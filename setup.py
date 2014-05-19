@@ -1,5 +1,4 @@
 from setuptools import setup, find_packages
-import sys, os
 
 version = '0.0'
 
@@ -9,7 +8,7 @@ setup(
     description="CKAN extension for the Glasgow Open Data Portal",
     long_description='''
     ''',
-    classifiers=[], # Get strings from http://pypi.python.org/pypi?%3Aaction=list_classifiers
+    classifiers=[],
     keywords='',
     author='',
     author_email='',
@@ -25,6 +24,6 @@ setup(
     entry_points='''
         [ckan.plugins]
         # Add plugins here, e.g.
-        glasgow=ckanext.glasgow.plugins:GlasgowPlugin
+        glasgow_schema=ckanext.glasgow.plugins:GlasgowSchemaPlugin
     ''',
 )
