@@ -14,19 +14,20 @@ def string_max_length(max_length):
     :raises: ckan.lib.navl.dictization_functions.Invalid if the string is
         longer than max length
     '''
+    def callable(value, context):
 
-    def callable(key, data, errors, context):
-        value = data.get(key)
         if len(value) > max_length:
             raise Invalid(
                 _('Length must be less than {0} characters')
                 .format(max_length)
             )
 
+        return value
+
     return callable
 
 
-# Copied from master (2.3a) as this is not yet in 2.2 (See #1690)
+# Copied from master (2.3a) as this is not yet in 2.2 (See #1692)
 def int_validator(value, context):
     '''
     Return an integer for value, which may be a string in base 10 or
@@ -69,15 +70,14 @@ def int_range(min_value=0, max_value=5):
         :raises: ckan.lib.navl.dictization_functions.Invalid if the value is
         not within the range
     '''
-
-    def callable(key, data, errors, context):
-        value = data.get(key)
+    def callable(value, context):
 
         if not (value >= min_value and value <= max_value):
             raise Invalid(
                 _('Value must be an integer between {0} and {1}')
                 .format(min_value, max_value)
             )
+        return value
 
     return callable
 
@@ -87,9 +87,9 @@ def trim_string(max_length):
     Trims a string up to a defined length
 
     '''
-    def callable(key, data, errors, context):
-        value = data.get(key)
-        if isinstance(value, basestring) and len(value) > max_length:
-            data[key] = value[:max_length]
+    def callable(value, context):
 
+        if isinstance(value, basestring) and len(value) > max_length:
+            value = value[:max_length]
+        return value
     return callable

@@ -67,11 +67,11 @@ def _modify_schema(schema):
     schema['quality'] = [not_empty, int_validator, int_range(0, 5),
                          convert_to_extras]
 
+    # Optional fields
+
     schema['published_on_behalf_of'] = [ignore_missing,
                                         string_max_length(255), unicode,
                                         convert_to_extras]
-
-    # Optional fields
 
     schema['usage_guidance'] = [ignore_missing, string_max_length(255),
                                 unicode, convert_to_extras]
