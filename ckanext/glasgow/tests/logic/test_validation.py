@@ -21,6 +21,10 @@ class TestValidation(object):
             'maintainer': 'Test maintainer',
             'maintainer_email': 'Test maintainer email',
             'license_id': 'OGL-UK-2.0',
+            'tags': [
+                {'name': 'Test tag 1'},
+                {'name': 'Test tag 2'},
+            ],
             'openness_rating': 3,
             'quality': 5,
             'published_on_behalf_of': 'Test published on behalf of',

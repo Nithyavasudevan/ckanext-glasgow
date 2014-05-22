@@ -27,6 +27,31 @@ def string_max_length(max_length):
     return callable
 
 
+def tags_max_length(max_length):
+    '''
+    Checks if the combined lenght of all tags is longer than a
+    certain length
+
+    :raises: ckan.lib.navl.dictization_functions.Invalid if the strings are
+        longer than max length
+    '''
+    def callable(key, data, errors, context):
+
+        total_length = 0
+
+        for key in data.keys():
+            if key[0] == 'tags' and key[2] == 'name':
+                total_length += len(data[key])
+
+        if total_length > max_length:
+            raise Invalid(
+                _('Combined length of tags must be less than {0} characters')
+                .format(max_length)
+            )
+
+    return callable
+
+
 # Copied from master (2.3a) as this is not yet in 2.2 (See #1692)
 def int_validator(value, context):
     '''

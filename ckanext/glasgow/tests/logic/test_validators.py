@@ -3,6 +3,7 @@ import nose
 import ckan.plugins as p
 
 from ckanext.glasgow.logic import validators
+from ckan.lib.navl.dictization_functions import validate
 
 eq_ = nose.tools.eq_
 
@@ -26,6 +27,37 @@ class TestValidators(object):
         validator = validators.string_max_length(20)
 
         nose.tools.assert_raises(p.toolkit.Invalid, validator, value, context)
+
+    def test_tags_max_length_valid(self):
+
+        data_dict = {
+            'tags': [{'name': 'test_tag_1'}, {'name': 'test_tag_2'}]
+        }
+        schema = {
+            '__before': [validators.tags_max_length(20)],
+            'tags': {'name': []},
+        }
+        context = {}
+
+        data, errors = validate(data_dict, schema, context)
+
+        eq_(errors, {})
+
+    def test_tags_max_length_invalid(self):
+
+        data_dict = {
+            'tags': [{'name': 'test_tag_1'}, {'name': 'test_tag_2'}]
+        }
+        schema = {
+            '__before': [validators.tags_max_length(10)],
+            'tags': {'name': []},
+        }
+        context = {}
+
+        data, errors = validate(data_dict, schema, context)
+
+        eq_(errors['__before'],
+            ['Combined length of tags must be less than 10 characters'])
 
     def test_int_validator_valid(self):
 

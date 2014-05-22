@@ -7,6 +7,7 @@ import ckan.plugins as p
 
 from ckanext.glasgow.logic.validators import (
     string_max_length,
+    tags_max_length,
     int_validator,
     int_range,
     trim_string,
@@ -46,6 +47,8 @@ def _modify_schema(schema):
     convert_to_extras = get_converter('convert_to_extras')
 
     # Mandatory fields
+
+    schema['__before'] = [tags_max_length(64000)]
 
     schema['name'] = [not_empty, unicode, trim_string(100), name_validator,
                       package_name_validator]
