@@ -92,12 +92,14 @@ def int_range(min_value=0, max_value=5):
         Does *not* check if the value is actually an integer, so
         `int_validator` must be called before this validator.
 
+        If no value provided, validation passes.
+
         :raises: ckan.lib.navl.dictization_functions.Invalid if the value is
         not within the range
     '''
     def callable(value, context):
 
-        if not (value >= min_value and value <= max_value):
+        if value and not (value >= min_value and value <= max_value):
             raise Invalid(
                 _('Value must be an integer between {0} and {1}')
                 .format(min_value, max_value)

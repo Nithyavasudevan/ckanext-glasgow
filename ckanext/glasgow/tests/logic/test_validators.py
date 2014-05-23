@@ -79,7 +79,7 @@ class TestValidators(object):
     def test_int_range_valid(self):
 
         validator = validators.int_range(0, 5)
-        valid_values = [0, 3, 5]
+        valid_values = [None, '', 0, 3, 5]
         context = {}
 
         for value in valid_values:
