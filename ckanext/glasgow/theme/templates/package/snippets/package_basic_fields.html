@@ -1,0 +1,165 @@
+{% import 'macros/form.html' as form %}
+
+{# Needed to avoid the staged creation #}
+<input type="hidden" name="_ckan_phase" value="" />
+
+<fieldset>
+  <legend>{{ _('Mandatory fields') }}</legend>
+
+  {# Title #}
+  {{ form.input('title', id='field-title', label=_('Title'), placeholder=_('eg. A descriptive title'), value=data.title, error=errors.title, classes=['control-full', 'control-large'], attrs={'data-module': 'slug-preview-target'}, is_required=true) }}
+
+  {# Name / URL #}
+  {% set prefix = h.url_for(controller='package', action='read', id='') %}
+  {% set domain = h.url_for(controller='package', action='read', id='', qualified=true) %}
+  {% set domain = domain|replace("http://", "")|replace("https://", "") %}
+  {% set attrs = {'data-module': 'slug-preview-slug', 'data-module-prefix': domain, 'data-module-placeholder': '<dataset>'} %}
+  {{ form.prepend('name', id='field-name', label=_('URL'), prepend=prefix, placeholder=_('eg. my-dataset'), value=data.name, error=errors.name, attrs=attrs, is_required=true) }}
+
+  {# Description #}
+  {{ form.markdown('notes', id='field-notes', label=_('Description'), placeholder=_('eg. Some useful notes about the data'), value=data.notes, error=errors.notes, is_required=true) }}
+
+  {# Maintainer #}
+  {{ form.input('maintainer', label=_('Maintainer'), id='field-maintainer', placeholder=_('Joe Bloggs'), value=data.maintainer, error=errors.maintainer, classes=['control-medium'], is_required=true) }}
+
+  {# Maintainer Email #}
+  {{ form.input('maintainer_email', label=_('Maintainer Email'), id='field-maintainer-email', placeholder=_('joe@example.com'), value=data.maintainer_email, error=errors.maintainer_email, classes=['control-medium'], is_required=true) }}
+
+  {# License #}
+  <div class="control-group control-medium">
+    {% set error = errors.license_id %}
+    <label class="control-label" for="field-license">
+      <span title="This field is required" class="control-required">*</span>
+      {{ _("License") }}
+    </label>
+    <div class="controls">
+      <select id="field-license" name="license_id" data-module="autocomplete">
+        {% for license_desc, license_id in licenses|sort if license_desc  %}
+          <option value="{{ license_id }}" {% if data.get('license_id', 'notspecified') == license_id %}selected="selected"{% endif %}>{{ license_desc }}</option>
+        {% endfor %}
+      </select>
+      {% if error %}<span class="error-block">{{ error }}</span>{% endif %}
+    </div>
+  </div>
+
+  {# Openness Rating #}
+  {# TODO: slider or similar #}
+  {{ form.input('openness_rating', label=_('Openness Rating'), placeholder=_('0 to 5'), id='field-openness_rating', value=data.openness_rating, error=errors.openness_rating, classes=['control-medium'], is_required=true) }}
+
+  {# Quality #}
+  {# TODO: slider or similar #}
+  {{ form.input('quality', label=_('Quality'), placeholder=_('0 to 5'), id='field-quality', value=data.quality, error=errors.quality, classes=['control-medium'], is_required=true) }}
+
+</fieldset>
+
+<fieldset>
+  <legend>{{ _('Optional fields') }}</legend>
+
+  {# Keywords #}
+   {% set tag_attrs = {'data-module': 'autocomplete', 'data-module-tags': '', 'data-module-source': '/api/2/util/tag/autocomplete?incomplete=?'} %}
+  {{ form.input('tag_string', id='field-tags', label=_('Keywords'), placeholder=_('eg. economy, mental health, government'), value=data.tag_string, error=errors.tags, classes=['control-full'], attrs=tag_attrs) }}
+
+  {# Published on behalf of #}
+  {{ form.input('published_on_behalf_of', label=_('Published on behalf of'), id='field-published_on_behalf_of', value=data.published_on_behalf_of, error=errors.published_on_behalf_of, classes=['control-medium']) }}
+
+  {# Usage Guidance #}
+  {{ form.input('usage_guidance', label=_('Usage Guidance'), id='field-usage_guidance', value=data.usage_guidance, error=errors.usage_guidance, classes=['control-medium']) }}
+
+  {# Category #}
+  {{ form.input('category', label=_('Category'), id='field-category', value=data.category, error=errors.category, classes=['control-medium']) }}
+
+  {# Theme #}
+  {{ form.input('theme', label=_('Theme'), id='field-theme', value=data.theme, error=errors.theme, classes=['control-medium']) }}
+
+  {# Standard Name #}
+  {{ form.input('standard_name', label=_('Standard Name'), id='field-standard_name', value=data.standard_name, error=errors.standard_name, classes=['control-medium']) }}
+
+  {# Standard Rating #}
+  {# TODO: slider or similar #}
+  {{ form.input('standard_rating', label=_('Standard Rating'), id='field-standard_rating', value=data.standard_rating, error=errors.standard_rating, classes=['control-medium']) }}
+
+  {# Standard Version #}
+  {{ form.input('standard_version', label=_('Standard Version'), id='field-standard_version', value=data.standard_version, error=errors.standard_version, classes=['control-medium']) }}
+
+</fieldset>
+
+{% set dataset_is_draft = data.get('state', 'draft').startswith('draft') or data.get('state', 'none') ==  'none' %}
+{% set dataset_has_organization = data.owner_org or data.group_id %}
+{% set organizations_available = h.organizations_available('create_dataset') %}
+{% set user_is_sysadmin = h.check_access('sysadmin') %}
+{% set show_organizations_selector = organizations_available and (user_is_sysadmin or dataset_is_draft) %}
+{% set show_visibility_selector = dataset_has_organization or (organizations_available and (user_is_sysadmin or dataset_is_draft)) %}
+{% set show_state_selector = data.id and h.check_access('package_delete', {'id': data.id}) and data.state != 'active' %}
+
+
+{% if show_organizations_selector or  show_visibility_selector or show_state_selector %}
+<fieldset>
+  <legend>{{ _('Management fields') }}</legend>
+{% endif %}
+
+  {# Organization #}
+  {# if we have a default group then this wants remembering #}
+  {% if data.group_id %}
+    <input type="hidden" name="groups__0__id" value="{{ data.group_id }}" />
+  {% endif %}
+
+  {% if show_organizations_selector and show_visibility_selector %}
+    <div data-module="dataset-visibility">
+  {% endif %}
+
+  {% if show_organizations_selector %}
+    {% set existing_org = data.owner_org or data.group_id %}
+    <div class="control-group">
+      <label for="field-organizations" class="control-label">{{ _('Organization') }}</label>
+      <div class="controls">
+        <select id="field-organizations" name="owner_org" data-module="autocomplete">
+          {% if h.check_config_permission('create_unowned_dataset') %}
+             <option value="" {% if not selected_org and data.id %} selected="selected" {% endif %}>{{ _('No organization') }}</option>
+          {% endif %}
+          {% for organization in organizations_available %}
+            {# get out first org from users list only if there is not an existing org #}
+            {% set selected_org = (existing_org and existing_org == organization.id) or (not existing_org and not data.id and organization.id == organizations_available[0].id) %}
+            <option value="{{ organization.id }}" {% if selected_org %} selected="selected" {% endif %}>{{ organization.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+  {% endif %}
+
+  {# Visibility #}
+  {% if show_visibility_selector %}
+    {% block package_metadata_fields_visibility %}
+      <div class="control-group">
+        <label for="field-private" class="control-label">{{ _('Visibility') }}</label>
+        <div class="controls">
+          <select id="field-private" name="private">
+            {% for option in [('True', _('Private')), ('False', _('Public'))] %}
+            <option value="{{ option[0] }}" {% if option[0] == data.private|trim %}selected="selected"{% endif %}>{{ option[1] }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+    {% endblock %}
+  {% endif %}
+
+  {% if show_organizations_selector and show_visibility_selector %}
+    </div>
+  {% endif %}
+
+  {# State #}
+  {% if show_state_selector %}
+    <div class="control-group">
+      <label for="field-state" class="control-label">{{ _('State') }}</label>
+      <div class="controls">
+        <select id="field-state" name="state">
+          <option value="active" {% if data.get('state', 'none') == 'active' %} selected="selected" {% endif %}>{{ _('Active') }}</option>
+          <option value="deleted" {% if data.get('state', 'none') == 'deleted' %} selected="selected" {% endif %}>{{ _('Deleted') }}</option>
+        </select>
+      </div>
+    </div>
+  {% endif %}
+
+{% if show_organizations_selector or  show_visibility_selector or show_state_selector %}
+</fieldset>
+{% endif %}
+
