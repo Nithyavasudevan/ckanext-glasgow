@@ -20,6 +20,53 @@ Invalid = p.toolkit.Invalid
 get_validator = p.toolkit.get_validator
 get_converter = p.toolkit.get_converter
 
+ckan_to_ec_dataset_mapping = {
+    'title': 'Title',
+    'notes': 'Description',
+    'maintainer': 'MaintainerName',
+    'maintainer_email': 'MaintainerContact',
+    'license_id': 'License',
+    'openness_rating': 'OpennessRating',
+    'quality': 'Quality',
+    'tags': 'Tags',
+    'published_on_behalf_of': 'PublishedOnBehalfOf',
+    'usage_guidance': 'UsageGuidance',
+    'category': 'Category',
+    'theme': 'Theme',
+    'standard_rating': 'StandardRating',
+    'standard_name': 'StandardName',
+    'standard_version': 'StandardVersion',
+}
+
+
+def convert_ckan_dataset_to_ec_dataset(ckan_dict):
+
+    ec_dict = {}
+
+    for ckan_name, ec_name in ckan_to_ec_dataset_mapping.iteritems():
+        if ckan_name != 'tags' and ckan_dict.get(ckan_name):
+            ec_dict[ec_name] = ckan_dict.get(ckan_name)
+
+    if ckan_dict.get('tags'):
+        ec_dict['Tags'] = ','.join([tag['name'] for tag in ckan_dict['tags']])
+
+    return ec_dict
+
+
+def convert_ec_dataset_to_ckan_dataset(ec_dict):
+
+    ckan_dict = {}
+
+    for ckan_name, ec_name in ckan_to_ec_dataset_mapping.iteritems():
+        if ec_name != 'Tags' and ec_dict.get(ec_name):
+            ckan_dict[ckan_name] = ec_dict.get(ec_name)
+
+    if ec_dict.get('Tags'):
+        ckan_dict['tags'] = [{'name': tag}
+                             for tag in ec_dict['Tags'].split(',')]
+
+    return ckan_dict
+
 
 def create_package_schema():
     schema = default_create_package_schema()
