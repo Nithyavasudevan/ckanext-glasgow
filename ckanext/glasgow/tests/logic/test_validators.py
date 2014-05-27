@@ -3,6 +3,8 @@ import nose
 import ckan.plugins as p
 
 from ckanext.glasgow.logic import validators
+
+# 2.3 will offer navl_validate in toolkit
 from ckan.lib.navl.dictization_functions import validate
 
 eq_ = nose.tools.eq_

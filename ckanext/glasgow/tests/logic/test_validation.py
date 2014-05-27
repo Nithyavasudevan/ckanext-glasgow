@@ -1,6 +1,8 @@
 import nose
 
 from ckan import model
+
+# 2.3 will offer navl_validate in toolkit
 from ckan.lib.navl.dictization_functions import validate
 
 import ckanext.glasgow.logic.schema as custom_schema
