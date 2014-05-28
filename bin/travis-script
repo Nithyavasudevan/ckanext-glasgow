@@ -3,7 +3,7 @@
 BASE_DIR="/home/travis/build/okfn"
 CKAN_DIR="/home/travis/build/okfn/ckan"
 
-nosetests --ckan --reset-db --with-pylons="$CKAN_DIR"/test-core.ini --nologcapture ckanext
+nosetests --ckan --reset-db --with-pylons="$BASE_DIR"/ckanext-glasgow/test.ini --nologcapture ckanext
 # Did an error occur?
 NOSE_ERROR=$?
 

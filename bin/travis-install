@@ -36,6 +36,8 @@ paster datastore set-permissions postgres -c "$CKAN_DIR"/test-core.ini
 
 # Setup extension
 cd $BASE_DIR/ckanext-glasgow
+
+pip install -r requirements-dev.txt
 python setup.py develop
 
 # Configure Solr
