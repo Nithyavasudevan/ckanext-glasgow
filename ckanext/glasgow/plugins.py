@@ -11,6 +11,8 @@ class GlasgowSchemaPlugin(p.SingletonPlugin, p.toolkit.DefaultDatasetForm):
 
     p.implements(p.IConfigurer, inherit=True)
     p.implements(p.IDatasetForm, inherit=True)
+    p.implements(p.IActions, inherit=True)
+    p.implements(p.IAuthFunctions, inherit=True)
 
     # IConfigurer
 
@@ -38,3 +40,33 @@ class GlasgowSchemaPlugin(p.SingletonPlugin, p.toolkit.DefaultDatasetForm):
 
     def show_package_schema(self):
         return custom_schema.show_package_schema()
+
+    # IActions
+
+    def get_actions(self):
+        import ckanext.glasgow.logic.action as custom_actions
+
+        function_names = (
+            'dataset_request_create',
+            'dataset_request_update',
+        )
+        return _get_module_functions(custom_actions, function_names)
+
+    # IAuthFunctions
+
+    def get_auth_functions(self):
+        import ckanext.glasgow.logic.auth as custom_auth
+
+        function_names = (
+            'dataset_request_create',
+            'dataset_request_update',
+        )
+        return _get_module_functions(custom_auth, function_names)
+
+
+def _get_module_functions(module, function_names):
+    functions = {}
+    for f in function_names:
+        functions[f] = module.__dict__[f]
+
+    return functions
