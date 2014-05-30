@@ -12,6 +12,8 @@ import ckan.plugins as p
 from ckan.lib.navl.dictization_functions import validate
 import ckan.lib.dictization.model_dictize as model_dictize
 
+import ckan.logic.action as core_actions
+
 import ckanext.glasgow.logic.schema as custom_schema
 
 get_action = p.toolkit.get_action
@@ -93,6 +95,21 @@ def pending_task_for_dataset(context, data_dict):
         return model_dictize.task_status_dictize(task, context)
     else:
         return None
+
+
+def package_create(context, data_dict):
+
+    if data_dict.get('__local_action', False):
+        context['local_action'] = True
+        data_dict.pop('__local_action', None)
+
+    if context.get('local_action', False):
+
+        return core_actions.create.package_create(context, data_dict)
+
+    else:
+
+        return dataset_request_create(context, data_dict)
 
 
 def dataset_request_create(context, data_dict):

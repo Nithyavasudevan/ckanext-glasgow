@@ -47,6 +47,7 @@ class GlasgowSchemaPlugin(p.SingletonPlugin, p.toolkit.DefaultDatasetForm):
         import ckanext.glasgow.logic.action as custom_actions
 
         function_names = (
+            'package_create',
             'dataset_request_create',
             'dataset_request_update',
             'pending_task_for_dataset',
@@ -59,6 +60,7 @@ class GlasgowSchemaPlugin(p.SingletonPlugin, p.toolkit.DefaultDatasetForm):
         import ckanext.glasgow.logic.auth as custom_auth
 
         function_names = (
+            'package_create',
             'dataset_request_create',
             'dataset_request_update',
             'pending_task_for_dataset',

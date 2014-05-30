@@ -3,6 +3,17 @@ import ckan.plugins as p
 import ckan.logic.auth as auth_core
 
 
+def package_create(context, data_dict):
+
+    if context.get('local_action', False):
+        return {'success': False,
+                'msg': 'Only sysadmins can create datasets directly into CKAN'
+                }
+    else:
+
+        return dataset_request_create(context, data_dict)
+
+
 def dataset_request_create(context, data_dict):
 
     return auth_core.create.package_create(context, data_dict)
