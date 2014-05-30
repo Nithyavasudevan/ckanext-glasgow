@@ -3,7 +3,6 @@ import nose
 
 import ckan.plugins as p
 import ckan.new_tests.helpers as helpers
-import ckan.new_tests.factories as factories
 
 eq_ = nose.tools.eq_
 
