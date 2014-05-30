@@ -1,4 +1,3 @@
-from threading import Thread
 import json
 
 import nose
@@ -14,7 +13,8 @@ from ckanext.glasgow.logic.action import (
     _update_task_status_success,
     _update_task_status_error,
     )
-from ckanext.glasgow.tests.mock_ec import run as run_mock_ec
+
+from ckanext.glasgow.tests import run_mock_ec
 
 
 eq_ = nose.tools.eq_
@@ -242,17 +242,10 @@ class TestDatasetCreate(object):
                                               password='test')
 
         # Start mock EC API
-        def run():
-            run_mock_ec(port=7071, debug=False)
-
-        t = Thread(target=run)
-        t.daemon = True
-        t.start()
-
-        config['ckanext.glasgow.ec_api'] = 'http://0.0.0.0:7071'
+        run_mock_ec()
 
     @classmethod
-    def teardown(cls):
+    def teardown_class(cls):
         helpers.reset_db()
 
     def test_create(self):
