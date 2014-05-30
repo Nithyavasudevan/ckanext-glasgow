@@ -159,13 +159,13 @@ class TestDatasetCreate(object):
 
         # Start mock EC API
         def run():
-            run_mock_ec(port=7070, debug=False)
+            run_mock_ec(port=7071, debug=False)
 
         t = Thread(target=run)
         t.daemon = True
         t.start()
 
-        config['ckanext.glasgow.ec_api'] = 'http://0.0.0.0:7070'
+        config['ckanext.glasgow.ec_api'] = 'http://0.0.0.0:7071'
 
     @classmethod
     def teardown(cls):
