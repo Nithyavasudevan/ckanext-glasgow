@@ -1,29 +1,18 @@
 import nose
-import webtest
 
-from pylons import config
-
-import ckan
 import ckan.new_tests.helpers as helpers
 
 from ckanext.glasgow.tests import run_mock_ec
+from ckanext.glasgow.tests.functional import get_test_app
 
 eq_ = nose.tools.eq_
-
-
-def _get_test_app():
-    '''Return a webtest.TestApp for CKAN
-    '''
-    app = ckan.config.middleware.make_app(config['global_conf'], **config)
-    app = webtest.TestApp(app)
-    return app
 
 
 class TestDatasetController(object):
 
     @classmethod
     def setup_class(cls):
-        cls.app = _get_test_app()
+        cls.app = get_test_app()
 
         # Create test user
         cls.normal_user = helpers.call_action('user_create',

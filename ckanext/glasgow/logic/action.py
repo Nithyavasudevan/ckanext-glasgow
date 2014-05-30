@@ -228,6 +228,8 @@ def dataset_request_create(context, data_dict):
     return {
         'task_id': task_dict['id'],
         'request_id': request_id,
+        # This is required by the core controller to do the redirect
+        'name': validated_data_dict['name'],
     }
 
 
