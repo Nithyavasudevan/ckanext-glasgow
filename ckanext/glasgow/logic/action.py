@@ -3,12 +3,14 @@ import datetime
 import uuid
 
 import requests
+from sqlalchemy import or_
 
 from pylons import config
 
 import ckan.model as model
 import ckan.plugins as p
 from ckan.lib.navl.dictization_functions import validate
+import ckan.lib.dictization.model_dictize as model_dictize
 
 import ckanext.glasgow.logic.schema as custom_schema
 
@@ -53,6 +55,44 @@ def _get_api_endpoint(operation):
         url = '/files'
 
     return method, '{0}{1}'.format(base, url)
+
+
+def pending_task_for_dataset(context, data_dict):
+    '''
+    Returns the most recent pending request for a particular dataset
+
+    Returns the most recent TaskStatus with a state of 'new' or 'sent'.
+    Datasets can be identified by id or name.
+
+    :param id: Dataset id (optional if name provided)
+    :type operation: string
+    :param name: Dataset name (optional if id provided)
+    :type operation: string
+
+    :returns: a task status dict if found, None otherwise.
+    :rtype: dict
+    '''
+
+    p.toolkit.check_access('pending_task_for_dataset', context, data_dict)
+
+    id = data_dict.get('id') or data_dict.get('name')
+
+    model = context.get('model')
+    task = model.Session.query(model.TaskStatus) \
+        .filter(model.TaskStatus.entity_type == 'dataset') \
+        .filter(or_(model.TaskStatus.state == 'new',
+                model.TaskStatus.state == 'sent')) \
+        .filter(or_(
+                model.TaskStatus.key == id,
+                model.TaskStatus.entity_id == id,
+                )) \
+        .order_by(model.TaskStatus.last_updated.desc()) \
+        .first()
+
+    if task:
+        return model_dictize.task_status_dictize(task, context)
+    else:
+        return None
 
 
 def dataset_request_create(context, data_dict):

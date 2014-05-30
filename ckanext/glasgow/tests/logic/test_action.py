@@ -49,11 +49,6 @@ class TestTaskStatusHelpers(object):
         helpers.reset_db()
 
     def test_create_task_status(self):
-        '''
-            _create_task_status,
-            _update_task_status_success,
-            _update_task_status_error,
-        '''
 
         task_dict = _create_task_status({'user': 'test'},
                                         task_type='test_task_type',
@@ -144,6 +139,95 @@ class TestTaskStatusHelpers(object):
         # Check the DB was actually updated
         eq_(task.value, 'test_value_updated')
         eq_(task.state, 'error')
+
+
+class TestTaskStatus(object):
+
+    @classmethod
+    def setup_class(cls):
+        helpers.reset_db()
+
+    def test_pending_task_for_dataset_by_name(self):
+
+        task_dict = _create_task_status({'user': 'test'},
+                                        task_type='test_task_type',
+                                        entity_id='test_dataset_id',
+                                        entity_type='dataset',
+                                        key='test_dataset_name',
+                                        value='test_value'
+                                        )
+
+        pending_task = helpers.call_action('pending_task_for_dataset',
+                                           name='test_dataset_name'
+                                           )
+
+        eq_(pending_task['id'], task_dict['id'])
+
+    def test_pending_task_for_dataset_by_id(self):
+
+        task_dict = _create_task_status({'user': 'test'},
+                                        task_type='test_task_type',
+                                        entity_id='test_dataset_id',
+                                        entity_type='dataset',
+                                        key='test_dataset_name',
+                                        value='test_value'
+                                        )
+
+        pending_task = helpers.call_action('pending_task_for_dataset',
+                                           id='test_dataset_id'
+                                           )
+
+        eq_(pending_task['id'], task_dict['id'])
+
+    def test_pending_task_for_dataset_success_found(self):
+
+        task_dict = _create_task_status({'user': 'test'},
+                                        task_type='test_task_type',
+                                        entity_id='test_dataset_id',
+                                        entity_type='dataset',
+                                        key='test_dataset_name',
+                                        value='test_value'
+                                        )
+
+        task_dict = _update_task_status_success({'user': 'test'},
+                                                task_dict=task_dict,
+                                                value='test_value_updated'
+                                                )
+
+        pending_task = helpers.call_action('pending_task_for_dataset',
+                                           id='test_dataset_id'
+                                           )
+
+        eq_(pending_task['id'], task_dict['id'])
+
+    def test_pending_task_for_dataset_error_not_found(self):
+
+        task_dict = _create_task_status({'user': 'test'},
+                                        task_type='test_task_type',
+                                        entity_id='test_dataset_id',
+                                        entity_type='dataset',
+                                        key='test_dataset_name',
+                                        value='test_value'
+                                        )
+
+        task_dict = _update_task_status_error({'user': 'test'},
+                                              task_dict=task_dict,
+                                              value='test_value_updated'
+                                              )
+
+        pending_task = helpers.call_action('pending_task_for_dataset',
+                                           id='test_dataset_id'
+                                           )
+
+        eq_(pending_task, None)
+
+    def test_pending_task_for_dataset_not_found(self):
+
+        pending_task = helpers.call_action('pending_task_for_dataset',
+                                           id='unexisting_dataset'
+                                           )
+
+        eq_(pending_task, None)
 
 
 class TestDatasetCreate(object):
