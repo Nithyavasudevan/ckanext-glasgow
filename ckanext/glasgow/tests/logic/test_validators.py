@@ -1,8 +1,13 @@
 import nose
 
 import ckan.plugins as p
+import ckan.new_tests.helpers as helpers
 
 from ckanext.glasgow.logic import validators
+from ckanext.glasgow.logic.action import (
+    _create_task_status,
+)
+
 
 # 2.3 will offer navl_validate in toolkit
 from ckan.lib.navl.dictization_functions import validate
@@ -107,3 +112,33 @@ class TestValidators(object):
         new_value = validator(value, context)
 
         eq_(new_value, 'long_string')
+
+
+class TestNameValidators(object):
+
+    def setup(cls):
+        helpers.reset_db()
+
+    def test_no_pending_dataset_with_same_name_valid(self):
+
+        value = 'test_dataset_name'
+        context = {}
+        new_value = validators.no_pending_dataset_with_same_name(value,
+                                                                 context)
+        eq_(new_value, value)
+
+    def test_no_pending_dataset_with_same_name_invalid(self):
+
+        task_dict = _create_task_status({'user': 'test'},
+                                        task_type='test_task_type',
+                                        entity_id='test_dataset_id',
+                                        entity_type='dataset',
+                                        key='test_dataset_name',
+                                        value='test_value'
+                                        )
+
+        value = 'test_dataset_name'
+        context = {}
+        nose.tools.assert_raises(p.toolkit.Invalid,
+                                 validators.no_pending_dataset_with_same_name,
+                                 value, context)
