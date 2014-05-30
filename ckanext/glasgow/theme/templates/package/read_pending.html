@@ -1,0 +1,29 @@
+{% extends "package/base.html" %}
+
+{% set dataset = task.value.data_dict %}
+
+{% block breadcrumb_content %}
+    {% set dataset_title = dataset.title or dataset.name %}
+      <li>{% link_for _('Datasets'), controller='package', action='search' %}</li>
+    <li{{ self.breadcrumb_content_selected() }}> [Pending] {{ dataset_title }}</li>
+{% endblock %}
+
+{% if task %}
+
+
+{% block subtitle %}[Pending] {{ dataset.title or dataset.name }} - {{ super() }}{% endblock %}
+
+
+  {% block primary_content_inner %}
+    <p>Creation of the dataset <span class="dataset-title"><strong>{{ dataset.title }}</span></strong> has been requested to the CTPEC.</p>
+
+    <ul>
+      <li>CTPEC request id: {{ task.value.request_id }}</li>
+      <li>CKAN task id: {{ task.id }}</li>
+    </ul>
+
+    <p>This page will get automatically updated once the request is approved. {% link_for _('Refresh now'), controller='package', action='read', id=dataset.name %}
+
+  {% endblock %}
+
+{% endif %}

@@ -9,10 +9,29 @@ log = logging.getLogger(__name__)
 
 class GlasgowSchemaPlugin(p.SingletonPlugin, p.toolkit.DefaultDatasetForm):
 
+    p.implements(p.IRoutes, inherit=True)
     p.implements(p.IConfigurer, inherit=True)
     p.implements(p.IDatasetForm, inherit=True)
     p.implements(p.IActions, inherit=True)
     p.implements(p.IAuthFunctions, inherit=True)
+
+    # IRoutes
+
+    def before_map(self, map):
+
+        def reserved(environ, match_dict):
+            if match_dict['id'] == 'new':
+                return False
+            return True
+
+        controller = 'ckanext.glasgow.controllers.dataset:DatasetController'
+        map.connect('dataset_read', '/dataset/{id}',
+                    controller=controller,
+                    action='read',
+                    ckan_icon='sitemap',
+                    conditions={'function': reserved})
+
+        return map
 
     # IConfigurer
 
