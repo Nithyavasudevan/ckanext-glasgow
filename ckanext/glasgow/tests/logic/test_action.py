@@ -44,8 +44,7 @@ class TestGetAPIEndpoint(object):
 
 class TestTaskStatusHelpers(object):
 
-    @classmethod
-    def setup_class(cls):
+    def setup(cls):
         helpers.reset_db()
 
     def test_create_task_status(self):
@@ -149,7 +148,8 @@ class TestTaskStatus(object):
 
     def test_pending_task_for_dataset_by_name(self):
 
-        task_dict = _create_task_status({'user': 'test'},
+        context = {'user': 'test'}
+        task_dict = _create_task_status(context,
                                         task_type='test_task_type',
                                         entity_id='test_dataset_id',
                                         entity_type='dataset',
@@ -158,14 +158,17 @@ class TestTaskStatus(object):
                                         )
 
         pending_task = helpers.call_action('pending_task_for_dataset',
+                                           context=context,
                                            name='test_dataset_name'
                                            )
 
         eq_(pending_task['id'], task_dict['id'])
+        eq_(pending_task['state'], 'new')
 
     def test_pending_task_for_dataset_by_id(self):
 
-        task_dict = _create_task_status({'user': 'test'},
+        context = {'user': 'test'}
+        task_dict = _create_task_status(context,
                                         task_type='test_task_type',
                                         entity_id='test_dataset_id',
                                         entity_type='dataset',
@@ -174,14 +177,17 @@ class TestTaskStatus(object):
                                         )
 
         pending_task = helpers.call_action('pending_task_for_dataset',
+                                           context=context,
                                            id='test_dataset_id'
                                            )
 
         eq_(pending_task['id'], task_dict['id'])
+        eq_(pending_task['state'], 'new')
 
     def test_pending_task_for_dataset_success_found(self):
 
-        task_dict = _create_task_status({'user': 'test'},
+        context = {'user': 'test'}
+        task_dict = _create_task_status(context,
                                         task_type='test_task_type',
                                         entity_id='test_dataset_id',
                                         entity_type='dataset',
@@ -189,16 +195,18 @@ class TestTaskStatus(object):
                                         value='test_value'
                                         )
 
-        task_dict = _update_task_status_success({'user': 'test'},
+        task_dict = _update_task_status_success(context,
                                                 task_dict=task_dict,
                                                 value='test_value_updated'
                                                 )
 
         pending_task = helpers.call_action('pending_task_for_dataset',
+                                           context=context,
                                            id='test_dataset_id'
                                            )
 
         eq_(pending_task['id'], task_dict['id'])
+        eq_(pending_task['state'], 'sent')
 
     def test_pending_task_for_dataset_error_not_found(self):
 
@@ -292,5 +300,5 @@ class TestDatasetCreate(object):
         eq_(task_dict['task_type'], 'dataset_request_create')
         eq_(task_dict['entity_type'], 'dataset')
         eq_(task_dict['key'], data_dict['name'])
-        eq_(task_dict['state'], 'new')
+        eq_(task_dict['state'], 'sent')
         assert 'data_dict' in json.loads(task_dict['value'])

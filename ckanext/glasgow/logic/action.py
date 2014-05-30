@@ -266,6 +266,8 @@ def _update_task_status_success(context, task_dict, value):
 
     task_dict = get_action('task_status_update')(context, task_dict)
 
+    _expire_task_status(context, task_dict['id'])
+
     return task_dict
 
 
@@ -282,7 +284,28 @@ def _update_task_status_error(context, task_dict, value):
 
     task_dict = get_action('task_status_update')(context, task_dict)
 
+    _expire_task_status(context, task_dict['id'])
+
     return task_dict
+
+
+def _expire_task_status(context, task_id):
+    '''Expires a TaskStatus object from the current Session
+
+    TaskStatus are generally updated twice in the same Session (first in
+    `_create_task_status` and then in either `_update_task_status_error`
+    or `_update_task_status_succes`. If we want functions calling the
+    `dataset_request_create` action to access the latest version, we need to
+    expire the object currently held in the Session.
+    '''
+    if not context.get('model'):
+        return
+
+    model = context['model']
+
+    task = model.Session.query(model.TaskStatus).get(task_id)
+    if task:
+        model.Session.expire(task)
 
 
 def dataset_request_update(context, data_dict):

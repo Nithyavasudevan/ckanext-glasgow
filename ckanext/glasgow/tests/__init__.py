@@ -22,5 +22,3 @@ def run_mock_ec(port=7071):
         t.start()
 
         config['ckanext.glasgow.ec_api'] = 'http://0.0.0.0:{0}'.format(port)
-
-
