@@ -33,13 +33,13 @@ class TestGetAPIEndpoint(object):
         base_api = self._base_api.rstrip('/')
 
         eq_(_get_api_endpoint('dataset_request_create'),
-            ('POST', base_api + '/datasets'))
+            ('POST', base_api + '/Datasets'))
         eq_(_get_api_endpoint('dataset_request_update'),
-            ('PUT', base_api + '/datasets'))
+            ('PUT', base_api + '/Datasets'))
         eq_(_get_api_endpoint('resource_request_create'),
-            ('POST', base_api + '/files'))
+            ('POST', base_api + '/Files'))
         eq_(_get_api_endpoint('resource_request_update'),
-            ('PUT', base_api + '/files'))
+            ('PUT', base_api + '/Files'))
 
 
 class TestTaskStatusHelpers(object):

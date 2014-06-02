@@ -69,16 +69,16 @@ def _get_api_endpoint(operation):
 
     if operation == 'dataset_request_create':
         method = 'POST'
-        url = '/datasets'
+        url = '/Datasets'
     elif operation == 'dataset_request_update':
         method = 'PUT'
-        url = '/datasets'
+        url = '/Datasets'
     elif operation == 'resource_request_create':
         method = 'POST'
-        url = '/files'
+        url = '/Files'
     elif operation == 'resource_request_update':
         method = 'PUT'
-        url = '/files'
+        url = '/Files'
 
     return method, '{0}{1}'.format(base, url)
 

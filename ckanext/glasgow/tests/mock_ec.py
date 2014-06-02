@@ -74,13 +74,13 @@ dataset_fields_under_255_characters = [
 ]
 
 
-@app.route('/datasets', methods=['POST'])
+@app.route('/Datasets', methods=['POST'])
 def request_dataset_create():
 
     return handle_dataset_request()
 
 
-@app.route('/datasets', methods=['PUT'])
+@app.route('/Datasets', methods=['PUT'])
 def request_dataset_update():
 
     return handle_dataset_request()
@@ -98,7 +98,7 @@ def handle_dataset_request():
 
     # Authorization
 
-    if (not 'Authorization' in flask.request.headers or
+    if ('Authorization' not in flask.request.headers or
        flask.request.headers['Authorization'] == 'unknown_token'):
         response = flask.jsonify(
             Message='Not Auhtorized'
