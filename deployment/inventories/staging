@@ -1,0 +1,5 @@
+[webserver]
+okfstagingfe.cloudapp.net
+
+[dbserver]
+okfstagingdb1.cloudapp.net

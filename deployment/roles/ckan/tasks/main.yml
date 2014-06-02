@@ -1,0 +1,31 @@
+- name: Make sure packages are installed
+  apt: pkg={{ item }} state=installed update_cache=yes
+  with_items:
+    - nginx
+    - apache2
+    - libapache2-mod-wsgi
+    - libpq5
+
+- name: Download the CKAN package
+  get_url: url=http://packaging.ckan.org/{{ ckan_package }} dest=/tmp/ mode=0440 sha256sum={{ ckan_sha }}
+
+- name: Check if CKAN is installed, install it if not
+  register: ckan_install
+  command: dpkg --skip-same-version -i /tmp/{{ ckan_package }}
+  changed_when: "ckan_install.stdout.startswith('Selecting')"
+
+- name: Setup Apache
+  template: src=ckan_default.j2 dest=/etc/apache2/sites-available/ckan_default owner=www-data group=www-data mode=0644
+
+- name: Enable Apache virtualhost
+  file: src=/etc/apache2/sites-available/ckan_default dest=/etc/apache2/sites-enabled/ckan_default owner=www-data group=www-data state=link
+  notify:
+    - "Restart Apache"
+    - "Restart Nginx"
+
+
+#TODO: Template-ize ckan config file
+#- name: setup ckan config file
+#template: src=etc/ckan/production.ini dest=/etc/ckan/default/production.ini owner=root group=root mode=0544
+
+

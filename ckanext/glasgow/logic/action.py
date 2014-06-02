@@ -38,7 +38,7 @@ def _get_api_auth_token():
     tmp_token_file = config.get('ckanext.glasgow.tmp_auth_token_file')
     if tmp_token_file:
         try:
-            with open(tmp_token_file + 'asdsad', 'r') as f:
+            with open(tmp_token_file, 'r') as f:
                 token = f.read().strip('\n')
                 if not token.startswith('Bearer '):
                     token = 'Bearer ' + token

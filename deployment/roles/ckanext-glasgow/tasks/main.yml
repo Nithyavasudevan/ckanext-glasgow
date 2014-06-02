@@ -1,0 +1,9 @@
+---
+
+- name: Get ckanext-glasgow extension
+  git: repo=https://github.com/okfn/ckanext-glasgow dest=/usr/lib/ckan/default/src/ckanext-glasgow
+
+- name: Run setup.py develop for glasgow
+  command: chdir=/usr/lib/ckan/default/src/ckanext-glasgow/ ../../bin/python setup.py develop
+
+#TODO: config options

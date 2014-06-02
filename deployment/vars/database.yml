@@ -1,0 +1,5 @@
+# Move these to postgres role?
+
+ckan_database_name: glasgow
+ckan_database_user: glasgow
+ckan_database_password: pass

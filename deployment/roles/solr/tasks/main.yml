@@ -1,0 +1,15 @@
+# TODO: This installs Solr 1.4, we probably want Solr 4 eventually
+---
+- name: Install Solr
+  apt: pkg="{{ item }}" state=latest update_cache=yes cache_valid_time=3600
+  with_items:
+    - solr-tomcat
+
+# If we use a custom Solr schema, get it from ckanext-glasgow instead
+- name: Get CKAN source
+  git: repo=https://github.com/ckan/ckan dest=/usr/lib/ckan/default/src/ckan version=release-v2.2
+
+- name: Symlink to the CKAN schema
+  file: src=/usr/lib/ckan/default/src/ckan/ckan/config/solr/schema.xml dest=/etc/solr/conf/schema.xml state=link force=yes
+  notify: "Restart Tomcat"
+
