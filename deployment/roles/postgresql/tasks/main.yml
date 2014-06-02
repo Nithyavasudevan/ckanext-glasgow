@@ -1,0 +1,26 @@
+---
+- name: Install Postgres and necessary packages
+  apt: pkg="{{ item }}" state=latest update_cache=yes cache_valid_time=3600
+  with_items:
+    - postgresql-9.1
+    - python-psycopg2
+  tags:
+  - database
+
+- name: Setup Postgresql user
+  sudo_user: postgres
+  postgresql_user: name={{ ckan_database_user }} password={{ ckan_database_password }}
+  notify: "Restart Postgres"
+  tags:
+  - database
+
+
+
+- name: Setup Postgresql database
+  sudo_user: postgres
+  postgresql_db: db={{ ckan_database_name }} owner={{ ckan_database_user }} encoding='UTF-8'
+  notify: "Restart Postgres"
+  tags:
+  - database
+
+
