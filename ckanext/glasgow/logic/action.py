@@ -1,3 +1,4 @@
+import logging
 import json
 import datetime
 import uuid
@@ -16,12 +17,35 @@ import ckan.logic.action as core_actions
 
 import ckanext.glasgow.logic.schema as custom_schema
 
+
+log = logging.getLogger(__name__)
+
 get_action = p.toolkit.get_action
 check_access = p.toolkit.check_access
 
 
 def _make_uuid():
     return unicode(uuid.uuid4())
+
+
+def _get_api_auth_token():
+    '''
+    This is all fake, it will get replaced with proper integration with WAAD
+    '''
+
+    token = 'tmp_auth_token'
+
+    tmp_token_file = config.get('ckanext.glasgow.tmp_auth_token_file')
+    if tmp_token_file:
+        try:
+            with open(tmp_token_file + 'asdsad', 'r') as f:
+                token = f.read().strip('\n')
+                if not token.startswith('Bearer '):
+                    token = 'Bearer ' + token
+        except IOError:
+            log.critical('Temp auth token file not found: {0}'
+                         .format(tmp_token_file))
+    return token
 
 
 def _get_api_endpoint(operation):
@@ -184,7 +208,7 @@ def dataset_request_create(context, data_dict):
 
     # TODO: Authenticate request
     headers = {
-        'Authorization': 'tmp_token',
+        'Authorization': _get_api_auth_token(),
         'Content-Type': 'application/json',
     }
 
