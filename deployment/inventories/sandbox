@@ -1,0 +1,5 @@
+[webserver]
+okfsandboxfe.cloudapp.net
+
+[dbserver]
+okfsandboxdb.cloudapp.net

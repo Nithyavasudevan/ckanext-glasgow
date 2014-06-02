@@ -1,0 +1,5 @@
+[webserver]
+ckanfrontend.cloudapp.net
+
+[dbserver]
+ckandatabaseint.cloudapp.net
