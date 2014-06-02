@@ -1,3 +1,4 @@
+import logging
 import uuid
 
 import flask
@@ -26,6 +27,11 @@ def make_json_app(import_name, **kwargs):
 
     for code in default_exceptions.iterkeys():
         app.error_handler_spec[None][code] = make_json_error
+
+    # Add logging
+    handler = logging.StreamHandler()
+    handler.setLevel(logging.INFO)
+    app.logger.addHandler(handler)
 
     return app
 
@@ -89,6 +95,11 @@ def request_dataset_update():
 def handle_dataset_request():
     data = flask.request.json
 
+    if app.debug:
+        app.logger.debug('Headers received:\n{0}'
+                         .format(flask.request.headers))
+        app.logger.debug('Data received:\n{0}'.format(data))
+
     if not data:
         response = flask.jsonify(
             Message='No data received'
@@ -132,9 +143,12 @@ def handle_dataset_request():
             return response
 
     # All good, return a request id
+    request_id = unicode(uuid.uuid4())
+    if app.debug:
+        app.logger.debug('Request id generated:\n{0}'.format(request_id))
 
     return flask.jsonify(
-        RequestId=unicode(uuid.uuid4())
+        RequestId=request_id
     )
 
 
