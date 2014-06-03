@@ -17,11 +17,16 @@
         <div class="error-explanation alert alert-error">{{ error }}</div>
       {% endif %}
 
+      <p>While full integration with WAAD is not in place, this allows you to provide
+        an auth token to be used in all API requests to the CTPEC API.</p>
+
+      <p>Please paste here the full authorization token:</p>
+
       <form action="" method="POST">
 
-      <textarea name="token"></textarea>
+      <textarea name="token" rows=10 style="height: auto; width: 500px"></textarea>
 
-      <button class="btn btn-primary" type="submit" name="save">Save</button>
+      <div><button class="btn btn-primary" type="submit" name="save">Save</button></div>
       </form>
       
     </div>
