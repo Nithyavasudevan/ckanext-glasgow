@@ -4,6 +4,8 @@ from ckan.controllers.package import PackageController
 
 import ckan.plugins as p
 
+from ckanext.glasgow.logic.action import ECAPINotAuthorized
+
 
 class DatasetController(PackageController):
 
@@ -22,3 +24,17 @@ class DatasetController(PackageController):
                                     extra_vars=vars)
         else:
             return super(DatasetController, self).read(id, format)
+
+    def new(self, data=None, errors=None, error_summary=None):
+        '''Needed to capture custom exceptions'''
+        return super(DatasetController, self).new(data, errors,
+                                                  error_summary)
+
+    def _save_new(self, context, package_type=None):
+        try:
+            return super(DatasetController, self)._save_new(context,
+                                                            package_type)
+        except ECAPINotAuthorized, e:
+            vars = {'error_type': 'auth'}
+            return p.toolkit.render('package/read_api_error.html',
+                                    extra_vars=vars)

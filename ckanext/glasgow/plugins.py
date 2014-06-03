@@ -19,17 +19,15 @@ class GlasgowSchemaPlugin(p.SingletonPlugin, p.toolkit.DefaultDatasetForm):
 
     def before_map(self, map):
 
-        def reserved(environ, match_dict):
-            if match_dict['id'] == 'new':
-                return False
-            return True
-
         controller = 'ckanext.glasgow.controllers.dataset:DatasetController'
+
+        map.connect('add dataset', '/dataset/new', controller=controller,
+                    action='new')
         map.connect('dataset_read', '/dataset/{id}',
                     controller=controller,
                     action='read',
-                    ckan_icon='sitemap',
-                    conditions={'function': reserved})
+                    ckan_icon='sitemap'
+                    )
 
         return map
 

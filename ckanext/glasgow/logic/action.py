@@ -14,6 +14,7 @@ from ckan.lib.navl.dictization_functions import validate
 import ckan.lib.dictization.model_dictize as model_dictize
 
 import ckan.logic.action as core_actions
+from ckan.logic import ActionError
 
 import ckanext.glasgow.logic.schema as custom_schema
 
@@ -22,6 +23,14 @@ log = logging.getLogger(__name__)
 
 get_action = p.toolkit.get_action
 check_access = p.toolkit.check_access
+
+
+class ECAPINotAuthorized(ActionError):
+    pass
+
+
+class ECAPIValidationError(p.toolkit.ValidationError):
+    pass
 
 
 def _make_uuid():
@@ -234,7 +243,7 @@ def dataset_request_create(context, data_dict):
         task_dict = _update_task_status_error(context, task_dict, error_dict)
 
         if status_code == 401:
-            raise p.toolkit.NotAuthorized(error_dict)
+            raise ECAPINotAuthorized(error_dict)
         else:
             raise p.toolkit.ValidationError(error_dict)
 

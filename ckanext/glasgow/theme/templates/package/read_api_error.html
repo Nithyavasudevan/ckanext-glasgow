@@ -1,0 +1,23 @@
+{% extends "package/base.html" %}
+
+
+{% block breadcrumb_content %}
+  <li>{% link_for _('Datasets'), controller='package', action='search' %}</li>
+  <li{{ self.breadcrumb_content_selected() }}> [Error]</li>
+{% endblock %}
+
+{% if task %}
+
+
+{% block subtitle %}[Error] - {{ super() }}{% endblock %}
+
+
+  {% block primary_content_inner %}
+    <div class="error-explanation alert alert-error">
+      <p>The EC API returned an authorization error (401 Not Authorized).</p>
+      <p>You need to provide a valid authorization token (if you provided one before, it may have expired)</p>
+    </div>
+
+  {% endblock %}
+
+{% endif %}
