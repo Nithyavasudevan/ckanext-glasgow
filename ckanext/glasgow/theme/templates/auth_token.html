@@ -1,0 +1,31 @@
+{% extends "page.html" %}
+
+{% block subtitle %}{{ _('API Authorization Token') }}{% endblock %}
+
+{% block breadcrumb_content %}
+  <li class="active">API Authorization Token</li>
+{% endblock %}
+
+{% block primary %}
+  <article class="module">
+    <div class="module-content">
+      {% if msg %}
+        <div class="alert">{{ msg }}</div>
+      {% endif %}
+
+      {% if error %}
+        <div class="error-explanation alert alert-error">{{ error }}</div>
+      {% endif %}
+
+      <form action="" method="POST">
+
+      <textarea name="token"></textarea>
+
+      <button class="btn btn-primary" type="submit" name="save">Save</button>
+      </form>
+      
+    </div>
+  </article>
+{% endblock %}
+
+{% block secondary %}{% endblock %}

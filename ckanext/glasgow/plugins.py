@@ -28,6 +28,8 @@ class GlasgowSchemaPlugin(p.SingletonPlugin, p.toolkit.DefaultDatasetForm):
                     action='read',
                     ckan_icon='sitemap'
                     )
+        map.connect('auth token', '/auth_token', controller=controller,
+                    action='auth_token')
 
         return map
 
