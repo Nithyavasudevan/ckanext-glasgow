@@ -90,6 +90,24 @@ class TestSchemaConversion(object):
         eq_(ckan_dict['standard_rating'], 5)
         eq_(ckan_dict['standard_version'], 'Test standard version')
 
+    def test_convert_ckan_dataset_to_ec_dataset_missing_fields(self):
+
+        ckan_dict = {
+        }
+
+        ec_dict = custom_schema.convert_ckan_dataset_to_ec_dataset(ckan_dict)
+
+        assert not 'Title' in ec_dict
+
+    def test_convert_ec_dataset_to_ckan_dataset_missing_fields(self):
+
+        ec_dict = {
+        }
+
+        ckan_dict = custom_schema.convert_ec_dataset_to_ckan_dataset(ec_dict)
+
+        assert not 'title' in ec_dict
+
     def test_convert_ckan_resource_to_ec_file(self):
 
         ckan_dict = {
@@ -149,3 +167,21 @@ class TestSchemaConversion(object):
         eq_(ckan_dict['standard_rating'], 1)
         eq_(ckan_dict['standard_version'], 'Test standard version')
         eq_(ckan_dict['creation_date'], '2014-03-22T05:42:00')
+
+    def test_convert_ckan_resource_to_ec_file_missing_fields(self):
+
+        ckan_dict = {
+        }
+
+        ec_dict = custom_schema.convert_ckan_resource_to_ec_file(ckan_dict)
+
+        assert not 'Title' in ec_dict
+
+    def test_convert_ec_file_to_ckan_resource_missing_fields(self):
+
+        ec_dict = {
+        }
+
+        ckan_dict = custom_schema.convert_ec_dataset_to_ckan_dataset(ec_dict)
+
+        assert not 'name' in ec_dict

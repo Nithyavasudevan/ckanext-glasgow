@@ -97,7 +97,8 @@ def convert_ckan_resource_to_ec_file(ckan_dict):
     ec_dict = {}
 
     for ckan_name, ec_name in ckan_to_ec_resource_mapping.iteritems():
-        ec_dict[ec_name] = ckan_dict.get(ckan_name)
+        if ckan_dict.get(ckan_name):
+            ec_dict[ec_name] = ckan_dict.get(ckan_name)
 
     return ec_dict
 
@@ -107,7 +108,8 @@ def convert_ec_file_to_ckan_resource(ec_dict):
     ckan_dict = {}
 
     for ckan_name, ec_name in ckan_to_ec_resource_mapping.iteritems():
-        ckan_dict[ckan_name] = ec_dict.get(ec_name)
+        if ec_dict.get(ec_name):
+            ckan_dict[ckan_name] = ec_dict.get(ec_name)
 
     return ckan_dict
 
