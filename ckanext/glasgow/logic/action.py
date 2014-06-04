@@ -210,7 +210,7 @@ def dataset_request_create(context, data_dict):
 
     # Convert payload from CKAN to EC API spec
 
-    ec_dict = custom_schema.convert_ckan_dataset_to_ec_dataset(data_dict)
+    ec_dict = custom_schema.convert_ckan_dataset_to_ec_dataset(validated_data_dict)
 
     # Send request to EC Data Collection API
 
