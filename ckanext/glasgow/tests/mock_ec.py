@@ -109,7 +109,6 @@ file_fields_under_255_characters = [
 ]
 
 
-
 @app.route('/Datasets', methods=['POST'])
 def request_dataset_create():
 
@@ -168,7 +167,6 @@ def handle_request(request_type='dataset'):
         mandatory_fields = file_mandatory_fields
         fields_under_255_characters = file_fields_under_255_characters
 
-
     for field in mandatory_fields:
         if not data.get(field):
             response = flask.jsonify(
@@ -181,7 +179,7 @@ def handle_request(request_type='dataset'):
             return response
 
     for field in fields_under_255_characters:
-        if len(data.get(field, '')) > 255:
+        if data.get(field) and len(data.get(field, '')) > 255:
             response = flask.jsonify(
                 Message='Field too long',
                 ModelState={
