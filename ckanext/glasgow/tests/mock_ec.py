@@ -79,20 +79,62 @@ dataset_fields_under_255_characters = [
     'UsageGuidance',
 ]
 
+file_all_fields = [
+    'DatasetId',
+    'Title',
+    'Description',
+    'Type',
+    'License',
+    'OpennessRating',
+    'Quality',
+    'StandardName',
+    'StandardRating',
+    'StandardVersion',
+    'CreationDate',
+]
+
+file_mandatory_fields = [
+    'DatasetId',
+    'Title',
+    'Description',
+    'Type',
+]
+
+file_fields_under_255_characters = [
+    'Title',
+    'Type',
+    'License',
+    'StandardName',
+    'StandardVersion',
+]
+
+
 
 @app.route('/Datasets', methods=['POST'])
 def request_dataset_create():
 
-    return handle_dataset_request()
+    return handle_request('dataset')
 
 
 @app.route('/Datasets', methods=['PUT'])
 def request_dataset_update():
 
-    return handle_dataset_request()
+    return handle_request('dataset')
 
 
-def handle_dataset_request():
+@app.route('/Files', methods=['POST'])
+def request_file_create():
+
+    return handle_request('file')
+
+
+@app.route('/Files', methods=['PUT'])
+def request_file_update():
+
+    return handle_request('file')
+
+
+def handle_request(request_type='dataset'):
     data = flask.request.json
 
     if app.debug:
@@ -119,7 +161,15 @@ def handle_dataset_request():
 
     # Basic Validation
 
-    for field in dataset_mandatory_fields:
+    if request_type == 'dataset':
+        mandatory_fields = dataset_mandatory_fields
+        fields_under_255_characters = dataset_fields_under_255_characters
+    elif request_type == 'file':
+        mandatory_fields = file_mandatory_fields
+        fields_under_255_characters = file_fields_under_255_characters
+
+
+    for field in mandatory_fields:
         if not data.get(field):
             response = flask.jsonify(
                 Message='Missing fields',
@@ -130,7 +180,7 @@ def handle_dataset_request():
             response.status_code = 400
             return response
 
-    for field in dataset_fields_under_255_characters:
+    for field in fields_under_255_characters:
         if len(data.get(field, '')) > 255:
             response = flask.jsonify(
                 Message='Field too long',
