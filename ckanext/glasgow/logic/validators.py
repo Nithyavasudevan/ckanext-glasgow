@@ -1,3 +1,7 @@
+import datetime
+
+from dateutil.parser import parse as date_parser
+
 import ckan.plugins as p
 
 # Reference some stuff from the toolkit
@@ -138,3 +142,21 @@ def trim_string(max_length):
             value = value[:max_length]
         return value
     return callable
+
+
+def iso_date(value, context):
+    '''
+    Checks if the value can be interpreted as an ISO 8601 date representation
+
+    :raises: :py:exc:`~ckan.plugins.toolkit.Invalid` if the value could not be
+        transformed to ISO 8601
+
+    '''
+
+    default_date = datetime.datetime(
+        datetime.datetime.today().year, 1, 1, 0, 0, 0)
+    try:
+        date_value = date_parser(value, default=default_date)
+    except ValueError:
+        raise Invalid(_('Invalid date'))
+    return date_value.isoformat()

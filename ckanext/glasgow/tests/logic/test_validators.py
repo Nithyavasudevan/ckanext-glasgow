@@ -1,4 +1,5 @@
 import nose
+import datetime
 
 import ckan.plugins as p
 import ckan.new_tests.helpers as helpers
@@ -112,6 +113,34 @@ class TestValidators(object):
         new_value = validator(value, context)
 
         eq_(new_value, 'long_string')
+
+    def test_iso_date_valid(self):
+
+        values = [
+            '2014',
+            '2014-03',
+            'March 2014',
+            '2014-03-22T05:42:00',
+        ]
+        context = {}
+        for value in values:
+            new_value = validators.iso_date(value, context)
+
+            # Check it returns a valid datetime
+            datetime.datetime.strptime(new_value, '%Y-%m-%dT%H:%M:%S')
+
+    def test_iso_date_invalid(self):
+
+        values = [
+            'xaaee',
+            'Test 2013',
+            '2014-13',
+            '13999-03-22T05:42:00',
+        ]
+        context = {}
+        for value in values:
+            nose.tools.assert_raises(p.toolkit.Invalid,
+                                     validators.iso_date, value, context)
 
 
 class TestNameValidators(object):

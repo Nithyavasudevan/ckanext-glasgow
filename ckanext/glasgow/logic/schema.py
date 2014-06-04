@@ -207,6 +207,6 @@ def resource_schema():
     schema['standard_version'] = [ignore_missing, string_max_length(255),
                                   unicode]
 
-    schema['creation_date'] = [ignore_missing, unicode]
+    schema['creation_date'] = [ignore_missing, iso_date, unicode]
 
     return schema
