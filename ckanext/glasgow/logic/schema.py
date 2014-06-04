@@ -13,6 +13,7 @@ from ckanext.glasgow.logic.validators import (
     int_validator,
     int_range,
     trim_string,
+    iso_date,
     no_pending_dataset_with_same_name,
 )
 
