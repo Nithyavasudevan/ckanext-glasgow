@@ -1,7 +1,9 @@
 from ckan.logic.schema import (
     default_create_package_schema,
     default_update_package_schema,
-    default_show_package_schema)
+    default_show_package_schema,
+    default_resource_schema,
+    )
 
 import ckan.plugins as p
 
@@ -20,6 +22,12 @@ _ = p.toolkit._
 Invalid = p.toolkit.Invalid
 get_validator = p.toolkit.get_validator
 get_converter = p.toolkit.get_converter
+
+# Core validators and converters
+not_empty = get_validator('not_empty')
+ignore_missing = get_validator('ignore_missing')
+
+# CKAN to EC API mappings
 
 ckan_to_ec_dataset_mapping = {
     'title': 'Title',
@@ -87,9 +95,6 @@ def update_package_schema():
 
 def _modify_schema(schema):
 
-    # Core validators and converters
-    not_empty = get_validator('not_empty')
-    ignore_missing = get_validator('ignore_missing')
     name_validator = get_validator('name_validator')
     package_name_validator = get_validator('package_name_validator')
     convert_to_extras = get_converter('convert_to_extras')
@@ -110,7 +115,6 @@ def _modify_schema(schema):
 
     schema['maintainer_email'] = [not_empty, string_max_length(255), unicode]
 
-    # TODO: Populate license title or just use id
     schema['license_id'] = [not_empty, unicode]
 
     schema['openness_rating'] = [not_empty, int_validator, int_range(0, 5),
@@ -167,5 +171,42 @@ def show_package_schema():
     schema['standard_rating'] = [convert_from_extras]
 
     schema['standard_version'] = [convert_from_extras]
+
+    return schema
+
+
+def resource_schema():
+
+    # Mandatory fields
+
+    schema = default_resource_schema()
+
+    schema['name'] = [not_empty, string_max_length(255), unicode]
+
+    schema['description'] = [not_empty, string_max_length(4000), unicode]
+
+    schema['format'] = [not_empty, string_max_length(255), unicode]
+
+    # Optional fields
+
+    #TODO: sort this vs uploads
+    schema['url'] = [ignore_missing, unicode]
+
+    schema['license_id'] = [ignore_missing, unicode]
+
+    schema['openness_rating'] = [ignore_missing, int_validator, int_range(0, 5)
+                                 ]
+
+    schema['quality'] = [ignore_missing, int_validator, int_range(0, 5)]
+
+    schema['standard_name'] = [ignore_missing, string_max_length(255), unicode]
+
+    schema['standard_rating'] = [ignore_missing, int_validator, int_range(0, 5)
+                                 ]
+
+    schema['standard_version'] = [ignore_missing, string_max_length(255),
+                                  unicode]
+
+    schema['creation_date'] = [ignore_missing, unicode]
 
     return schema

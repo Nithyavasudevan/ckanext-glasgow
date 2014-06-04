@@ -9,10 +9,12 @@ import ckanext.glasgow.logic.schema as custom_schema
 
 eq_ = nose.tools.eq_
 
-create_schema = custom_schema.create_package_schema()
+create_dataset_schema = custom_schema.create_package_schema()
+
+resource_schema = custom_schema.resource_schema()
 
 
-class TestValidation(object):
+class TestDatasetValidation(object):
 
     def test_basic_valid(self):
 
@@ -39,7 +41,7 @@ class TestValidation(object):
         }
         context = {'model': model, 'session': model.Session}
 
-        data, errors = validate(data_dict, create_schema, context)
+        data, errors = validate(data_dict, create_dataset_schema, context)
 
         # No errors
         eq_(errors, {})
@@ -72,7 +74,7 @@ class TestValidation(object):
         }
         context = {'model': model, 'session': model.Session}
 
-        data, errors = validate(data_dict, create_schema, context)
+        data, errors = validate(data_dict, create_dataset_schema, context)
 
         eq_(sorted(errors.keys()), ['license_id', 'maintainer',
             'maintainer_email', 'name', 'notes', 'openness_rating', 'quality',
@@ -95,7 +97,7 @@ class TestValidation(object):
         }
         context = {'model': model, 'session': model.Session}
 
-        data, errors = validate(data_dict, create_schema, context)
+        data, errors = validate(data_dict, create_dataset_schema, context)
 
         # No errors
         eq_(errors, {})
@@ -122,7 +124,7 @@ class TestValidation(object):
 
         context = {'model': model, 'session': model.Session}
 
-        data, errors = validate(data_dict, create_schema, context)
+        data, errors = validate(data_dict, create_dataset_schema, context)
 
         eq_(sorted(errors.keys()), ['category', 'maintainer',
             'maintainer_email', 'published_on_behalf_of',
@@ -147,7 +149,7 @@ class TestValidation(object):
 
         context = {'model': model, 'session': model.Session}
 
-        data, errors = validate(data_dict, create_schema, context)
+        data, errors = validate(data_dict, create_dataset_schema, context)
 
         eq_(errors, {'notes': ['Length must be less than 4000 characters']})
 
@@ -166,7 +168,7 @@ class TestValidation(object):
 
         context = {'model': model, 'session': model.Session}
 
-        data, errors = validate(data_dict, create_schema, context)
+        data, errors = validate(data_dict, create_dataset_schema, context)
 
         eq_(errors, {})
 
@@ -197,7 +199,7 @@ class TestValidation(object):
         }
         context = {'model': model, 'session': model.Session}
 
-        data, errors = validate(data_dict, create_schema, context)
+        data, errors = validate(data_dict, create_dataset_schema, context)
 
         eq_(sorted(errors.keys()), ['openness_rating', 'quality',
                                     'standard_rating'])
@@ -231,7 +233,159 @@ class TestValidation(object):
         }
         context = {'model': model, 'session': model.Session}
 
-        data, errors = validate(data_dict, create_schema, context)
+        data, errors = validate(data_dict, create_dataset_schema, context)
+
+        eq_(sorted(errors.keys()), ['openness_rating', 'quality',
+                                    'standard_rating'])
+
+        for k, v in errors.iteritems():
+            eq_(errors[k], ['Value must be an integer between 0 and 5'])
+
+
+class TestResourceValidation(object):
+
+    def test_basic_valid(self):
+
+        data_dict = {
+            'name': 'Test File name',
+            'description': 'Some longer description',
+            'format': 'application/csv',
+            'license_id': 'uk-ogl',
+            'openness_rating': 3,
+            'quality': 5,
+            'standard_name': 'Test standard name',
+            'standard_rating': 1,
+            'standard_version': 'Test standard version',
+            'creation_date': '2014-03-22T05:42:00',
+        }
+        context = {'model': model, 'session': model.Session}
+
+        data, errors = validate(data_dict, resource_schema, context)
+
+        # No errors
+        eq_(errors, {})
+
+        # No modifications
+        for key in data_dict.keys():
+            eq_(data_dict[key], data[key])
+
+    def test_create_missing_fields(self):
+
+        data_dict = {
+
+        }
+
+        context = {'model': model, 'session': model.Session}
+
+        data, errors = validate(data_dict, resource_schema, context)
+
+        eq_(sorted(errors.keys()), ['description', 'format', 'name'])
+
+        for k, v in errors.iteritems():
+            eq_(errors[k], ['Missing value'])
+
+    def test_create_only_mandatory_fields(self):
+
+        data_dict = {
+            'name': 'Test File name',
+            'description': 'Some longer description',
+            'format': 'application/csv',
+        }
+
+        context = {'model': model, 'session': model.Session}
+
+        data, errors = validate(data_dict, resource_schema, context)
+
+        # No errors
+        eq_(errors, {})
+
+    def test_create_fields_too_long(self):
+
+        data_dict = {
+            'name': 'a' * 256,
+            'description': 'Some longer descripiton',
+            'format': 'a' * 256,
+            'maintainer': 'a' * 256,
+            'standard_name': 'a' * 256,
+            'standard_version': 'a' * 256,
+        }
+
+        context = {'model': model, 'session': model.Session}
+
+        data, errors = validate(data_dict, resource_schema, context)
+
+        eq_(sorted(errors.keys()), ['format', 'name', 'standard_name',
+                                    'standard_version'])
+
+        for k, v in errors.iteritems():
+            eq_(errors[k], ['Length must be less than 255 characters'])
+
+    def test_create_description_too_long(self):
+
+        data_dict = {
+            'name': 'Test File name',
+            'description': 'a' * 4001,
+            'format': 'application/csv',
+            'license_id': 'uk-ogl',
+            'openness_rating': 3,
+            'quality': 5,
+            'standard_name': 'Test standard name',
+            'standard_rating': 1,
+            'standard_version': 'Test standard version',
+            'creation_date': '2014-03-22T05:42:00',
+        }
+
+        context = {'model': model, 'session': model.Session}
+
+        data, errors = validate(data_dict, resource_schema, context)
+
+        eq_(errors,
+            {'description': ['Length must be less than 4000 characters']})
+
+    def test_create_wrong_integers(self):
+
+        data_dict = {
+            'name': 'Test File name',
+            'description': 'Some longer description',
+            'format': 'application/csv',
+            'license_id': 'uk-ogl',
+            'openness_rating': 'a',
+            'quality': '4%',
+            'standard_name': 'Test standard name',
+            'standard_rating': 53.45,
+            'standard_version': 'Test standard version',
+            'creation_date': '2014-03-22T05:42:00',
+        }
+
+        context = {'model': model, 'session': model.Session}
+
+        data, errors = validate(data_dict, resource_schema, context)
+
+        eq_(sorted(errors.keys()), ['openness_rating', 'quality',
+                                    'standard_rating'])
+
+        for k, v in errors.iteritems():
+            eq_(errors[k], ['Invalid integer',
+                            'Value must be an integer between 0 and 5'])
+
+    def test_create_integers_out_of_range(self):
+
+        data_dict = {
+            'name': 'Test File name',
+            'description': 'Some longer description',
+            'format': 'application/csv',
+            'license_id': 'uk-ogl',
+            'openness_rating': -12,
+            'quality': 6,
+            'standard_name': 'Test standard name',
+            'standard_rating': 55,
+            'standard_version': 'Test standard version',
+            'creation_date': '2014-03-22T05:42:00',
+        }
+
+        context = {'model': model, 'session': model.Session}
+
+        data, errors = validate(data_dict, resource_schema, context)
 
         eq_(sorted(errors.keys()), ['openness_rating', 'quality',
                                     'standard_rating'])
