@@ -89,3 +89,63 @@ class TestSchemaConversion(object):
         eq_(ckan_dict['standard_name'], 'Test standard name')
         eq_(ckan_dict['standard_rating'], 5)
         eq_(ckan_dict['standard_version'], 'Test standard version')
+
+    def test_convert_ckan_resource_to_ec_file(self):
+
+        ckan_dict = {
+            'package_id': 'test_dataset_id',
+            'name': 'Test File name',
+            'description': 'Some longer description',
+            'format': 'application/csv',
+            'license_id': 'uk-ogl',
+            'openness_rating': 3,
+            'quality': 5,
+            'standard_name': 'Test standard name',
+            'standard_rating': 1,
+            'standard_version': 'Test standard version',
+            'creation_date': '2014-03-22T05:42:00',
+        }
+
+        ec_dict = custom_schema.convert_ckan_resource_to_ec_file(ckan_dict)
+
+        eq_(ec_dict['DatasetId'], 'test_dataset_id')
+        eq_(ec_dict['Title'], 'Test File name')
+        eq_(ec_dict['Description'], 'Some longer description')
+        eq_(ec_dict['Type'], 'application/csv')
+        eq_(ec_dict['License'], 'uk-ogl')
+        eq_(ec_dict['OpennessRating'], 3)
+        eq_(ec_dict['Quality'], 5)
+        eq_(ec_dict['StandardName'], 'Test standard name')
+        eq_(ec_dict['StandardRating'], 1)
+        eq_(ec_dict['StandardVersion'], 'Test standard version')
+        eq_(ec_dict['CreationDate'], '2014-03-22T05:42:00')
+
+    def test_convert_ec_file_to_ckan_resource(self):
+
+        ec_dict = {
+            'DatasetId': 'test_dataset_id',
+            'Title': 'Test File name',
+            'Description': 'Some longer description',
+            'Type': 'application/csv',
+            'License': 'uk-ogl',
+            'OpennessRating': 3,
+            'Quality': 5,
+            'StandardName': 'Test standard name',
+            'StandardRating': 1,
+            'StandardVersion': 'Test standard version',
+            'CreationDate': '2014-03-22T05:42:00',
+        }
+
+        ckan_dict = custom_schema.convert_ec_file_to_ckan_resource(ec_dict)
+
+        eq_(ckan_dict['package_id'], 'test_dataset_id')
+        eq_(ckan_dict['name'], 'Test File name')
+        eq_(ckan_dict['description'], 'Some longer description')
+        eq_(ckan_dict['format'], 'application/csv')
+        eq_(ckan_dict['license_id'], 'uk-ogl')
+        eq_(ckan_dict['openness_rating'], 3)
+        eq_(ckan_dict['quality'], 5)
+        eq_(ckan_dict['standard_name'], 'Test standard name')
+        eq_(ckan_dict['standard_rating'], 1)
+        eq_(ckan_dict['standard_version'], 'Test standard version')
+        eq_(ckan_dict['creation_date'], '2014-03-22T05:42:00')

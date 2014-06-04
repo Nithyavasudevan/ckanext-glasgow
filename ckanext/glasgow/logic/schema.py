@@ -47,6 +47,20 @@ ckan_to_ec_dataset_mapping = {
     'standard_version': 'StandardVersion',
 }
 
+ckan_to_ec_resource_mapping = {
+    'name': 'Title',
+    'package_id': 'DatasetId',
+    'description': 'Description',
+    'format': 'Type',
+    'license_id': 'License',
+    'openness_rating': 'OpennessRating',
+    'quality': 'Quality',
+    'standard_name': 'StandardName',
+    'standard_rating': 'StandardRating',
+    'standard_version': 'StandardVersion',
+    'creation_date': 'CreationDate',
+}
+
 
 def convert_ckan_dataset_to_ec_dataset(ckan_dict):
 
@@ -73,6 +87,26 @@ def convert_ec_dataset_to_ckan_dataset(ec_dict):
     if ec_dict.get('Tags'):
         ckan_dict['tags'] = [{'name': tag}
                              for tag in ec_dict['Tags'].split(',')]
+
+    return ckan_dict
+
+
+def convert_ckan_resource_to_ec_file(ckan_dict):
+
+    ec_dict = {}
+
+    for ckan_name, ec_name in ckan_to_ec_resource_mapping.iteritems():
+        ec_dict[ec_name] = ckan_dict.get(ckan_name)
+
+    return ec_dict
+
+
+def convert_ec_file_to_ckan_resource(ec_dict):
+
+    ckan_dict = {}
+
+    for ckan_name, ec_name in ckan_to_ec_resource_mapping.iteritems():
+        ckan_dict[ckan_name] = ec_dict.get(ec_name)
 
     return ckan_dict
 
