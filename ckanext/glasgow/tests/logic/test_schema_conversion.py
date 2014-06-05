@@ -38,7 +38,7 @@ class TestSchemaConversion(object):
         eq_(ec_dict['MaintainerName'], 'Test maintainer')
         eq_(ec_dict['MaintainerContact'], 'Test maintainer email')
         eq_(ec_dict['License'], 'OGL-UK-2.0')
-        eq_(ec_dict['Tags'], 'Test tag 1,Test tag 2')
+        eq_(ec_dict['Keywords'], 'Test tag 1,Test tag 2')
         eq_(ec_dict['OpennessRating'], 3)
         eq_(ec_dict['Quality'], 5)
         eq_(ec_dict['PublishedOnBehalfOf'], 'Test published on behalf of')
@@ -57,7 +57,7 @@ class TestSchemaConversion(object):
             'MaintainerName': 'Test maintainer',
             'MaintainerContact': 'Test maintainer email',
             'License': 'OGL-UK-2.0',
-            'Tags': 'Test tag 1,Test tag 2',
+            'Keywords': 'Test tag 1,Test tag 2',
             'OpennessRating': 3,
             'Quality': 5,
             'PublishedOnBehalfOf': 'Test published on behalf of',
