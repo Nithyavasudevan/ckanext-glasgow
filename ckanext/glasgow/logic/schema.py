@@ -73,7 +73,7 @@ def convert_ckan_dataset_to_ec_dataset(ckan_dict):
 
     if ckan_dict.get('tags'):
         ec_dict['Tags'] = ','.join([tag['name']
-                                       for tag in ckan_dict['tags']])
+                                    for tag in ckan_dict['tags']])
     elif ckan_dict.get('tags_string'):
         ec_dict['Tags'] = ckan_dict.get('tags_string')
 
@@ -220,6 +220,8 @@ def resource_schema():
     # Mandatory fields
 
     schema = default_resource_schema()
+
+    schema['package_id'] = [not_empty, unicode]
 
     schema['name'] = [not_empty, string_max_length(255), unicode]
 

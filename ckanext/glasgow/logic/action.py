@@ -82,12 +82,14 @@ def _get_api_endpoint(operation):
     elif operation == 'dataset_request_update':
         method = 'PUT'
         url = '/Datasets'
-    elif operation == 'resource_request_create':
+    elif operation == 'file_request_create':
         method = 'POST'
         url = '/Files'
-    elif operation == 'resource_request_update':
+    elif operation == 'file_request_update':
         method = 'PUT'
         url = '/Files'
+    else:
+        return None, None
 
     return method, '{0}{1}'.format(base, url)
 
@@ -192,7 +194,6 @@ def dataset_request_create(context, data_dict):
     validated_data_dict, errors = validate(data_dict, create_schema, context)
 
     if errors:
-        model.Session.rollback()
         raise p.toolkit.ValidationError(errors)
 
     # Create a task status entry with the validated data
@@ -210,7 +211,8 @@ def dataset_request_create(context, data_dict):
 
     # Convert payload from CKAN to EC API spec
 
-    ec_dict = custom_schema.convert_ckan_dataset_to_ec_dataset(validated_data_dict)
+    ec_dict = custom_schema.convert_ckan_dataset_to_ec_dataset(
+        validated_data_dict)
 
     # Send request to EC Data Collection API
 
@@ -264,6 +266,137 @@ def dataset_request_create(context, data_dict):
         'request_id': request_id,
         # This is required by the core controller to do the redirect
         'name': validated_data_dict['name'],
+    }
+
+
+def file_request_create(context, data_dict):
+    '''
+    Requests the creation of a dataset to the EC Data Collection API
+
+    This function accepts the same parameters as the default
+    `package_create` and will run the same validation, but instead of
+    creating the dataset in CKAN will store the submitted data in the
+    `task_status` table and forward it to the Data Collection API.
+
+    :raises: :py:exc:`~ckan.plugins.toolkit.ValidationError` if the
+        validation of the submitted data didn't pass, or the EC API returned
+        an error. In this case, the exception will contain the following:
+        {
+            'status': status_code, # HTTP status code returned by the EC API
+            'content': response # JSON response returned by the EC API
+        }
+
+    :raises: :py:exc:`~ckan.plugins.toolkit.NotAuthorized` if the
+        user is not authorized to perform the operaion, or the EC API returned
+        an authorization error. In this case, the exception will contain the
+        following:
+        {
+            'status': status_code, # HTTP status code returned by the EC API
+            'content': response # JSON response returned by the EC API
+        }
+
+
+    :returns: a dictionary with the CKAN `task_id` and the EC API `request_id`
+    :rtype: dictionary
+
+    '''
+
+    # TODO: refactor to reuse code across updates and file creation/udpate
+
+    # Check if parent dataset exists
+
+    if data_dict.get('dataset_id'):
+        data_dict['package_id'] = data_dict['dataset_id']
+    package_id = p.toolkit.get_or_bust(data_dict, 'package_id')
+
+    try:
+        p.toolkit.get_action('package_show')(context, {'id': package_id})
+    except p.toolkit.ObjectNotFound:
+        raise p.toolkit.ObjectNotFound('Dataset not found')
+
+    # Check access
+
+    check_access('file_request_create', context, data_dict)
+
+    # Validate data_dict
+
+    context.update({'model': model, 'session': model.Session})
+    create_schema = custom_schema.resource_schema()
+
+    validated_data_dict, errors = validate(data_dict, create_schema, context)
+
+    if errors:
+        raise p.toolkit.ValidationError(errors)
+
+    # Create a task status entry with the validated data
+
+    key = '{0}@{1}'.format(validated_data_dict.get('package_id', 'file'),
+                           datetime.datetime.now().isoformat())
+    task_dict = _create_task_status(context,
+                                    task_type='file_request_create',
+                                    entity_id=_make_uuid(),
+                                    entity_type='file',
+                                    key=key,
+                                    value=json.dumps(
+                                        {'data_dict': validated_data_dict})
+                                    )
+
+    # Convert payload from CKAN to EC API spec
+
+    ec_dict = custom_schema.convert_ckan_resource_to_ec_file(
+        validated_data_dict)
+
+    # Send request to EC Data Collection API
+
+    method, url = _get_api_endpoint('file_request_create')
+
+    # TODO: Authenticate request
+    headers = {
+        'Authorization': _get_api_auth_token(),
+        'Content-Type': 'application/json',
+    }
+
+    response = requests.request(method, url,
+                                data=json.dumps(ec_dict),
+                                headers=headers,
+                                )
+
+    status_code = response.status_code
+
+    if not response.content:
+        raise p.toolkit.ValidationError('Empty content')
+
+    content = response.json()
+
+    # Check status codes
+
+    if status_code != 200:
+        error_dict = {
+            'status': status_code,
+            'content': content
+        }
+        task_dict = _update_task_status_error(context, task_dict, error_dict)
+
+        if status_code == 401:
+            raise ECAPINotAuthorized(error_dict)
+        else:
+            raise p.toolkit.ValidationError(error_dict)
+
+    # Store data in task status table
+
+    request_id = content.get('RequestId')
+    task_dict = _update_task_status_success(context, task_dict, {
+        'data_dict': validated_data_dict,
+        'request_id': request_id,
+    })
+
+    # Return task id to access it later and the request id returned by the
+    # EC Metadata API
+
+    return {
+        'task_id': task_dict['id'],
+        'request_id': request_id,
+        'name': None,
     }
 
 

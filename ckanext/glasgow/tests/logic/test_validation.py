@@ -247,6 +247,7 @@ class TestResourceValidation(object):
     def test_basic_valid(self):
 
         data_dict = {
+            'package_id': 'test-dataset-id',
             'name': 'Test File name',
             'description': 'Some longer description',
             'format': 'application/csv',
@@ -279,7 +280,8 @@ class TestResourceValidation(object):
 
         data, errors = validate(data_dict, resource_schema, context)
 
-        eq_(sorted(errors.keys()), ['description', 'format', 'name'])
+        eq_(sorted(errors.keys()), ['description', 'format', 'name',
+                                    'package_id'])
 
         for k, v in errors.iteritems():
             eq_(errors[k], ['Missing value'])
@@ -287,6 +289,7 @@ class TestResourceValidation(object):
     def test_create_only_mandatory_fields(self):
 
         data_dict = {
+            'package_id': 'test-dataset-id',
             'name': 'Test File name',
             'description': 'Some longer description',
             'format': 'application/csv',
@@ -302,6 +305,7 @@ class TestResourceValidation(object):
     def test_create_fields_too_long(self):
 
         data_dict = {
+            'package_id': 'test-dataset-id',
             'name': 'a' * 256,
             'description': 'Some longer descripiton',
             'format': 'a' * 256,
@@ -323,6 +327,7 @@ class TestResourceValidation(object):
     def test_create_description_too_long(self):
 
         data_dict = {
+            'package_id': 'test-dataset-id',
             'name': 'Test File name',
             'description': 'a' * 4001,
             'format': 'application/csv',
@@ -345,6 +350,7 @@ class TestResourceValidation(object):
     def test_create_wrong_integers(self):
 
         data_dict = {
+            'package_id': 'test-dataset-id',
             'name': 'Test File name',
             'description': 'Some longer description',
             'format': 'application/csv',
@@ -371,6 +377,7 @@ class TestResourceValidation(object):
     def test_create_integers_out_of_range(self):
 
         data_dict = {
+            'package_id': 'test-dataset-id',
             'name': 'Test File name',
             'description': 'Some longer description',
             'format': 'application/csv',

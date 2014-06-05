@@ -24,6 +24,12 @@ def dataset_request_update(context, data_dict):
     return auth_core.update.package_create(context, data_dict)
 
 
+def file_request_create(context, data_dict):
+
+    # Forward auth check to the dataset level
+    return dataset_request_create(context, data_dict)
+
+
 def task_status_show(context, data_dict):
     return {'success': False,
             'msg': 'Only sysadmins can see task statuses'}

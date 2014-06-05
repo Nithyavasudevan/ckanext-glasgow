@@ -5,6 +5,7 @@ import nose
 from pylons import config
 
 import ckan.model as model
+import ckan.plugins as p
 import ckan.new_tests.helpers as helpers
 
 from ckanext.glasgow.logic.action import (
@@ -23,7 +24,7 @@ eq_ = nose.tools.eq_
 class TestGetAPIEndpoint(object):
 
     @classmethod
-    def setup(cls):
+    def setup_class(cls):
 
         cls._base_api = 'https://base.api/'
 
@@ -36,9 +37,9 @@ class TestGetAPIEndpoint(object):
             ('POST', base_api + '/Datasets'))
         eq_(_get_api_endpoint('dataset_request_update'),
             ('PUT', base_api + '/Datasets'))
-        eq_(_get_api_endpoint('resource_request_create'),
+        eq_(_get_api_endpoint('file_request_create'),
             ('POST', base_api + '/Files'))
-        eq_(_get_api_endpoint('resource_request_update'),
+        eq_(_get_api_endpoint('file_request_update'),
             ('PUT', base_api + '/Files'))
 
 
@@ -241,7 +242,9 @@ class TestTaskStatus(object):
 class TestDatasetCreate(object):
 
     @classmethod
-    def setup(cls):
+    def setup_class(cls):
+
+        helpers.reset_db()
 
         # Create test user
         cls.normal_user = helpers.call_action('user_create',
@@ -254,7 +257,7 @@ class TestDatasetCreate(object):
 
     @classmethod
     def teardown_class(cls):
-        helpers.reset_db()
+        pass
 
     def test_create(self):
 
@@ -302,3 +305,165 @@ class TestDatasetCreate(object):
         eq_(task_dict['key'], data_dict['name'])
         eq_(task_dict['state'], 'sent')
         assert 'data_dict' in json.loads(task_dict['value'])
+
+
+class TestFileCreate(object):
+
+    @classmethod
+    def setup_class(cls):
+
+        helpers.reset_db()
+
+        # Create test user
+        cls.normal_user = helpers.call_action('user_create',
+                                              name='normal_user',
+                                              email='test@test.com',
+                                              password='test')
+        context = {'local_action': True}
+        data_dict = {
+            'name': 'test-dataset',
+            'title': 'Test Dataset',
+            'notes': 'Some longer description',
+            'maintainer': 'Test maintainer',
+            'maintainer_email': 'Test maintainer email',
+            'license_id': 'OGL-UK-2.0',
+            'openness_rating': 3,
+            'quality': 5,
+        }
+
+        cls.dataset = helpers.call_action('package_create', context=context,
+                                          **data_dict)
+
+        # Start mock EC API
+        run_mock_ec()
+
+    @classmethod
+    def teardown_class(cls):
+        pass
+
+    def test_create(self):
+
+        data_dict = {
+            'package_id': self.dataset['id'],
+            'name': 'Test File name',
+            'description': 'Some longer description',
+            'format': 'application/csv',
+            'license_id': 'uk-ogl',
+            'openness_rating': 3,
+            'quality': 5,
+            'standard_name': 'Test standard name',
+            'standard_rating': 1,
+            'standard_version': 'Test standard version',
+            'creation_date': '2014-03-22T05:42:00',
+        }
+
+        context = {'user': self.normal_user['name']}
+        request_dict = helpers.call_action('file_request_create',
+                                           context=context,
+                                           **data_dict)
+
+        assert 'task_id' in request_dict
+        eq_(len(request_dict['task_id']), 36)
+
+        assert 'request_id' in request_dict
+        # TODO: test format when known
+        assert request_dict['request_id']
+
+        # Check that TaskStatus was actually created
+        task_dict = helpers.call_action('task_status_show',
+                                        id=request_dict['task_id'])
+
+        eq_(task_dict['id'], request_dict['task_id'])
+        eq_(task_dict['task_type'], 'file_request_create')
+        eq_(task_dict['entity_type'], 'file')
+        assert self.dataset['id'] in task_dict['key']
+        eq_(task_dict['state'], 'sent')
+        assert 'data_dict' in json.loads(task_dict['value'])
+
+    def test_create_can_use_dataset_id(self):
+
+        data_dict = {
+            'dataset_id': self.dataset['id'],
+            'name': 'Test File name',
+            'description': 'Some longer description',
+            'format': 'application/csv',
+            'license_id': 'uk-ogl',
+            'openness_rating': 3,
+            'quality': 5,
+            'standard_name': 'Test standard name',
+            'standard_rating': 1,
+            'standard_version': 'Test standard version',
+            'creation_date': '2014-03-22T05:42:00',
+        }
+
+        context = {'user': self.normal_user['name']}
+        request_dict = helpers.call_action('file_request_create',
+                                           context=context,
+                                           **data_dict)
+
+        assert 'task_id' in request_dict
+        assert 'request_id' in request_dict
+
+    def test_create_no_dataset_id(self):
+
+        data_dict = {
+            'name': 'Test File name',
+            'description': 'Some longer description',
+            'format': 'application/csv',
+            'license_id': 'uk-ogl',
+            'openness_rating': 3,
+            'quality': 5,
+            'standard_name': 'Test standard name',
+            'standard_rating': 1,
+            'standard_version': 'Test standard version',
+            'creation_date': '2014-03-22T05:42:00',
+        }
+
+        context = {'user': self.normal_user['name']}
+        nose.tools.assert_raises(p.toolkit.ValidationError,
+                                 helpers.call_action,
+                                 'file_request_create',
+                                 context=context, **data_dict)
+
+    def test_create_validation_errors(self):
+
+        data_dict = {
+            'package_id': self.dataset['id'],
+            'name': 'a' * 256,
+            'format': 'application/csv',
+            'license_id': 'uk-ogl',
+            'openness_rating': 'a',
+            'quality': 5,
+            'standard_name': 'Test standard name',
+            'standard_rating': 1,
+            'standard_version': 'Test standard version',
+            'creation_date': '2014-03-22T05:42:00',
+        }
+
+        context = {'user': self.normal_user['name']}
+        nose.tools.assert_raises(p.toolkit.ValidationError,
+                                 helpers.call_action,
+                                 'file_request_create',
+                                 context=context, **data_dict)
+
+    def test_create_dataset_does_not_exist(self):
+
+        data_dict = {
+            'package_id': 'unknown-dataset',
+            'name': 'Test File name',
+            'description': 'Some longer description',
+            'format': 'application/csv',
+            'license_id': 'uk-ogl',
+            'openness_rating': 3,
+            'quality': 5,
+            'standard_name': 'Test standard name',
+            'standard_rating': 1,
+            'standard_version': 'Test standard version',
+            'creation_date': '2014-03-22T05:42:00',
+        }
+
+        context = {'user': self.normal_user['name']}
+        nose.tools.assert_raises(p.toolkit.ObjectNotFound,
+                                 helpers.call_action,
+                                 'file_request_create',
+                                 context=context, **data_dict)

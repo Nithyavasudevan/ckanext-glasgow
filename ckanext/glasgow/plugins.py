@@ -68,6 +68,7 @@ class GlasgowSchemaPlugin(p.SingletonPlugin, p.toolkit.DefaultDatasetForm):
         function_names = (
             'package_create',
             'dataset_request_create',
+            'file_request_create',
             'dataset_request_update',
             'pending_task_for_dataset',
         )
@@ -81,6 +82,7 @@ class GlasgowSchemaPlugin(p.SingletonPlugin, p.toolkit.DefaultDatasetForm):
         function_names = (
             'package_create',
             'dataset_request_create',
+            'file_request_create',
             'dataset_request_update',
             'pending_task_for_dataset',
             'task_status_show',
