@@ -1,0 +1,12 @@
+---
+
+- name: Get ckanext-oauth2waad extension
+  git: repo=https://github.com/ckan/ckanext-oauth2waad dest=/usr/lib/ckan/default/src/ckanext-oauth2waad
+
+- name: Run setup.py develop for ckanext-oauth2waad
+  command: chdir=/usr/lib/ckan/default/src/ckanext-oauth2waad/ ../../bin/python setup.py develop
+
+- name: Install requirements for ckanext-oauth2waad
+  pip: requirements=/usr/lib/ckan/default/src/ckanext-oauth2waad/requirements.txt virtualenv=/usr/lib/ckan/default
+
+#TODO: config options
