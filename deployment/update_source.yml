@@ -1,0 +1,17 @@
+---
+- hosts: webserver
+  vars:
+    github_org: okfn
+    repo: ckanext-glasgow
+    version: master
+  tasks:
+    - name: Checkout version
+      action: git repo=https://github.com/{{ github_org }}/{{ repo }} dest=/usr/lib/ckan/default/src/{{ repo }} version={{ version }} force=yes
+
+    - name: Pull code
+      action: command chdir=/usr/lib/ckan/default/src/{{ repo }}/ git pull
+      register: update
+
+    - name: Reload apache
+      action: service name=apache2 state=reloaded
+      when: update.changed
