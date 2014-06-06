@@ -232,7 +232,7 @@ def dataset_request_create(context, data_dict):
     status_code = response.status_code
 
     if not response.content:
-        raise p.toolkit.ValidationError('Empty content')
+        raise p.toolkit.ValidationError(['Empty content'])
 
     content = response.json()
 
@@ -240,8 +240,9 @@ def dataset_request_create(context, data_dict):
 
     if status_code != 200:
         error_dict = {
-            'status': status_code,
-            'content': content
+            'message': ['The CTPEC API returned an error code'],
+            'status': [status_code],
+            'content': [content]
         }
         task_dict = _update_task_status_error(context, task_dict, error_dict)
 
@@ -364,7 +365,7 @@ def file_request_create(context, data_dict):
     status_code = response.status_code
 
     if not response.content:
-        raise p.toolkit.ValidationError('Empty content')
+        raise p.toolkit.ValidationError(['Empty content'])
 
     content = response.json()
 
@@ -372,8 +373,9 @@ def file_request_create(context, data_dict):
 
     if status_code != 200:
         error_dict = {
-            'status': status_code,
-            'content': content
+            'message': ['The CTPEC API returned an error code'],
+            'status': [status_code],
+            'content': [content]
         }
         task_dict = _update_task_status_error(context, task_dict, error_dict)
 
