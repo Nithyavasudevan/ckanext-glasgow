@@ -6,7 +6,7 @@ import uuid
 import requests
 from sqlalchemy import or_
 
-from pylons import config
+from pylons import config, session
 
 import ckan.model as model
 import ckan.plugins as p
@@ -39,21 +39,45 @@ def _make_uuid():
 
 def _get_api_auth_token():
     '''
-    This is all fake, it will get replaced with proper integration with WAAD
+    Use the auth_token obtained when logging in with the WAAD credentials
+
+    This is stored in the Pylons session
+    TODO: refresh it when expired
+
+    :returns: an auth_token value ready to be used in an `Authorization`
+              header (ie following the Bearer scheme)
+    :rtype: string
+
     '''
 
-    token = 'tmp_auth_token'
+    token = None
 
-    tmp_token_file = config.get('ckanext.glasgow.tmp_auth_token_file')
-    if tmp_token_file:
-        try:
-            with open(tmp_token_file, 'r') as f:
-                token = f.read().strip('\n')
-                if not token.startswith('Bearer '):
-                    token = 'Bearer ' + token
-        except IOError:
-            log.critical('Temp auth token file not found: {0}'
-                         .format(tmp_token_file))
+    try:
+        token = session.get('ckanext-oauth2waad-access-token')
+
+    except TypeError:
+        # No session (eg tests or command line)
+        pass
+
+    if not token:
+
+        # From this onwards it is all fake, it's just temporary maintained in
+        # case proper integration with WAAD is not working
+
+        token = 'tmp_auth_token'
+
+        tmp_token_file = config.get('ckanext.glasgow.tmp_auth_token_file')
+        if tmp_token_file:
+            try:
+                with open(tmp_token_file, 'r') as f:
+                    token = f.read().strip('\n')
+            except IOError:
+                log.critical('Temp auth token file not found: {0}'
+                             .format(tmp_token_file))
+
+    if not token.startswith('Bearer '):
+        token = 'Bearer ' + token
+
     return token
 
 
@@ -218,7 +242,6 @@ def dataset_request_create(context, data_dict):
 
     method, url = _get_api_endpoint('dataset_request_create')
 
-    # TODO: Authenticate request
     headers = {
         'Authorization': _get_api_auth_token(),
         'Content-Type': 'application/json',
@@ -351,7 +374,6 @@ def file_request_create(context, data_dict):
 
     method, url = _get_api_endpoint('file_request_create')
 
-    # TODO: Authenticate request
     headers = {
         'Authorization': _get_api_auth_token(),
         'Content-Type': 'application/json',
