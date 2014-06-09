@@ -24,6 +24,8 @@ class GlasgowSchemaPlugin(p.SingletonPlugin, p.toolkit.DefaultDatasetForm):
 
         map.connect('add dataset', '/dataset/new', controller=controller,
                     action='new')
+        map.connect('/dataset/new_resource/{id}', controller=controller,
+                    action='new_resource')
         map.connect('dataset_read', '/dataset/{id}',
                     controller=controller,
                     action='read',

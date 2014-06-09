@@ -41,6 +41,16 @@ class DatasetController(PackageController):
             return p.toolkit.render('package/read_api_error.html',
                                     extra_vars=vars)
 
+    def new_resource(self, id, data=None, errors=None, error_summary=None):
+        try:
+            return super(DatasetController, self).new_resource(id, data,
+                                                               errors,
+                                                               error_summary)
+        except ECAPINotAuthorized, e:
+            vars = {'error_type': 'auth'}
+            return p.toolkit.render('package/read_api_error.html',
+                                    extra_vars=vars)
+
     def auth_token(self):
 
         if p.toolkit.request.method == 'GET':
