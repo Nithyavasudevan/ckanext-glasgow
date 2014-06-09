@@ -67,6 +67,7 @@ class GlasgowSchemaPlugin(p.SingletonPlugin, p.toolkit.DefaultDatasetForm):
 
         function_names = (
             'package_create',
+            'resource_create',
             'dataset_request_create',
             'file_request_create',
             'dataset_request_update',

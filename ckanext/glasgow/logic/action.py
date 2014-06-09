@@ -1,3 +1,4 @@
+import cgi
 import logging
 import json
 import datetime
@@ -293,6 +294,21 @@ def dataset_request_create(context, data_dict):
     }
 
 
+def resource_create(context, data_dict):
+
+    if data_dict.get('__local_action', False):
+        context['local_action'] = True
+        data_dict.pop('__local_action', None)
+    if context.get('local_action', False):
+
+        return core_actions.create.resource_create(context, data_dict)
+
+    else:
+
+        return p.toolkit.get_action('file_request_create')(context,
+                                                           data_dict)
+
+
 def file_request_create(context, data_dict):
     '''
     Requests the creation of a dataset to the EC Data Collection API
@@ -352,6 +368,12 @@ def file_request_create(context, data_dict):
     if errors:
         raise p.toolkit.ValidationError(errors)
 
+    if not 'upload' in data_dict:
+        raise p.toolkit.ValidationError({'upload': ['No file uploaded']})
+
+    if not isinstance(data_dict.get('upload'), cgi.FieldStorage):
+        raise p.toolkit.ValidationError({'upload': ['Wrong file provided']})
+
     # Create a task status entry with the validated data
 
     key = '{0}@{1}'.format(validated_data_dict.get('package_id', 'file'),
@@ -374,13 +396,21 @@ def file_request_create(context, data_dict):
 
     method, url = _get_api_endpoint('file_request_create')
 
+    data = {
+        'metadata': json.dumps(ec_dict)
+    }
+
     headers = {
         'Authorization': _get_api_auth_token(),
-        'Content-Type': 'application/json',
+    }
+
+    files = {
+        'file': (data_dict['upload'].filename, data_dict['upload'].file)
     }
 
     response = requests.request(method, url,
-                                data=json.dumps(ec_dict),
+                                data=data,
+                                files=files,
                                 headers=headers,
                                 )
 

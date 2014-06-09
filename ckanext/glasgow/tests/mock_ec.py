@@ -1,5 +1,6 @@
 import logging
 import uuid
+import json
 
 import flask
 from werkzeug.exceptions import default_exceptions
@@ -112,28 +113,28 @@ file_fields_under_255_characters = [
 @app.route('/Datasets', methods=['POST'])
 def request_dataset_create():
 
-    return handle_request('dataset')
+    return handle_dataset_request()
 
 
 @app.route('/Datasets', methods=['PUT'])
 def request_dataset_update():
 
-    return handle_request('dataset')
+    return handle_dataset_request()
 
 
 @app.route('/Files', methods=['POST'])
 def request_file_create():
 
-    return handle_request('file')
+    return handle_file_request()
 
 
 @app.route('/Files', methods=['PUT'])
 def request_file_update():
 
-    return handle_request('file')
+    return handle_file_request()
 
 
-def handle_request(request_type='dataset'):
+def handle_dataset_request():
     data = flask.request.json
 
     if app.debug:
@@ -160,14 +161,7 @@ def handle_request(request_type='dataset'):
 
     # Basic Validation
 
-    if request_type == 'dataset':
-        mandatory_fields = dataset_mandatory_fields
-        fields_under_255_characters = dataset_fields_under_255_characters
-    elif request_type == 'file':
-        mandatory_fields = file_mandatory_fields
-        fields_under_255_characters = file_fields_under_255_characters
-
-    for field in mandatory_fields:
+    for field in dataset_mandatory_fields:
         if not data.get(field):
             response = flask.jsonify(
                 Message='Missing fields',
@@ -178,8 +172,96 @@ def handle_request(request_type='dataset'):
             response.status_code = 400
             return response
 
-    for field in fields_under_255_characters:
+    for field in dataset_fields_under_255_characters:
         if data.get(field) and len(data.get(field, '')) > 255:
+            response = flask.jsonify(
+                Message='Field too long',
+                ModelState={
+                    'model.' + field:
+                    ["{0} field must be shorter than 255 characters."
+                     .format(field)]
+                })
+            response.status_code = 400
+            return response
+
+    # All good, return a request id
+    request_id = unicode(uuid.uuid4())
+    if app.debug:
+        app.logger.debug('Request id generated:\n{0}'.format(request_id))
+
+    return flask.jsonify(
+        RequestId=request_id
+    )
+
+
+def handle_file_request():
+
+    if app.debug:
+        app.logger.debug('Headers received:\n{0}'
+                         .format(flask.request.headers))
+
+    # Authorization
+
+    if ('Authorization' not in flask.request.headers or
+       flask.request.headers['Authorization'] == 'unknown_token'):
+        response = flask.jsonify(
+            Message='Not Auhtorized'
+        )
+        response.status_code = 401
+        return response
+
+    # Check for files
+    if not len(flask.request.files):
+        response = flask.jsonify(
+            # TODO: use actual message
+            Message='File Missing'
+        )
+        response.status_code = 400
+        return response
+
+    uploaded_file = flask.request.files.values()[0]
+    if app.debug:
+        app.logger.debug('File headers received:\n{0}'
+                         .format(uploaded_file.headers))
+
+    file_name = uploaded_file.filename
+
+    if not len(flask.request.form):
+        response = flask.jsonify(
+            # TODO: use actual message
+            Message='Metadata Missing'
+        )
+        response.status_code = 400
+        return response
+
+    metadata_fields = flask.request.form.values()[0]
+
+    try:
+        metadata = json.loads(metadata_fields)
+    except ValueError:
+        response = flask.jsonify(
+            # TODO: use actual message
+            Message='Wrong File Metadata'
+        )
+        response.status_code = 400
+        return response
+    if app.debug:
+        app.logger.debug('File metadata received:\n{0}'
+                         .format(metadata))
+
+    for field in file_mandatory_fields:
+        if not metadata.get(field):
+            response = flask.jsonify(
+                Message='Missing fields',
+                ModelState={
+                    'model.' + field:
+                    ["The {0} field is required.".format(field)]
+                })
+            response.status_code = 400
+            return response
+
+    for field in file_fields_under_255_characters:
+        if metadata.get(field) and len(metadata.get(field, '')) > 255:
             response = flask.jsonify(
                 Message='Field too long',
                 ModelState={
@@ -204,8 +286,11 @@ def handle_request(request_type='dataset'):
 def api_description():
 
     api_desc = {
-        'Request dataset creation': 'POST /datasets',
-        'Request dataset update': 'PUT /datasets',
+        'Request dataset creation': 'POST /Datasets',
+        'Request dataset update': 'PUT /Datasets',
+        'Request file creation': 'POST /Files',
+        'Request file update': 'PUT /Files',
+
     }
 
     return flask.jsonify(**api_desc)
