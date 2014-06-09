@@ -14,6 +14,7 @@ class GlasgowSchemaPlugin(p.SingletonPlugin, p.toolkit.DefaultDatasetForm):
     p.implements(p.IDatasetForm, inherit=True)
     p.implements(p.IActions, inherit=True)
     p.implements(p.IAuthFunctions, inherit=True)
+    p.implements(p.ITemplateHelpers, inherit=True)
 
     # IRoutes
 
@@ -89,6 +90,16 @@ class GlasgowSchemaPlugin(p.SingletonPlugin, p.toolkit.DefaultDatasetForm):
             'task_status_show',
         )
         return _get_module_functions(custom_auth, function_names)
+
+    # ITemplateHelpers
+
+    def get_helpers(self):
+        import ckanext.glasgow.helpers as custom_helpers
+
+        function_names = (
+            'get_licenses',
+        )
+        return _get_module_functions(custom_helpers, function_names)
 
 
 def _get_module_functions(module, function_names):
