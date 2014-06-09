@@ -1,5 +1,7 @@
 import nose
 
+import ckan.new_tests.helpers as helpers
+
 import ckanext.glasgow.logic.schema as custom_schema
 
 eq_ = nose.tools.eq_
@@ -20,6 +22,9 @@ class TestSchemaConversion(object):
                 {'name': 'Test tag 1'},
                 {'name': 'Test tag 2'},
             ],
+            'extras': [
+                {'key': 'ec_api_dataset_id', 'value': 1},
+            ],
             'openness_rating': 3,
             'quality': 5,
             'published_on_behalf_of': 'Test published on behalf of',
@@ -33,6 +38,7 @@ class TestSchemaConversion(object):
 
         ec_dict = custom_schema.convert_ckan_dataset_to_ec_dataset(ckan_dict)
 
+        eq_(ec_dict['Id'], 1)
         eq_(ec_dict['Title'], 'Test Dataset')
         eq_(ec_dict['Description'], 'Some longer description')
         eq_(ec_dict['MaintainerName'], 'Test maintainer')
@@ -52,6 +58,7 @@ class TestSchemaConversion(object):
     def test_convert_ec_dataset_to_ckan_dataset(self):
 
         ec_dict = {
+            'Id': 1,
             'Title': 'Test Dataset',
             'Description': 'Some longer description',
             'MaintainerName': 'Test maintainer',
@@ -79,6 +86,9 @@ class TestSchemaConversion(object):
         eq_(ckan_dict['tags'], [
             {'name': 'Test tag 1'},
             {'name': 'Test tag 2'},
+            ])
+        eq_(ckan_dict['extras'], [
+            {'key': 'ec_api_dataset_id', 'value': 1},
             ])
         eq_(ckan_dict['openness_rating'], 3)
         eq_(ckan_dict['quality'], 5)
@@ -110,8 +120,28 @@ class TestSchemaConversion(object):
 
     def test_convert_ckan_resource_to_ec_file(self):
 
+        # Create a dataset for the resource
+        context = {'local_action': True}
+        data_dict = {
+            'name': 'test-dataset-id',
+            'title': 'Test Dataset',
+            'notes': 'Some longer description',
+            'maintainer': 'Test maintainer',
+            'maintainer_email': 'Test maintainer email',
+            'license_id': 'OGL-UK-2.0',
+            'openness_rating': 3,
+            'quality': 5,
+            'extras': [
+                {'key': 'ec_api_dataset_id', 'value': 1},
+            ]
+        }
+
+        request_dict = helpers.call_action('package_create',
+                                           context=context,
+                                           **data_dict)
+
         ckan_dict = {
-            'package_id': 'test_dataset_id',
+            'package_id': 'test-dataset-id',
             'name': 'Test File name',
             'description': 'Some longer description',
             'format': 'application/csv',
@@ -126,7 +156,6 @@ class TestSchemaConversion(object):
 
         ec_dict = custom_schema.convert_ckan_resource_to_ec_file(ckan_dict)
 
-        eq_(ec_dict['DatasetId'], 'test_dataset_id')
         eq_(ec_dict['Title'], 'Test File name')
         eq_(ec_dict['Description'], 'Some longer description')
         eq_(ec_dict['Type'], 'application/csv')
@@ -138,10 +167,12 @@ class TestSchemaConversion(object):
         eq_(ec_dict['StandardVersion'], 'Test standard version')
         eq_(ec_dict['CreationDate'], '2014-03-22T05:42:00')
 
+        helpers.reset_db()
+
     def test_convert_ec_file_to_ckan_resource(self):
 
         ec_dict = {
-            'DatasetId': 'test_dataset_id',
+            'DatasetId': 1,
             'Title': 'Test File name',
             'Description': 'Some longer description',
             'Type': 'application/csv',
@@ -156,7 +187,6 @@ class TestSchemaConversion(object):
 
         ckan_dict = custom_schema.convert_ec_file_to_ckan_resource(ec_dict)
 
-        eq_(ckan_dict['package_id'], 'test_dataset_id')
         eq_(ckan_dict['name'], 'Test File name')
         eq_(ckan_dict['description'], 'Some longer description')
         eq_(ckan_dict['format'], 'application/csv')
