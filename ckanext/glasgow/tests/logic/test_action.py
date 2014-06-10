@@ -1,3 +1,4 @@
+import os
 import json
 
 import nose
@@ -13,6 +14,7 @@ from ckanext.glasgow.logic.action import (
     _create_task_status,
     _update_task_status_success,
     _update_task_status_error,
+    ECAPINotAuthorized,
     )
 
 from ckanext.glasgow.tests import run_mock_ec
@@ -305,6 +307,55 @@ class TestDatasetCreate(object):
         eq_(task_dict['key'], data_dict['name'])
         eq_(task_dict['state'], 'sent')
         assert 'data_dict' in json.loads(task_dict['value'])
+
+    def test_create_ec_401(self):
+
+        data_dict = {
+            'name': 'test-dataset-401',
+            'title': 'Test Dataset',
+            'notes': 'Some longer description',
+            'maintainer': 'Test maintainer',
+            'maintainer_email': 'Test maintainer email',
+            'license_id': 'OGL-UK-2.0',
+            'tags': [
+                {'name': 'Test tag 1'},
+                {'name': 'Test tag 2'},
+            ],
+            'openness_rating': 3,
+            'quality': 5,
+            'published_on_behalf_of': 'Test published on behalf of',
+            'usage_guidance': 'Test usage guidance',
+            'category': 'Test category',
+            'theme': 'Test theme',
+            'standard_name': 'Test standard name',
+            'standard_rating': 5,
+            'standard_version': 'Test standard version',
+        }
+
+        # This will make the mock EC API return a 401
+        os.environ['__CKANEXT_GLASGOW_AUTH_HEADER'] = 'unknown_token'
+        context = {'user': self.normal_user['name']}
+        with nose.tools.assert_raises(ECAPINotAuthorized) as cm:
+            helpers.call_action('dataset_request_create',
+                                context=context,
+                                **data_dict)
+        os.environ['__CKANEXT_GLASGOW_AUTH_HEADER'] = ''
+
+        assert 'task_id' in cm.exception.extra_msg
+
+        task_id = cm.exception.extra_msg['task_id'][0]
+
+        # Check that TaskStatus was actually created
+        task_dict = helpers.call_action('task_status_show', id=task_id)
+
+        eq_(task_dict['id'], task_id)
+        eq_(task_dict['task_type'], 'dataset_request_create')
+        eq_(task_dict['entity_type'], 'dataset')
+        eq_(task_dict['key'], data_dict['name'])
+        eq_(task_dict['state'], 'error')
+        value = json.loads(task_dict['value'])
+        assert 'data_dict' in value
+        assert 'error' in value
 
 
 class TestFileCreate(object):

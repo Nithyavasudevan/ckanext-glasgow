@@ -1,3 +1,4 @@
+import os
 import cgi
 import logging
 import json
@@ -59,6 +60,9 @@ def _get_api_auth_token():
     except TypeError:
         # No session (eg tests or command line)
         pass
+
+        # Allow token to be set from an env var. Useful for the tests.
+        token = os.environ.get('__CKANEXT_GLASGOW_AUTH_HEADER', None)
 
     if not token:
 
@@ -266,9 +270,13 @@ def dataset_request_create(context, data_dict):
         error_dict = {
             'message': ['The CTPEC API returned an error code'],
             'status': [status_code],
-            'content': [content]
+            'content': [content],
+            'task_id': [task_dict['id']]
         }
-        task_dict = _update_task_status_error(context, task_dict, error_dict)
+        task_dict = _update_task_status_error(context, task_dict, {
+            'data_dict': validated_data_dict,
+            'error': error_dict
+        })
 
         if status_code == 401:
             raise ECAPINotAuthorized(error_dict)

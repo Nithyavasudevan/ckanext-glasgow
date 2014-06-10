@@ -152,7 +152,7 @@ def handle_dataset_request():
     # Authorization
 
     if ('Authorization' not in flask.request.headers or
-       flask.request.headers['Authorization'] == 'unknown_token'):
+       flask.request.headers['Authorization'] == 'Bearer unknown_token'):
         response = flask.jsonify(
             Message='Not Auhtorized'
         )
