@@ -22,9 +22,7 @@ class TestSchemaConversion(object):
                 {'name': 'Test tag 1'},
                 {'name': 'Test tag 2'},
             ],
-            'extras': [
-                {'key': 'ec_api_dataset_id', 'value': 1},
-            ],
+            'ec_api_id': 1,
             'openness_rating': 3,
             'quality': 5,
             'published_on_behalf_of': 'Test published on behalf of',
@@ -87,9 +85,7 @@ class TestSchemaConversion(object):
             {'name': 'Test tag 1'},
             {'name': 'Test tag 2'},
             ])
-        eq_(ckan_dict['extras'], [
-            {'key': 'ec_api_dataset_id', 'value': 1},
-            ])
+        eq_(ckan_dict['ec_api_id'], 1)
         eq_(ckan_dict['openness_rating'], 3)
         eq_(ckan_dict['quality'], 5)
         eq_(ckan_dict['published_on_behalf_of'], 'Test published on behalf of')
@@ -122,23 +118,6 @@ class TestSchemaConversion(object):
 
         # Create a dataset for the resource
         context = {'local_action': True}
-        data_dict = {
-            'name': 'test-dataset-id',
-            'title': 'Test Dataset',
-            'notes': 'Some longer description',
-            'maintainer': 'Test maintainer',
-            'maintainer_email': 'Test maintainer email',
-            'license_id': 'OGL-UK-2.0',
-            'openness_rating': 3,
-            'quality': 5,
-            'extras': [
-                {'key': 'ec_api_dataset_id', 'value': 1},
-            ]
-        }
-
-        request_dict = helpers.call_action('package_create',
-                                           context=context,
-                                           **data_dict)
 
         ckan_dict = {
             'package_id': 'test-dataset-id',
@@ -152,10 +131,16 @@ class TestSchemaConversion(object):
             'standard_rating': 1,
             'standard_version': 'Test standard version',
             'creation_date': '2014-03-22T05:42:00',
+            'ec_api_dataset_id': 1,
+            'ec_api_id': 2,
+
         }
 
         ec_dict = custom_schema.convert_ckan_resource_to_ec_file(ckan_dict)
 
+
+        eq_(ec_dict['Id'], 2)
+        eq_(ec_dict['DatasetId'], 1)
         eq_(ec_dict['Title'], 'Test File name')
         eq_(ec_dict['Description'], 'Some longer description')
         eq_(ec_dict['Type'], 'application/csv')
@@ -172,6 +157,7 @@ class TestSchemaConversion(object):
     def test_convert_ec_file_to_ckan_resource(self):
 
         ec_dict = {
+            'Id': 2,
             'DatasetId': 1,
             'Title': 'Test File name',
             'Description': 'Some longer description',
@@ -187,6 +173,8 @@ class TestSchemaConversion(object):
 
         ckan_dict = custom_schema.convert_ec_file_to_ckan_resource(ec_dict)
 
+        eq_(ckan_dict['ec_api_id'], 2)
+        eq_(ckan_dict['ec_api_dataset_id'], 1)
         eq_(ckan_dict['name'], 'Test File name')
         eq_(ckan_dict['description'], 'Some longer description')
         eq_(ckan_dict['format'], 'application/csv')

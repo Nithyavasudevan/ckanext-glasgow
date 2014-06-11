@@ -31,6 +31,7 @@ ignore_missing = get_validator('ignore_missing')
 # CKAN to EC API mappings
 
 ckan_to_ec_dataset_mapping = {
+    'ec_api_id': 'Id',
     'title': 'Title',
     'notes': 'Description',
     'maintainer': 'MaintainerName',
@@ -49,6 +50,8 @@ ckan_to_ec_dataset_mapping = {
 }
 
 ckan_to_ec_resource_mapping = {
+    'ec_api_id': 'Id',
+    'ec_api_dataset_id': 'DatasetId',
     'name': 'Title',
     'description': 'Description',
     'format': 'Type',
@@ -76,10 +79,6 @@ def convert_ckan_dataset_to_ec_dataset(ckan_dict):
     elif ckan_dict.get('tags_string'):
         ec_dict['Tags'] = ckan_dict.get('tags_string')
 
-    for extra in ckan_dict.get('extras', []):
-        if extra['key'] == 'ec_api_dataset_id':
-            ec_dict['Id'] = extra['value']
-
     return ec_dict
 
 
@@ -95,11 +94,6 @@ def convert_ec_dataset_to_ckan_dataset(ec_dict):
         ckan_dict['tags'] = [{'name': tag}
                              for tag in ec_dict['Tags'].split(',')]
 
-    if ec_dict.get('Id'):
-        ckan_dict['extras'] = [
-            {'key': 'ec_api_dataset_id', 'value': ec_dict.get('Id')}
-        ]
-
     return ckan_dict
 
 
@@ -108,17 +102,8 @@ def convert_ckan_resource_to_ec_file(ckan_dict):
     ec_dict = {}
 
     for ckan_name, ec_name in ckan_to_ec_resource_mapping.iteritems():
-        if ckan_name != 'package_id' and ckan_dict.get(ckan_name):
+        if ckan_dict.get(ckan_name):
             ec_dict[ec_name] = ckan_dict.get(ckan_name)
-
-    # Get EC API Id from dataset extras
-    if ckan_dict.get('package_id'):
-        dataset_dict = p.toolkit.get_action('package_show')(
-            {}, {'id': ckan_dict['package_id']})
-
-        for extra in dataset_dict.get('extras', []):
-            if extra['key'] == 'ec_api_dataset_id':
-                ec_dict['DatasetId'] = extra['value']
 
     return ec_dict
 
@@ -128,7 +113,7 @@ def convert_ec_file_to_ckan_resource(ec_dict):
     ckan_dict = {}
 
     for ckan_name, ec_name in ckan_to_ec_resource_mapping.iteritems():
-        if ec_name != 'DatasetId' and ec_dict.get(ec_name):
+        if ec_dict.get(ec_name):
             ckan_dict[ckan_name] = ec_dict.get(ec_name)
 
     return ckan_dict
@@ -204,6 +189,10 @@ def _modify_schema(schema):
     schema['standard_version'] = [ignore_missing, string_max_length(255),
                                   unicode, convert_to_extras]
 
+    # Internal fields
+
+    schema['ec_api_id'] = [ignore_missing]
+
 
 def show_package_schema():
 
@@ -267,5 +256,12 @@ def resource_schema():
                                   unicode]
 
     schema['creation_date'] = [ignore_missing, iso_date, unicode]
+
+    # Internal fields
+
+    schema['ec_api_id'] = [ignore_missing]
+
+    schema['ec_api_dataset_id'] = [ignore_missing]
+
 
     return schema
