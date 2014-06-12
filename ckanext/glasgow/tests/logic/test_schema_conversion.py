@@ -116,9 +116,6 @@ class TestSchemaConversion(object):
 
     def test_convert_ckan_resource_to_ec_file(self):
 
-        # Create a dataset for the resource
-        context = {'local_action': True}
-
         ckan_dict = {
             'package_id': 'test-dataset-id',
             'name': 'Test File name',
@@ -138,9 +135,59 @@ class TestSchemaConversion(object):
 
         ec_dict = custom_schema.convert_ckan_resource_to_ec_file(ckan_dict)
 
-
         eq_(ec_dict['Id'], 2)
         eq_(ec_dict['DatasetId'], 1)
+        eq_(ec_dict['Title'], 'Test File name')
+        eq_(ec_dict['Description'], 'Some longer description')
+        eq_(ec_dict['Type'], 'application/csv')
+        eq_(ec_dict['License'], 'uk-ogl')
+        eq_(ec_dict['OpennessRating'], 3)
+        eq_(ec_dict['Quality'], 5)
+        eq_(ec_dict['StandardName'], 'Test standard name')
+        eq_(ec_dict['StandardRating'], 1)
+        eq_(ec_dict['StandardVersion'], 'Test standard version')
+        eq_(ec_dict['CreationDate'], '2014-03-22T05:42:00')
+
+    def test_convert_ckan_resource_to_ec_file_no_ec_api_dataset_id(self):
+
+        # Create a dataset for the resource
+        context = {'local_action': True}
+        data_dict = {
+            'name': 'test_dataset',
+            'title': 'Test Dataset',
+            'notes': 'Some longer description',
+            'maintainer': 'Test maintainer',
+            'maintainer_email': 'Test maintainer email',
+            'license_id': 'OGL-UK-2.0',
+            'openness_rating': 3,
+            'quality': 5,
+            'ec_api_id': 4,
+        }
+
+        test_org = helpers.call_action('package_create',
+                                       context=context,
+                                       **data_dict)
+
+        ckan_dict = {
+            'package_id': 'test_dataset',
+            'name': 'Test File name',
+            'description': 'Some longer description',
+            'format': 'application/csv',
+            'license_id': 'uk-ogl',
+            'openness_rating': 3,
+            'quality': 5,
+            'standard_name': 'Test standard name',
+            'standard_rating': 1,
+            'standard_version': 'Test standard version',
+            'creation_date': '2014-03-22T05:42:00',
+            'ec_api_id': 2,
+
+        }
+
+        ec_dict = custom_schema.convert_ckan_resource_to_ec_file(ckan_dict)
+
+        eq_(ec_dict['Id'], 2)
+        eq_(ec_dict['DatasetId'], '4')
         eq_(ec_dict['Title'], 'Test File name')
         eq_(ec_dict['Description'], 'Some longer description')
         eq_(ec_dict['Type'], 'application/csv')

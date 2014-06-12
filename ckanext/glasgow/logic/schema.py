@@ -105,6 +105,17 @@ def convert_ckan_resource_to_ec_file(ckan_dict):
         if ckan_dict.get(ckan_name):
             ec_dict[ec_name] = ckan_dict.get(ckan_name)
 
+    if not ec_dict.get('DatasetId') and ckan_dict.get('package_id'):
+        # Get the EC API from the parent dataset
+        try:
+            dataset_dict = p.toolkit.get_action('package_show')(
+                {'ignore_auth': True},
+                {'id': ckan_dict.get('package_id')})
+            #TODO: this comes up as string, convert to int?
+            ec_dict['DatasetId'] = dataset_dict.get('ec_api_id')
+        except p.toolkit.ObjectNotFound:
+            pass
+
     return ec_dict
 
 
@@ -191,7 +202,8 @@ def _modify_schema(schema):
 
     # Internal fields
 
-    schema['ec_api_id'] = [ignore_missing]
+    schema['ec_api_id'] = [ignore_missing, int_validator, unicode,
+                           convert_to_extras]
 
 
 def show_package_schema():
@@ -217,6 +229,10 @@ def show_package_schema():
     schema['standard_rating'] = [convert_from_extras]
 
     schema['standard_version'] = [convert_from_extras]
+
+    # Internal fields
+
+    schema['ec_api_id'] = [convert_from_extras]
 
     return schema
 
@@ -259,9 +275,8 @@ def resource_schema():
 
     # Internal fields
 
-    schema['ec_api_id'] = [ignore_missing]
+    schema['ec_api_id'] = [ignore_missing, int_validator, unicode]
 
-    schema['ec_api_dataset_id'] = [ignore_missing]
-
+    schema['ec_api_dataset_id'] = [ignore_missing, int_validator, unicode]
 
     return schema
