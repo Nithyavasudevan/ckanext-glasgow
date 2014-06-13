@@ -248,8 +248,6 @@ class TestDatasetCreate(object):
     @classmethod
     def setup_class(cls):
 
-        helpers.reset_db()
-
         # Create test user
         cls.normal_user = helpers.call_action('user_create',
                                               name='normal_user',
@@ -261,7 +259,7 @@ class TestDatasetCreate(object):
 
     @classmethod
     def teardown_class(cls):
-        pass
+        helpers.reset_db()
 
     def test_create(self):
 
@@ -377,8 +375,6 @@ class TestFileCreate(object):
     @classmethod
     def setup_class(cls):
 
-        helpers.reset_db()
-
         # Create test user
         cls.normal_user = helpers.call_action('user_create',
                                               name='normal_user',
@@ -404,7 +400,7 @@ class TestFileCreate(object):
 
     @classmethod
     def teardown_class(cls):
-        pass
+        helpers.reset_db()
 
     def test_create(self):
 
