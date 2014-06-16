@@ -1,3 +1,4 @@
+import logging
 import json
 
 import dateutil.parser
@@ -9,14 +10,25 @@ from sqlalchemy.sql import update, bindparam
 import ckan.model as model
 import ckan.plugins.toolkit as toolkit
 
-from ckanext.harvest.model import HarvestJob, HarvestObject
+from ckanext.harvest.model import HarvestJob, HarvestObject, HarvestObjectExtra
 from ckanext.harvest.harvesters.base import HarvesterBase
 
 import ckanext.glasgow.logic.schema as glasgow_schema
 
+log = logging.getLogger(__name__)
+
 
 class EcHarvester(HarvesterBase):
 
+    def _get_object_extra(self, harvest_object, key):
+        '''
+        Helper function for retrieving the value from a harvest object extra,
+        given the key
+        '''
+        for extra in harvest_object.extras:
+            if extra.key == key:
+                return extra.value
+        return None
     def _get_site_user(self):
         return toolkit.get_action('get_site_user')({
                 'model': model,
@@ -62,11 +74,13 @@ class EcHarvester(HarvesterBase):
                 except toolkit.ObjectNotFound:
                     # only create if the organization does not already exist
                     data_dict = {
-                        'id': org['Id'],
                         'title': org['Title'],
                         'name': slugify.slugify(org['Title']),
+                        'extras': [
+                            {'key': 'ec_api_id', 'value': org['Id']},
+                        ]
                     }
-                    toolkit.get_action('organization_create')(context, data_dict) 
+                    toolkit.get_action('organization_create')(context, data_dict)
 
             skip += len(orgs)
             request = requests.get(api_endpoint, params={'$skip': skip})
@@ -109,11 +123,11 @@ class EcHarvester(HarvesterBase):
                         .filter(HarvestJob.id!=harvest_job.id) \
                         .order_by(HarvestJob.gather_finished.desc()) \
                         .limit(1).first()
-        
+
         orgs = self._create_orgs(harvest_job)
         if orgs is False:
             return False
-        
+
         api_url = config.get('ckanext.glasgow.read_ec_api', '').rstrip('/')
         api_endpoint = api_url + '/Organisations/{0}/Datasets'
 
@@ -128,8 +142,13 @@ class EcHarvester(HarvesterBase):
         for org_name in orgs:
             org = toolkit.get_action('organization_show')(context,
                                                           {'id': org_name})
-            
-            endpoint = api_endpoint.format(org['id'])
+            values = [e['value'] for e in org.get('extras', []) if e['key'] == 'ec_api_id']
+            if not len(values):
+                log.warning('Could not get EC API id for organization {0}, skipping...'.format(org['name']))
+                continue
+            ec_api_org_id = values[0]
+
+            endpoint = api_endpoint.format(ec_api_org_id)
             request = requests.get(endpoint)
             result = self._fetch_from_ec(harvest_job, request)
             if not result:
@@ -140,11 +159,14 @@ class EcHarvester(HarvesterBase):
             while datasets:
                 for dataset in datasets:
                     modified = dateutil.parser.parse(dataset.get('ModifiedTime'))
+
                     if not previous_job or not modified or modified > previous_job.gather_finished:
                         harvest_object = HarvestObject(
                             guid=dataset['Id'],
                             content=json.dumps(dataset),
-                            job=harvest_job
+                            job=harvest_job,
+                            # Add reference to CKAN org to use on import stage
+                            extras=[HarvestObjectExtra(key='owner_org', value=org['id'])]
                         )
                         harvest_object.save()
                         harvest_object_ids.append(harvest_object.id)
@@ -158,7 +180,7 @@ class EcHarvester(HarvesterBase):
                 result = self._fetch_from_ec(harvest_job, request)
                 if not result:
                     return False
-                
+
                 datasets = result.get('MetadataResultSet', [])
 
         return harvest_object_ids
@@ -189,12 +211,13 @@ class EcHarvester(HarvesterBase):
         if not ckan_data_dict.has_key('name'):
             ckan_data_dict['name'] = slugify.slugify(ec_data_dict['Title'])
 
-
+        # Add EC APU ids
+        ckan_data_dict['ec_api_org_id'] = ec_data_dict['OrganisationId']
+        ckan_data_dict['ec_api_id'] = ec_data_dict['Id']
 
         try:
-            org = toolkit.get_action('organization_show')(context,
-                {'id': str(ec_data_dict['OrganisationId'])})
-            ckan_data_dict['owner_org'] = org['id']
+            owner_org = self._get_object_extra(harvest_object, 'owner_org')
+            ckan_data_dict['owner_org'] = owner_org
             pkg = toolkit.get_action('package_create')(context,
                                                           ckan_data_dict)
 

@@ -18,7 +18,6 @@ class TestDatasetCreate(object):
     @classmethod
     def setup_class(cls):
 
-        helpers.reset_db()
 
         # Create test user
         cls.normal_user = helpers.call_action('user_create',
@@ -30,6 +29,10 @@ class TestDatasetCreate(object):
         harvest_model.setup()
         run_mock_ec()
 
+    @classmethod
+    def teardown_class(cls):
+
+        helpers.reset_db()
 
     def test_create_orgs(self):
         harvester = EcHarvester()
@@ -78,7 +81,7 @@ class TestDatasetCreate(object):
     def test_import(self):
         harvester = EcHarvester()
         job = HarvestJobFactory()
-        factories.Organization(id='4', name='test-org')
+        factories.Organization(name='test-org-2')
         harvest_object = harvest_model.HarvestObject(
             guid='3',
             job=job,
@@ -111,6 +114,9 @@ class TestDatasetCreate(object):
         pkg = helpers.call_action('package_show', name_or_id=u'raj-data-set-001')
         nt.assert_equals(pkg['title'], u'Raj Data Set 001')
 
-        org = helpers.call_action('organization_show', id=u'4')
+        nt.assert_equals(pkg['ec_api_id'], u'3')
+        nt.assert_equals(pkg['ec_api_org_id'], u'4')
+
+        org = helpers.call_action('organization_show', id=u'test-org-2')
         nt.assert_equals(len(org['packages']), 1)
-        nt.asssert_equals(org['packages'][0]['name'], u'raj-data-set-001')
+        nt.assert_equals(org['packages'][0]['name'], u'raj-data-set-001')
