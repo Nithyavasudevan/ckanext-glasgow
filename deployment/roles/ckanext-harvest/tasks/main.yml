@@ -1,0 +1,57 @@
+---
+
+- name: Make sure packages are installed
+  apt: pkg={{ item }} state=installed update_cache=yes
+  with_items:
+    - redis-server
+    - supervisor
+
+- name: Get harvest extension
+  git: repo=https://github.com/ckan/ckanext-harvest dest=/usr/lib/ckan/default/src/ckanext-harvest version=stable
+
+- name: Run setup.py develop for harvest
+  command: chdir=/usr/lib/ckan/default/src/ckanext-harvest/ ../../bin/python setup.py develop
+
+- name: Install requirements for harvest
+  pip: requirements=/usr/lib/ckan/default/src/ckanext-harvest/pip-requirements.txt virtualenv=/usr/lib/ckan/default
+
+- name: Install python redis client
+  pip: name=redis version=2.8.0 virtualenv=/usr/lib/ckan/default
+
+- name: Copy all needed files
+  template: src={{ item }} dest=/{{ item }} backup=yes owner=root group=root
+  with_items:
+    - etc/supervisor/conf.d/ckan-harvest.conf
+    - etc/cron.d/ckan-harvest
+    - etc/init/supervisor.conf
+
+- name: Add harvest and ckan_harvester plugins to the ini file
+  lineinfile: dest=/etc/ckan/default/production.ini
+                     backup=yes
+                     backrefs=yes
+                     state=present
+                     regexp='ckan.plugins\s?=(.*)'
+                     line='ckan.plugins =\1 harvest ckan_harvester'
+
+- name: Add Redis backend option to the ini file
+  lineinfile: dest=/etc/ckan/default/production.ini
+                     backup=yes
+                     state=present
+                     regexp='^ckan.harvest.mq.type=redis'
+                     line='ckan.harvest.mq.type=redis'
+                     insertafter='ckan.plugins(.*)\n'
+
+- name: Restart Redis
+  service: name=redis-server state=restarted
+
+- name: Restart Supervisor for harvest-fetch
+  supervisorctl: name=harvest-fetch:* state=restarted
+  register: command_result
+  failed_when: "'ERROR' in command_result.msg"
+  # Hack thanks to ansible issue #5844]
+
+- name: Restart Supervisor for harvest-gather
+  supervisorctl: name=harvest-gather state=restarted
+
+- name: Restart apache
+  action: service name=apache2 state=restarted

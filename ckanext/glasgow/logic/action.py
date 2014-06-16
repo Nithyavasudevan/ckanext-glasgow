@@ -103,24 +103,43 @@ def _get_api_endpoint(operation):
     :rtype: tuple
     '''
 
-    base = config.get('ckanext.glasgow.ec_api', '').rstrip('/')
+    write_base = config.get('ckanext.glasgow.write_ec_api', '').rstrip('/')
+    read_base = config.get('ckanext.glasgow.read_ec_api', '').rstrip('/')
 
     if operation == 'dataset_request_create':
         method = 'POST'
-        url = '/Datasets'
+        path = '/Datasets/Organisation/{organization_id}'
     elif operation == 'dataset_request_update':
         method = 'PUT'
-        url = '/Datasets'
+        path = '/Datasets/Organisation/{organization_id}'
     elif operation == 'file_request_create':
         method = 'POST'
-        url = '/Files'
+        path = '/Files/Organisation/{organization_id}/Dataset/{dataset_id}'
     elif operation == 'file_request_update':
         method = 'PUT'
-        url = '/Files'
+        path = '/Files/Organisation/{organization_id}/Dataset/{dataset_id}'
     else:
         return None, None
 
-    return method, '{0}{1}'.format(base, url)
+    base = write_base if method in ('POST', 'PUT') else read_base
+
+    return method, '{0}{1}'.format(base, path)
+
+
+def _get_ec_api_org_id(ckan_org_id):
+    # Get EC API id from parent organization
+    org_dict = p.toolkit.get_action('organization_show')({}, {
+        'id': ckan_org_id})
+
+    ec_api_org_id = org_dict.get('ec_api_id')
+
+    # TODO: remove once the orgs use a proper schema
+    if not ec_api_org_id:
+        values = [e['value'] for e in org_dict.get('extras', [])
+                  if e['key'] == 'ec_api_id']
+        ec_api_org_id = values[0] if len(values) else None
+
+    return ec_api_org_id
 
 
 def pending_task_for_dataset(context, data_dict):
@@ -225,6 +244,14 @@ def dataset_request_create(context, data_dict):
     if errors:
         raise p.toolkit.ValidationError(errors)
 
+    # Get parent org EC API id
+    ec_api_org_id = validated_data_dict.get('ec_api_org_id') or \
+                    _get_ec_api_org_id(validated_data_dict['owner_org'])
+
+    if not ec_api_org_id:
+        raise p.toolkit.ValidationError(
+            ['Could not get EC API id for parent organization'])
+
     # Create a task status entry with the validated data
 
     task_dict = _create_task_status(context,
@@ -246,6 +273,10 @@ def dataset_request_create(context, data_dict):
     # Send request to EC Data Collection API
 
     method, url = _get_api_endpoint('dataset_request_create')
+
+    url = url.format(
+        organization_id=ec_api_org_id
+    )
 
     headers = {
         'Authorization': _get_api_auth_token(),
@@ -358,7 +389,8 @@ def file_request_create(context, data_dict):
     package_id = p.toolkit.get_or_bust(data_dict, 'package_id')
 
     try:
-        p.toolkit.get_action('package_show')(context, {'id': package_id})
+        dataset_dict = p.toolkit.get_action('package_show')(context,
+                                                            {'id': package_id})
     except p.toolkit.ObjectNotFound:
         raise p.toolkit.ObjectNotFound('Dataset not found')
 
@@ -376,11 +408,26 @@ def file_request_create(context, data_dict):
     if errors:
         raise p.toolkit.ValidationError(errors)
 
-    if not 'upload' in data_dict:
+    if 'upload' not in data_dict:
         raise p.toolkit.ValidationError({'upload': ['No file uploaded']})
 
     if not isinstance(data_dict.get('upload'), cgi.FieldStorage):
         raise p.toolkit.ValidationError({'upload': ['Wrong file provided']})
+
+    # Get parent org and dataset EC API ids
+
+    ec_api_org_id = validated_data_dict.get('ec_api_org_id') or \
+                    _get_ec_api_org_id(dataset_dict['owner_org'])
+    ec_api_dataset_id = validated_data_dict.get('ec_api_dataset_id') or \
+                    dataset_dict['ec_api_id']
+
+
+    if not ec_api_org_id:
+        raise p.toolkit.ValidationError(
+            ['Could not get EC API id for parent organization'])
+    if not ec_api_dataset_id:
+        raise p.toolkit.ValidationError(
+            ['Could not get EC API id for parent dataset'])
 
     # Create a task status entry with the validated data
 
@@ -403,6 +450,10 @@ def file_request_create(context, data_dict):
     # Send request to EC Data Collection API
 
     method, url = _get_api_endpoint('file_request_create')
+    url = url.format(
+        organization_id=ec_api_org_id,
+        dataset_id=ec_api_dataset_id,
+    )
 
     data = {
         'metadata': json.dumps(ec_dict)

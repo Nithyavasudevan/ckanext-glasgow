@@ -9,3 +9,4 @@
     - ckan
     - ckanext-glasgow
     - ckanext-oauth2waad
+    - ckanext-harvest

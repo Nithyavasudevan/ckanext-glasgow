@@ -111,7 +111,7 @@ def convert_ckan_resource_to_ec_file(ckan_dict):
             dataset_dict = p.toolkit.get_action('package_show')(
                 {'ignore_auth': True},
                 {'id': ckan_dict.get('package_id')})
-            #TODO: this comes up as string, convert to int?
+            # TODO: this comes up as string, convert to int?
             ec_dict['DatasetId'] = dataset_dict.get('ec_api_id')
         except p.toolkit.ObjectNotFound:
             pass
@@ -205,6 +205,9 @@ def _modify_schema(schema):
     schema['ec_api_id'] = [ignore_missing, int_validator, unicode,
                            convert_to_extras]
 
+    schema['ec_api_org_id'] = [ignore_missing, int_validator, unicode,
+                               convert_to_extras]
+
 
 def show_package_schema():
 
@@ -234,6 +237,8 @@ def show_package_schema():
 
     schema['ec_api_id'] = [convert_from_extras]
 
+    schema['ec_api_org_id'] = [convert_from_extras]
+
     return schema
 
 
@@ -253,7 +258,7 @@ def resource_schema():
 
     # Optional fields
 
-    #TODO: sort this vs uploads
+    # TODO: sort this vs uploads
     schema['url'] = [ignore_missing, unicode]
 
     schema['license_id'] = [ignore_missing, unicode]

@@ -21,4 +21,5 @@ def run_mock_ec(port=7071):
         t.daemon = True
         t.start()
 
-        config['ckanext.glasgow.ec_api'] = 'http://0.0.0.0:{0}'.format(port)
+        config['ckanext.glasgow.write_ec_api'] = 'http://0.0.0.0:{0}'.format(port)
+        config['ckanext.glasgow.read_ec_api'] = 'http://0.0.0.0:{0}'.format(port)

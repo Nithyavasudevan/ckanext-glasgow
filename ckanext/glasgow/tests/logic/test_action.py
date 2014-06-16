@@ -30,21 +30,23 @@ class TestGetAPIEndpoint(object):
     @classmethod
     def setup_class(cls):
 
-        cls._base_api = 'https://base.api/'
+        cls._base_write_api = 'https://base.write.api/'
+        cls._base_read_api = 'https://base.read.api/'
 
-        config['ckanext.glasgow.ec_api'] = cls._base_api
+        config['ckanext.glasgow.write_ec_api'] = cls._base_write_api
+        config['ckanext.glasgow.read_ec_api'] = cls._base_read_api
 
     def test_get_api_endpoint(self):
-        base_api = self._base_api.rstrip('/')
+        base_api = self._base_write_api.rstrip('/')
 
         eq_(_get_api_endpoint('dataset_request_create'),
-            ('POST', base_api + '/Datasets'))
+            ('POST', base_api + '/Datasets/Organisation/{organization_id}'))
         eq_(_get_api_endpoint('dataset_request_update'),
-            ('PUT', base_api + '/Datasets'))
+            ('PUT', base_api + '/Datasets/Organisation/{organization_id}'))
         eq_(_get_api_endpoint('file_request_create'),
-            ('POST', base_api + '/Files'))
+            ('POST', base_api + '/Files/Organisation/{organization_id}/Dataset/{dataset_id}'))
         eq_(_get_api_endpoint('file_request_update'),
-            ('PUT', base_api + '/Files'))
+            ('PUT', base_api + '/Files/Organisation/{organization_id}/Dataset/{dataset_id}'))
 
 
 class TestTaskStatusHelpers(object):
@@ -254,6 +256,13 @@ class TestDatasetCreate(object):
                                               email='test@test.com',
                                               password='test')
 
+        # Create test org
+        test_org = helpers.call_action('organization_create',
+                                       context={'user': 'normal_user'},
+                                       name='test_org',
+                                       extras=[{'key': 'ec_api_id',
+                                                'value': 1}])
+
         # Start mock EC API
         run_mock_ec()
 
@@ -264,7 +273,8 @@ class TestDatasetCreate(object):
     def test_create(self):
 
         data_dict = {
-            'name': 'test-dataset',
+            'name': 'test_dataset',
+            'owner_org': 'test_org',
             'title': 'Test Dataset',
             'notes': 'Some longer description',
             'maintainer': 'Test maintainer',
@@ -311,7 +321,8 @@ class TestDatasetCreate(object):
     def test_create_ec_401(self):
 
         data_dict = {
-            'name': 'test-dataset-401',
+            'name': 'test_dataset-401',
+            'owner_org': 'test_org',
             'title': 'Test Dataset',
             'notes': 'Some longer description',
             'maintainer': 'Test maintainer',
@@ -380,9 +391,18 @@ class TestFileCreate(object):
                                               name='normal_user',
                                               email='test@test.com',
                                               password='test')
-        context = {'local_action': True}
+
+        # Create test org
+        test_org = helpers.call_action('organization_create',
+                                       context={'user': 'normal_user'},
+                                       name='test_org',
+                                       extras=[{'key': 'ec_api_id',
+                                                'value': 1}])
+
+        context = {'local_action': True, 'user': 'normal_user'}
         data_dict = {
-            'name': 'test-dataset',
+            'name': 'test_dataset',
+            'owner_org': 'test_org',
             'title': 'Test Dataset',
             'notes': 'Some longer description',
             'maintainer': 'Test maintainer',

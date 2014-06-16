@@ -110,28 +110,28 @@ file_fields_under_255_characters = [
 ]
 
 
-@app.route('/Datasets', methods=['POST'])
-def request_dataset_create():
+@app.route('/Datasets/Organisation/<int:organization_id>', methods=['POST'])
+def request_dataset_create(organization_id):
 
-    return handle_dataset_request()
-
-
-@app.route('/Datasets', methods=['PUT'])
-def request_dataset_update():
-
-    return handle_dataset_request()
+    return handle_dataset_request(organization_id)
 
 
-@app.route('/Files', methods=['POST'])
-def request_file_create():
+@app.route('/Datasets/Organisation/<int:organization_id>', methods=['PUT'])
+def request_dataset_update(organization_id):
 
-    return handle_file_request()
+    return handle_dataset_request(organization_id)
 
 
-@app.route('/Files', methods=['PUT'])
-def request_file_update():
+@app.route('/Files/Organisation/<int:organization_id>/Dataset/<int:dataset_id>', methods=['POST'])
+def request_file_create(organization_id, dataset_id):
 
-    return handle_file_request()
+    return handle_file_request(organization_id, dataset_id)
+
+
+@app.route('/Files/Organisation/<int:organization_id>/Dataset/<int:dataset_id>', methods=['PUT'])
+def request_file_update(organization_id, dataset_id):
+
+    return handle_file_request(organization_id, dataset_id)
 
 @app.route('/Organisations/<int:org_id>/Datasets', methods=['GET'])
 def request_datasets(org_id):
@@ -257,7 +257,7 @@ def request_orgs():
     )
 
 
-def handle_dataset_request():
+def handle_dataset_request(organization_id):
     data = flask.request.json
 
     if app.debug:
@@ -317,7 +317,7 @@ def handle_dataset_request():
     )
 
 
-def handle_file_request():
+def handle_file_request(organization_id, dataset_id):
 
     if app.debug:
         app.logger.debug('Headers received:\n{0}'

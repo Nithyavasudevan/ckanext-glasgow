@@ -151,9 +151,22 @@ class TestSchemaConversion(object):
     def test_convert_ckan_resource_to_ec_file_no_ec_api_dataset_id(self):
 
         # Create a dataset for the resource
-        context = {'local_action': True}
+        helpers.call_action('user_create',
+                            name='sysadmin_user',
+                            email='test@test.com',
+                            password='test',
+                            sysadmin=True)
+
+        helpers.call_action('organization_create',
+                            context={'user': 'sysadmin_user'},
+                            name='test_org',
+                            extras=[{'key': 'ec_api_id',
+                                     'value': 1}])
+
+        context = {'local_action': True, 'user': 'sysadmin_user'}
         data_dict = {
             'name': 'test_dataset',
+            'owner_org': 'test_org',
             'title': 'Test Dataset',
             'notes': 'Some longer description',
             'maintainer': 'Test maintainer',
