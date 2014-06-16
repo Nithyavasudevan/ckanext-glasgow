@@ -15,20 +15,42 @@ class TestDatasetController(object):
         cls.app = get_test_app()
 
         # Create test user
+        cls.sysadmin_user = helpers.call_action('user_create',
+                                                name='sysadmin_user',
+                                                email='test@test.com',
+                                                password='test',
+                                                sysadmin=True)
+
         cls.normal_user = helpers.call_action('user_create',
                                               name='normal_user',
                                               email='test@test.com',
                                               password='test')
+
+        cls.test_org = helpers.call_action('organization_create',
+                                           context={'user': 'sysadmin_user'},
+                                           name='test_org',
+                                           extras=[{'key': 'ec_api_id',
+                                                    'value': 1}])
+
+        member = {'username': 'normal_user',
+                  'role': 'admin',
+                  'id': 'test_org'}
+        helpers.call_action('organization_member_create',
+                            context={'user': 'sysadmin_user'},
+                            **member)
+
         # Start mock EC API
         run_mock_ec()
 
-    def teardown(cls):
+    @classmethod
+    def teardown_class(cls):
         helpers.reset_db()
 
     def test_pending_dataset_page(self):
 
         data_dict = {
-            'name': 'test-dataset',
+            'name': 'test_dataset_pending',
+            'owner_org': 'test_org',
             'title': 'Test Dataset',
             'notes': 'Some longer description',
             'maintainer': 'Test maintainer',
@@ -45,7 +67,7 @@ class TestDatasetController(object):
 
         assert 'request_id' in request_dict
 
-        response = self.app.get('/dataset/test-dataset')
+        response = self.app.get('/dataset/test_dataset_pending')
         eq_(response.status_int, 200)
 
         # Check that we got the pending page, not a default dataset page
@@ -60,7 +82,8 @@ class TestDatasetController(object):
     def test_normal_dataset_page(self):
 
         data_dict = {
-            'name': 'test-dataset',
+            'name': 'test_dataset',
+            'owner_org': 'test_org',
             'title': 'Test Dataset',
             'notes': 'Some longer description',
             'maintainer': 'Test maintainer',
@@ -70,14 +93,15 @@ class TestDatasetController(object):
             'quality': 5,
         }
 
-        context = {'ignore_auth': True, 'local_action': True}
+        context = {'ignore_auth': True, 'local_action': True,
+                   'user': self.normal_user['name']}
         dataset_dict = helpers.call_action('package_create',
                                            context=context,
                                            **data_dict)
 
         assert 'id' in dataset_dict
 
-        response = self.app.get('/dataset/test-dataset')
+        response = self.app.get('/dataset/test_dataset')
         eq_(response.status_int, 200)
 
         # Check that we got the pending page, not a default dataset page

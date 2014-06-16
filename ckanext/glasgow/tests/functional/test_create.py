@@ -28,9 +28,12 @@ class TestCreateDataset(object):
                                               name='normal_user',
                                               email='test@test.com',
                                               password='test')
-        test_org = helpers.call_action('organization_create',
-                                       context={'user': 'sysadmin_user'},
-                                       name='test_org')
+
+        cls.test_org = helpers.call_action('organization_create',
+                                           context={'user': 'sysadmin_user'},
+                                           name='test_org',
+                                           extras=[{'key': 'ec_api_id',
+                                                    'value': 1}])
 
         member = {'username': 'normal_user',
                   'role': 'admin',
@@ -56,7 +59,8 @@ class TestCreateDataset(object):
     def test_create_dataset_normal_user(self):
 
         data_dict = {
-            'name': 'test-dataset',
+            'name': 'test_dataset',
+            'owner_org': self.test_org['id'],
             'title': 'Test Dataset',
             'notes': 'Some longer description',
             'maintainer': 'Test maintainer',
@@ -97,7 +101,7 @@ class TestCreateDataset(object):
         response = form.submit('save', extra_environ=extra_environ)
 
         eq_(response.status_int, 302)
-        assert '/dataset/test-dataset' in response.headers['Location']
+        assert '/dataset/test_dataset' in response.headers['Location']
 
         response = response.follow()
 
@@ -160,7 +164,9 @@ class TestCreateFile(object):
         # Create test org
         test_org = helpers.call_action('organization_create',
                                        context={'user': 'normal_user'},
-                                       name='test_org')
+                                       name='test_org',
+                                       extras=[{'key': 'ec_api_id',
+                                                'value': 1}])
 
         member = {'username': 'normal_user',
                   'role': 'admin',
@@ -176,6 +182,7 @@ class TestCreateFile(object):
         }
         data_dict = {
             'name': 'test_dataset',
+            'owner_org': 'test_org',
             'title': 'Test Dataset',
             'notes': 'Some longer description',
             'maintainer': 'Test maintainer',

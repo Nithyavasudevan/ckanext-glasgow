@@ -4,6 +4,7 @@ from ckan import model
 
 # 2.3 will offer navl_validate in toolkit
 from ckan.lib.navl.dictization_functions import validate
+import ckan.new_tests.helpers as helpers
 
 import ckanext.glasgow.logic.schema as custom_schema
 
@@ -16,10 +17,31 @@ resource_schema = custom_schema.resource_schema()
 
 class TestDatasetValidation(object):
 
+    @classmethod
+    def setup_class(cls):
+
+        # Create test user
+        cls.normal_user = helpers.call_action('user_create',
+                                              name='normal_user',
+                                              email='test@test.com',
+                                              password='test')
+
+        # Create test org
+        test_org = helpers.call_action('organization_create',
+                                       context={'user': 'normal_user'},
+                                       name='test_org',
+                                       extras=[{'key': 'ec_api_id',
+                                                'value': 1}])
+
+    @classmethod
+    def teardown_class(cls):
+        helpers.reset_db()
+
     def test_basic_valid(self):
 
         data_dict = {
-            'name': 'test-dataset',
+            'name': 'test_dataset',
+            'owner_org': 'test_org',
             'title': 'Test Dataset',
             'notes': 'Some longer description',
             'maintainer': 'Test maintainer',
@@ -39,7 +61,8 @@ class TestDatasetValidation(object):
             'standard_rating': 5,
             'standard_version': 'Test standard version',
         }
-        context = {'model': model, 'session': model.Session}
+        context = {'model': model, 'session': model.Session,
+                   'user': 'normal_user'}
 
         data, errors = validate(data_dict, create_dataset_schema, context)
 
@@ -60,7 +83,8 @@ class TestDatasetValidation(object):
 
         # No modifications
         for key in set(data_dict.keys()) - set(converted_to_extras):
-            eq_(data_dict[key], data[key])
+            if key != 'owner_org':
+                eq_(data_dict[key], data[key])
 
         for key in converted_to_extras:
             for extra in data['extras']:
@@ -77,16 +101,20 @@ class TestDatasetValidation(object):
         data, errors = validate(data_dict, create_dataset_schema, context)
 
         eq_(sorted(errors.keys()), ['license_id', 'maintainer',
-            'maintainer_email', 'name', 'notes', 'openness_rating', 'quality',
-                                    'title'])
+            'maintainer_email', 'name', 'notes', 'openness_rating', 
+                'owner_org', 'quality', 'title'])
 
         for k, v in errors.iteritems():
-            eq_(errors[k], ['Missing value'])
+            if k == 'owner_org':
+                eq_(errors[k], ['A organization must be supplied', 'Missing value'])
+            else:
+                eq_(errors[k], ['Missing value'])
 
     def test_create_only_mandatory_fields(self):
 
         data_dict = {
-            'name': 'test-dataset',
+            'name': 'test_dataset',
+            'owner_org': 'test_org',
             'title': 'Test Dataset',
             'notes': 'Some longer description',
             'maintainer': 'Test maintainer',
@@ -95,7 +123,8 @@ class TestDatasetValidation(object):
             'openness_rating': 3,
             'quality': 5,
         }
-        context = {'model': model, 'session': model.Session}
+        context = {'model': model, 'session': model.Session,
+                   'user': 'normal_user'}
 
         data, errors = validate(data_dict, create_dataset_schema, context)
 
@@ -105,7 +134,8 @@ class TestDatasetValidation(object):
     def test_create_fields_too_long(self):
 
         data_dict = {
-            'name': 'test-dataset',
+            'name': 'test_dataset',
+            'owner_org': 'test_org',
             'title': 'a' * 256,
             'notes': 'Some longer description',
             'maintainer': 'a' * 256,
@@ -122,8 +152,8 @@ class TestDatasetValidation(object):
             'standard_version': 'a' * 256,
         }
 
-        context = {'model': model, 'session': model.Session}
-
+        context = {'model': model, 'session': model.Session,
+                   'user': 'normal_user'}
         data, errors = validate(data_dict, create_dataset_schema, context)
 
         eq_(sorted(errors.keys()), ['category', 'maintainer',
@@ -137,7 +167,8 @@ class TestDatasetValidation(object):
     def test_create_description_too_long(self):
 
         data_dict = {
-            'name': 'test-dataset',
+            'name': 'test_dataset',
+            'owner_org': 'test_org',
             'title': 'Test Dataset',
             'notes': 'a' * 4001,
             'maintainer': 'Test maintainer',
@@ -147,7 +178,8 @@ class TestDatasetValidation(object):
             'quality': 5,
         }
 
-        context = {'model': model, 'session': model.Session}
+        context = {'model': model, 'session': model.Session,
+                   'user': 'normal_user'}
 
         data, errors = validate(data_dict, create_dataset_schema, context)
 
@@ -157,6 +189,7 @@ class TestDatasetValidation(object):
 
         data_dict = {
             'name': 'a' * 200,
+            'owner_org': 'test_org',
             'title': 'Test Dataset',
             'notes': 'Some longer description',
             'maintainer': 'Test maintainer',
@@ -166,8 +199,8 @@ class TestDatasetValidation(object):
             'quality': 5,
         }
 
-        context = {'model': model, 'session': model.Session}
-
+        context = {'model': model, 'session': model.Session,
+                   'user': 'normal_user'}
         data, errors = validate(data_dict, create_dataset_schema, context)
 
         eq_(errors, {})
@@ -177,7 +210,8 @@ class TestDatasetValidation(object):
     def test_create_wrong_integers(self):
 
         data_dict = {
-            'name': 'test-dataset',
+            'name': 'test_dataset',
+            'owner_org': 'test_org',
             'title': 'Test Dataset',
             'notes': 'Some longer description',
             'maintainer': 'Test maintainer',
@@ -197,7 +231,8 @@ class TestDatasetValidation(object):
             'standard_rating': 53.45,
             'standard_version': 'Test standard version',
         }
-        context = {'model': model, 'session': model.Session}
+        context = {'model': model, 'session': model.Session,
+                   'user': 'normal_user'}
 
         data, errors = validate(data_dict, create_dataset_schema, context)
 
@@ -211,7 +246,8 @@ class TestDatasetValidation(object):
     def test_create_integers_out_of_range(self):
 
         data_dict = {
-            'name': 'test-dataset',
+            'name': 'test_dataset',
+            'owner_org': 'test_org',
             'title': 'Test Dataset',
             'notes': 'Some longer description',
             'maintainer': 'Test maintainer',
@@ -231,8 +267,8 @@ class TestDatasetValidation(object):
             'standard_rating': '50',
             'standard_version': 'Test standard version',
         }
-        context = {'model': model, 'session': model.Session}
-
+        context = {'model': model, 'session': model.Session,
+                   'user': 'normal_user'}
         data, errors = validate(data_dict, create_dataset_schema, context)
 
         eq_(sorted(errors.keys()), ['openness_rating', 'quality',
@@ -247,7 +283,7 @@ class TestResourceValidation(object):
     def test_basic_valid(self):
 
         data_dict = {
-            'package_id': 'test-dataset-id',
+            'package_id': 'test_dataset_id',
             'name': 'Test File name',
             'description': 'Some longer description',
             'format': 'application/csv',
@@ -289,7 +325,7 @@ class TestResourceValidation(object):
     def test_create_only_mandatory_fields(self):
 
         data_dict = {
-            'package_id': 'test-dataset-id',
+            'package_id': 'test_dataset_id',
             'name': 'Test File name',
             'description': 'Some longer description',
             'format': 'application/csv',
@@ -305,7 +341,7 @@ class TestResourceValidation(object):
     def test_create_fields_too_long(self):
 
         data_dict = {
-            'package_id': 'test-dataset-id',
+            'package_id': 'test_dataset_id',
             'name': 'a' * 256,
             'description': 'Some longer descripiton',
             'format': 'a' * 256,
@@ -327,7 +363,7 @@ class TestResourceValidation(object):
     def test_create_description_too_long(self):
 
         data_dict = {
-            'package_id': 'test-dataset-id',
+            'package_id': 'test_dataset_id',
             'name': 'Test File name',
             'description': 'a' * 4001,
             'format': 'application/csv',
@@ -350,7 +386,7 @@ class TestResourceValidation(object):
     def test_create_wrong_integers(self):
 
         data_dict = {
-            'package_id': 'test-dataset-id',
+            'package_id': 'test_dataset_id',
             'name': 'Test File name',
             'description': 'Some longer description',
             'format': 'application/csv',
@@ -377,7 +413,7 @@ class TestResourceValidation(object):
     def test_create_integers_out_of_range(self):
 
         data_dict = {
-            'package_id': 'test-dataset-id',
+            'package_id': 'test_dataset_id',
             'name': 'Test File name',
             'description': 'Some longer description',
             'format': 'application/csv',
