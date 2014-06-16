@@ -4,6 +4,7 @@ import dateutil.parser
 from pylons import config
 import requests
 import slugify
+from sqlalchemy.sql import update, bindparam
 
 import ckan.model as model
 import ckan.plugins.toolkit as toolkit
@@ -196,6 +197,14 @@ class EcHarvester(HarvesterBase):
             ckan_data_dict['owner_org'] = org['id']
             pkg = toolkit.get_action('package_create')(context,
                                                           ckan_data_dict)
+
+            from ckanext.harvest.model import harvest_object_table
+            conn = model.Session.connection()
+            u = update(harvest_object_table) \
+                    .where(harvest_object_table.c.package_id==bindparam('b_package_id')) \
+                    .values(current=False)
+            conn.execute(u, b_package_id=pkg['id'])
+
             harvest_object.package_id = pkg['id']
             harvest_object.current = True
             harvest_object.save()
