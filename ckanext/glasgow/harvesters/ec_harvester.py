@@ -1,11 +1,13 @@
 import logging
 import json
 
+
 import dateutil.parser
 from pylons import config
 import requests
 import slugify
 from sqlalchemy.sql import update, bindparam
+from sqlalchemy import and_
 
 import ckan.model as model
 import ckan.plugins.toolkit as toolkit
@@ -68,10 +70,14 @@ class EcHarvester(HarvesterBase):
         # number of orgs.
         while orgs:
             for org in orgs:
-                try:
-                    toolkit.get_action('organization_show')(
-                        context, {'id': str(org['Id'])})
-                except toolkit.ObjectNotFound:
+                # Need to check id in extras directly:
+                existing_org = model.Session.query(model.Group) \
+                                    .join(model.GroupExtra) \
+                                    .filter(and_(model.GroupExtra.key=='ec_api_id',
+                                                 model.GroupExtra.value==str(org['Id']))) \
+                                    .first()
+                if not existing_org:
+
                     # only create if the organization does not already exist
                     data_dict = {
                         'title': org['Title'],
