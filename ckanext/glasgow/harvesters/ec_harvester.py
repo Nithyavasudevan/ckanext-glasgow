@@ -26,7 +26,7 @@ class EcHarvester(HarvesterBase):
             }, {})
 
     def _create_orgs(self, harvest_job):
-        api_url = config.get('ckanext.glasgow.ec_api', '').rstrip('/')
+        api_url = config.get('ckanext.glasgow.read_ec_api', '').rstrip('/')
         api_endpoint = '{0}/Metadata/Organisation'.format(api_url)
 
         request = requests.get(api_endpoint)
@@ -114,7 +114,7 @@ class EcHarvester(HarvesterBase):
         if orgs is False:
             return False
         
-        api_url = config.get('ckanext.glasgow.ec_api', '').rstrip('/')
+        api_url = config.get('ckanext.glasgow.read_ec_api', '').rstrip('/')
         api_endpoint = api_url + '/Organisations/{0}/Datasets'
 
         context = {
