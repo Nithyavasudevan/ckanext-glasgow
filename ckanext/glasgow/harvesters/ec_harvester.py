@@ -29,6 +29,7 @@ class EcHarvester(HarvesterBase):
             if extra.key == key:
                 return extra.value
         return None
+
     def _get_site_user(self):
         return toolkit.get_action('get_site_user')({
                 'model': model,
@@ -58,21 +59,18 @@ class EcHarvester(HarvesterBase):
 
         skip = 0
 
-        context = {
-            'model': model,
-            'session': model.Session,
-            'user': self._get_site_user()['name']
-        }
 
         # loop until there are do results, as we do not know the total
         # number of orgs.
         while orgs:
             for org in orgs:
                 try:
-                    toolkit.get_action('organization_show')(
-                        context, {'id': str(org['Id'])})
-                except toolkit.ObjectNotFound:
                     # only create if the organization does not already exist
+                    context = {
+                        'model': model,
+                        'session': model.Session,
+                        'user': self._get_site_user()['name']
+                    }
                     data_dict = {
                         'title': org['Title'],
                         'name': slugify.slugify(org['Title']),
@@ -81,6 +79,8 @@ class EcHarvester(HarvesterBase):
                         ]
                     }
                     toolkit.get_action('organization_create')(context, data_dict)
+                except toolkit.ValidationError, e:
+                    pass
 
             skip += len(orgs)
             request = requests.get(api_endpoint, params={'$skip': skip})
@@ -219,7 +219,7 @@ class EcHarvester(HarvesterBase):
             owner_org = self._get_object_extra(harvest_object, 'owner_org')
             ckan_data_dict['owner_org'] = owner_org
             pkg = toolkit.get_action('package_create')(context,
-                                                          ckan_data_dict)
+                                                       ckan_data_dict)
 
             from ckanext.harvest.model import harvest_object_table
             conn = model.Session.connection()

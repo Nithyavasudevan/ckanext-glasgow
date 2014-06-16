@@ -19,15 +19,18 @@ class TestDatasetCreate(object):
     def setup_class(cls):
 
 
-        # Create test user
-        cls.normal_user = helpers.call_action('user_create',
-                                              name='normal_user',
-                                              email='test@test.com',
-                                              password='test')
 
         # Start mock EC API
         harvest_model.setup()
         run_mock_ec()
+
+    def setup(self):
+        helpers.reset_db()
+        # Create test user
+        self.normal_user = helpers.call_action('user_create',
+                                              name='normal_user',
+                                              email='test@test.com',
+                                              password='test')
 
     @classmethod
     def teardown_class(cls):
@@ -81,10 +84,12 @@ class TestDatasetCreate(object):
     def test_import(self):
         harvester = EcHarvester()
         job = HarvestJobFactory()
-        factories.Organization(name='test-org-2')
+        org = factories.Organization(name='test-org-2')
         harvest_object = harvest_model.HarvestObject(
             guid='3',
             job=job,
+            extras=[harvest_model.HarvestObjectExtra(
+                key='owner_org', value=org['id'])],
             content=json.dumps({
                 "Id": 3,
                 "Metadata": {
