@@ -4,6 +4,7 @@ import mock
 import nose.tools as nt
 
 import ckan.new_tests.helpers as helpers
+import ckan.new_tests.factories as factories
 
 import ckanext.harvest.model as harvest_model
 from ckanext.harvest.tests.factories import HarvestJobFactory
@@ -77,6 +78,7 @@ class TestDatasetCreate(object):
     def test_import(self):
         harvester = EcHarvester()
         job = HarvestJobFactory()
+        factories.Organization(id='4', name='test-org')
         harvest_object = harvest_model.HarvestObject(
             guid='3',
             job=job,
@@ -108,3 +110,7 @@ class TestDatasetCreate(object):
         harvester.import_stage(harvest_object)
         pkg = helpers.call_action('package_show', name_or_id=u'raj-data-set-001')
         nt.assert_equals(pkg['title'], u'Raj Data Set 001')
+
+        org = helpers.call_action('organization_show', id=u'4')
+        nt.assert_equals(len(org['packages']), 1)
+        nt.asssert_equals(org['packages'][0]['name'], u'raj-data-set-001')

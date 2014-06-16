@@ -1,0 +1,2 @@
+slugify==0.0.1
+-e git+git@github.com:ckan/ckanext-harvest.git#egg=ckanext_harvest

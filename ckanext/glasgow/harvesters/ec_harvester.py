@@ -188,7 +188,12 @@ class EcHarvester(HarvesterBase):
         if not ckan_data_dict.has_key('name'):
             ckan_data_dict['name'] = slugify.slugify(ec_data_dict['Title'])
 
+
+
         try:
+            org = toolkit.get_action('organization_show')(context,
+                {'id': str(ec_data_dict['OrganisationId'])})
+            ckan_data_dict['owner_org'] = org['id']
             result = toolkit.get_action('package_create')(context,
                                                           ckan_data_dict)
         except toolkit.ValidationError, e:
