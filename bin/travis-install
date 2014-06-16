@@ -24,6 +24,7 @@ git clone https://github.com/ckan/ckan
 cd ckan
 git checkout release-v2.2
 pip install -r requirements.txt
+pip install -r dev-requirements.txt
 python setup.py develop
 
 # Setup DB
