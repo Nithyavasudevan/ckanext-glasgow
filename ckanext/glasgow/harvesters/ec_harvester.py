@@ -179,7 +179,7 @@ class EcHarvester(HarvesterBase):
 
                 skip += len(datasets)
                 request = requests.get(
-                    api_endpoint.format(org['id']),
+                    api_endpoint.format(ec_api_org_id),
                     params={'$skip': skip}
                 )
 
