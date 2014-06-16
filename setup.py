@@ -25,5 +25,6 @@ setup(
         [ckan.plugins]
         # Add plugins here, e.g.
         glasgow_schema=ckanext.glasgow.plugins:GlasgowSchemaPlugin
+	ec_harvester=ckanext.glasgow.harvesters.ec_harvester:EcHarvester
     ''',
 )

@@ -133,6 +133,129 @@ def request_file_update():
 
     return handle_file_request()
 
+@app.route('/Organisations/<int:org_id>/Datasets', methods=['GET'])
+def request_datasets(org_id):
+    skip = int(flask.request.args.get('$skip', 0))
+    metadata_result_set = {
+        1: [],
+        2: [],
+        4: [
+            {
+                "Id": 3,
+                "Metadata": {
+                    "Category": "debitis",
+                    "Description": "Sint perspiciatis et dolorem. Consectetur impedit porro omnis nisi adipisci eum rerum tenetur. Voluptate accusamus praesentium autem molestiae possimus a quibusdam harum.",
+                    "License": "http://mayert.us/gibsondickinson/dicki.html",
+                    "MaintainerContact": "nova_windler@swift.uk",
+                    "MaintainerName": "Marge Conn",
+                    "OpennessRating": "0",
+                    "PublishedOnBehalfOf": "Ms. Gloria Bode",
+                    "Quality": "3",
+                    "StandardName": "Iste maxime ad non ea",
+                    "StandardRating": "4",
+                    "StandardVersion": "4.4.0",
+                    "Tags": "beatae consequatur sunt ducimus mollitia",
+                    "Title": "Raj Data Set 001",
+                    "Theme": "assumenda",
+                    "UsageGuidance": "Sed magnam labore voluptatem accusamus aut dicta eos et. Et omnis aliquam fugit sed iusto. Consectetur esse et tempora."
+                    },
+                "CreatedTime": "2014-06-09T14:08:08.78",
+                "ModifiedTime": "2014-06-09T14:08:08.78",
+                "OrganisationId": 4,
+                "Title": "Raj Data Set 001"
+                },
+            {
+                "Id": 7,
+                "Metadata": {
+                    "Category": "quia",
+                    "Description": "Eos porro labore vero. Ex voluptas dolore id repellat. Dolorum animi maiores debitis nesciunt maiores fuga.",
+                    "License": "http://watsicaoconnell.info/rosenbaum/auer.html",
+                    "MaintainerContact": "sandra@friesenborer.ca",
+                    "MaintainerName": "Liana Pouros",
+                    "OpennessRating": "4",
+                    "PublishedOnBehalfOf": "Katlyn Friesen",
+                    "Quality": "3",
+                    "StandardName": "Et deleniti saepe libero quasi eos et nobis",
+                    "StandardRating": "1",
+                    "StandardVersion": "4.0.78",
+                    "Tags": "deleniti rerum ratione in nemo",
+                    "Title": "Dolorum qui illo aliquid",
+                    "Theme": "illum",
+                    "UsageGuidance": "Eveniet consequatur recusandae omnis distinctio aspernatur. Numquam sit nam dolorum rerum aliquid commodi. Excepturi sit enim dolorem ipsa possimus omnis. Perspiciatis qui delectus id modi sunt aut consectetur. Repellat suscipit ipsum est."
+                    },
+                "CreatedTime": "2014-06-09T21:46:48.51",
+                "ModifiedTime": "2014-06-09T21:46:48.51",
+                "OrganisationId": 4,
+                "Title": "Dolorum qui illo aliquid"
+                },
+            {
+                "Id": 8,
+                "Metadata": {
+                    "Category": "sit",
+                    "Description": "Fuga voluptas ut et modi est maiores rerum. Sint qui aspernatur inventore quibusdam vel nulla temporibus necessitatibus. Vel voluptas similique quo illo. Repellendus totam ab repudiandae. Enim in corrupti illo ea reprehenderit dicta.",
+                    "License": "http://schambergermills.us/schowalter/champlin.html",
+                    "MaintainerContact": "granville.collins@hessel.co.uk",
+                    "MaintainerName": "Rolando Kemmer",
+                    "OpennessRating": "0",
+                    "PublishedOnBehalfOf": "Wayne Greenfelder",
+                    "Quality": "1",
+                    "StandardName": "Est alias qui doloribus possimus iusto",
+                    "StandardRating": "0",
+                    "StandardVersion": "5.5.44",
+                    "Tags": "possimus nemo id laboriosam expedita",
+                    "Title": "Non ipsum dolore voluptatem",
+                    "Theme": "sint",
+                    "UsageGuidance": "Ut suscipit labore excepturi ex laudantium ex voluptates. Sed accusantium sed consequuntur sequi ipsa modi. Delectus perspiciatis mollitia sint ullam maxime et et omnis. Sint ipsa quia a nesciunt."
+                    },
+                "CreatedTime": "2014-06-09T21:46:52.52",
+                "ModifiedTime": "2014-06-09T21:46:52.52",
+                "OrganisationId": 4,
+                "Title": "Non ipsum dolore voluptatem"
+                }
+            ],
+        }
+    res = metadata_result_set.get(org_id, [])
+    return flask.jsonify(**{
+        "MetadataResultSet": res[skip:],
+        "ErrorMessage": None,
+        "IsErrorResponse": False,
+        "IsRetryRequested": False
+        }
+    )
+
+
+@app.route('/Metadata/Organisation', methods=['GET'])
+def request_orgs():
+    skip = int(flask.request.args.get('$skip', 0))
+    metadata_result_set = [
+        {
+            "Id": 1,
+            "Title": "Glasgow City Council",
+            "CreatedTime": "2014-05-21T06:06:18.353",
+            "ModifiedTime": "2014-05-21T06:06:18.353"
+            },
+        {
+            "Id": 2,
+            "Title": "Microsoft",
+            "CreatedTime": "2014-05-21T00:00:00",
+            "ModifiedTime": "2014-05-21T00:00:00"
+            },
+        {
+            "Id": 4,
+            "Title": "Test Org",
+            "CreatedTime": "2014-05-22T00:06:18",
+            "ModifiedTime": "2014-05-22T06:06:18"
+            }
+        ]
+
+    return flask.jsonify(**{
+        "MetadataResultSet": metadata_result_set[skip:],
+        "ErrorMessage": None,
+        "IsErrorResponse": False,
+        "IsRetryRequested": False
+        }
+    )
+
 
 def handle_dataset_request():
     data = flask.request.json
