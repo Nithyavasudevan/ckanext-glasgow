@@ -1,4 +1,6 @@
 {% import 'macros/form.html' as form %}
+{% import 'macros/custom.html' as custom_form %}
+
 
 {% set data = data or {} %}
 {% set errors = errors or {} %}
@@ -13,13 +15,10 @@
   <fieldset>
     <legend>{{ _('Mandatory fields') }}</legend>
 
-    {# TODO: Remove Link option? #}
-    {% block basic_fields_url %}
       {% set is_upload = (data.url_type == 'upload') %}
-      {{ form.image_upload(data, errors, field_url='url', field_upload='upload', field_clear='clear_upload',
+      {{ custom_form.upload(data, errors, field_url='url', field_upload='upload', field_clear='clear_upload',
          is_upload_enabled=h.uploads_enabled(), is_url=data.url and not is_upload, is_upload=is_upload,
          upload_label=_('File'), url_label=_('URL')) }}
-    {% endblock %}
 
     {% block basic_fields_name %}
       {{ form.input('name', id='field-name', label=_('Title'), placeholder=_('eg. January 2011 Gold Prices'), value=data.name, error=errors.name, classes=['control-full']) }}

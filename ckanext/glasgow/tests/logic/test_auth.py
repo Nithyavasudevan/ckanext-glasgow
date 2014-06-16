@@ -12,8 +12,6 @@ class TestCreate(object):
     @classmethod
     def setup_class(cls):
 
-        helpers.reset_db()
-
         # Create test users and other objects
 
         cls.sysadmin_user = helpers.call_action('user_create',
@@ -42,6 +40,10 @@ class TestCreate(object):
                                                      name='normal_user_no_org',
                                                      email='test@test.com',
                                                      password='test')
+
+    @classmethod
+    def teardown_class(cls):
+        helpers.reset_db()
 
     def test_package_create_anon(self):
 

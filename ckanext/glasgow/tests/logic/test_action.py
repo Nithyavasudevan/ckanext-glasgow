@@ -1,4 +1,6 @@
+import cgi
 import os
+import StringIO
 import json
 
 import nose
@@ -246,8 +248,6 @@ class TestDatasetCreate(object):
     @classmethod
     def setup_class(cls):
 
-        helpers.reset_db()
-
         # Create test user
         cls.normal_user = helpers.call_action('user_create',
                                               name='normal_user',
@@ -259,7 +259,7 @@ class TestDatasetCreate(object):
 
     @classmethod
     def teardown_class(cls):
-        pass
+        helpers.reset_db()
 
     def test_create(self):
 
@@ -358,12 +358,22 @@ class TestDatasetCreate(object):
         assert 'error' in value
 
 
+def _get_mock_file_upload(file_name='test.csv'):
+
+    mock_file = StringIO.StringIO()
+    mock_file.write('File contents')
+
+    mock_upload = cgi.FieldStorage()
+    mock_upload.filename = 'test.csv'
+    mock_upload.file = mock_file
+
+    return mock_upload
+
+
 class TestFileCreate(object):
 
     @classmethod
     def setup_class(cls):
-
-        helpers.reset_db()
 
         # Create test user
         cls.normal_user = helpers.call_action('user_create',
@@ -390,7 +400,7 @@ class TestFileCreate(object):
 
     @classmethod
     def teardown_class(cls):
-        pass
+        helpers.reset_db()
 
     def test_create(self):
 
@@ -406,6 +416,9 @@ class TestFileCreate(object):
             'standard_rating': 1,
             'standard_version': 'Test standard version',
             'creation_date': '2014-03-22T05:42:00',
+            'ec_api_id': 3,
+            'ec_api_dataset_id': 1,
+            'upload': _get_mock_file_upload(),
         }
 
         context = {'user': self.normal_user['name']}
@@ -445,6 +458,9 @@ class TestFileCreate(object):
             'standard_rating': 1,
             'standard_version': 'Test standard version',
             'creation_date': '2014-03-22T05:42:00',
+            'ec_api_id': 3,
+            'ec_api_dataset_id': 1,
+            'upload': _get_mock_file_upload(),
         }
 
         context = {'user': self.normal_user['name']}
