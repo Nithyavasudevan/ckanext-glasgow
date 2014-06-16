@@ -194,8 +194,11 @@ class EcHarvester(HarvesterBase):
             org = toolkit.get_action('organization_show')(context,
                 {'id': str(ec_data_dict['OrganisationId'])})
             ckan_data_dict['owner_org'] = org['id']
-            result = toolkit.get_action('package_create')(context,
+            pkg = toolkit.get_action('package_create')(context,
                                                           ckan_data_dict)
+            harvest_object.package_id = pkg['id']
+            harvest_object.current = True
+            harvest_object.save()
         except toolkit.ValidationError, e:
             self._save_object_error('Invalid package with GUID %s: %r' % (harvest_object.guid, e.error_dict), harvest_object, 'Import')
             return False
