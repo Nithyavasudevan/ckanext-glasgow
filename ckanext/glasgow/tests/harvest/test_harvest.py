@@ -9,7 +9,7 @@ import ckan.new_tests.factories as factories
 import ckanext.harvest.model as harvest_model
 from ckanext.harvest.tests.factories import HarvestJobFactory
 
-from ckanext.glasgow.harvesters.ec_harvester import EcHarvester
+from ckanext.glasgow.harvesters.ec_harvester import EcInitialHarvester
 from ckanext.glasgow.tests import run_mock_ec
 
 
@@ -38,13 +38,13 @@ class TestDatasetCreate(object):
         helpers.reset_db()
 
     def test_create_orgs(self):
-        harvester = EcHarvester()
+        harvester = EcInitialHarvester()
         job = HarvestJobFactory()
         orgs = harvester._create_orgs(job)
         nt.assert_equals(len(orgs), 3)
 
     def test_gather(self):
-        harvester = EcHarvester()
+        harvester = EcInitialHarvester()
         job = HarvestJobFactory()
         harvester.gather_stage(job)
 
@@ -58,7 +58,7 @@ class TestDatasetCreate(object):
         req.status_code = 500
         m.return_value = req
 
-        harvester = EcHarvester()
+        harvester = EcInitialHarvester()
         job = HarvestJobFactory()
         
         nt.assert_equals(False, harvester.gather_stage(job))
@@ -76,13 +76,13 @@ class TestDatasetCreate(object):
         '''
         m.return_value = req
 
-        harvester = EcHarvester()
+        harvester = EcInitialHarvester()
         job = HarvestJobFactory()
         
         nt.assert_equals(False, harvester.gather_stage(job))
 
     def test_import(self):
-        harvester = EcHarvester()
+        harvester = EcInitialHarvester()
         job = HarvestJobFactory()
         org = factories.Organization(name='test-org-2')
         harvest_object = harvest_model.HarvestObject(

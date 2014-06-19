@@ -20,7 +20,7 @@ import ckanext.glasgow.logic.schema as glasgow_schema
 log = logging.getLogger(__name__)
 
 
-class EcHarvester(HarvesterBase):
+class EcInitialHarvester(HarvesterBase):
 
     def _get_object_extra(self, harvest_object, key):
         '''
@@ -118,8 +118,8 @@ class EcHarvester(HarvesterBase):
     def info(self):
         return {
             'name': 'ec_orgs',
-            'title': 'EC Organization Harvester',
-            'description': 'Harvester for EC Platform for Glasgow Project',
+            'title': 'EC Initial Import Harvester',
+            'description': 'Harvester for initial import of Glasgow Project',
 
         }
 
