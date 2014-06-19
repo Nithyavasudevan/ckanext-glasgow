@@ -81,6 +81,52 @@ class TestDatasetCreate(object):
         
         nt.assert_equals(False, harvester.gather_stage(job))
 
+    def test_fetch(self):
+        harvester = EcInitialHarvester()
+        job = HarvestJobFactory()
+        org = factories.Organization(name='test-org-1')
+
+        harvest_object = harvest_model.HarvestObject(
+            guid='3',
+            job=job,
+            extras=[harvest_model.HarvestObjectExtra(
+                key='owner_org', value=org['id'])],
+            content=json.dumps({
+                "Id": 3,
+                "Metadata": {
+                    "Category": "debitis",
+                    "Description": "Sint perspiciatis et dolorem. Consectetur impedit porro omnis nisi adipisci eum rerum tenetur. Voluptate accusamus praesentium autem molestiae possimus a quibusdam harum.",
+                    "License": "http://mayert.us/gibsondickinson/dicki.html",
+                    "MaintainerContact": "nova_windler@swift.uk",
+                    "MaintainerName": "Marge Conn",
+                    "OpennessRating": "0",
+                    "PublishedOnBehalfOf": "Ms. Gloria Bode",
+                    "Quality": "3",
+                    "StandardName": "Iste maxime ad non ea",
+                    "StandardRating": "4",
+                    "StandardVersion": "4.4.0",
+                    "Tags": "beatae consequatur sunt ducimus mollitia",
+                    "Title": "Raj Data Set 001",
+                    "Theme": "assumenda",
+                    "UsageGuidance": "Sed magnam labore voluptatem accusamus aut dicta eos et. Et omnis aliquam fugit sed iusto. Consectetur esse et tempora."
+                    },
+                "CreatedTime": "2014-06-09T14:08:08.78",
+                "ModifiedTime": "2014-06-09T14:08:08.78",
+                "OrganisationId": 1,
+                "Title": "Raj Data Set 001"
+                }))
+        harvest_object.save()
+        harvester.fetch_stage(harvest_object)
+
+        file_extras = [e for e in harvest_object.extras if e.key == 'file']
+        nt.assert_equals(len(file_extras), 2)
+        
+        # TODO: split into seperate test
+        harvester.import_stage(harvest_object)
+        pkg = helpers.call_action('package_show', name_or_id=harvest_object.package_id)
+
+        nt.assert_equals(len(pkg['resources']), 2)
+
     def test_import(self):
         harvester = EcInitialHarvester()
         job = HarvestJobFactory()

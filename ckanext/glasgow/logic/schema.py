@@ -62,6 +62,7 @@ ckan_to_ec_resource_mapping = {
     'standard_rating': 'StandardRating',
     'standard_version': 'StandardVersion',
     'creation_date': 'CreationDate',
+    'url': 'FileExternalUrl',
 }
 
 
@@ -208,6 +209,7 @@ def _modify_schema(schema):
     schema['ec_api_org_id'] = [ignore_missing, int_validator, unicode,
                                convert_to_extras]
 
+    schema['resources'] = resource_schema()
 
 def show_package_schema():
 

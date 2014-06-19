@@ -137,8 +137,6 @@ def request_file_update(organization_id, dataset_id):
 def request_datasets(org_id):
     skip = int(flask.request.args.get('$skip', 0))
     metadata_result_set = {
-        1: [],
-        2: [],
         4: [
             {
                 "Id": 3,
@@ -217,6 +215,75 @@ def request_datasets(org_id):
     res = metadata_result_set.get(org_id, [])
     return flask.jsonify(**{
         "MetadataResultSet": res[skip:],
+        "ErrorMessage": None,
+        "IsErrorResponse": False,
+        "IsRetryRequested": False
+        }
+    )
+
+
+@app.route('/Metadata/Organisation/<int:org_id>/Dataset/<int:dataset_id>/File',
+           methods=['GET'])
+def request_files(org_id, dataset_id):
+    skip = int(flask.request.args.get('$skip', 0))
+    metadata_result_set =  {
+        (1, 3): [
+            {
+                "CreatedTime": "2014-06-13T16:36:39.72",
+                "DataSetId": 3,
+                "FileId": "e2ef198d-26c8-41f1-9355-ac89f409de50",
+                "FileMetadata": {
+                    "CreationDate": "",
+                    "DataSetId": "3",
+                    "Description": "jg",
+                    "FileExternalUrl": "http://test.com/Download/Organisation/1/Dataset/4/File/e2ef198d-26c8-41f1-9355-ac89f409de50/Version/584732b0-7d46-4b52-929f-9b1e7533239b",
+                    "FileName": "test 964.txt",
+                    "FileUrl": "bc60abf7-d42b-412e-bacf-9c8523e2eee6/test 964.txt",
+                    "License": "",
+                    "OpennessRating": "",
+                    "Quality": "",
+                    "StandardName": "",
+                    "StandardRating": "",
+                    "StandardVersion": "",
+                    "Title": "NEw",
+                    "Type": "uyf"
+                },
+                "ModifiedTime": "0001-01-01T00:00:00",
+                "Status": 0,
+                "Title": "NEw",
+                "Version": "584732b0-7d46-4b52-929f-9b1e7533239b"
+            },
+            {
+                "CreatedTime": "2014-06-13T11:26:24.6",
+                "DataSetId": 3,
+                "FileId": "f82379eb-aa2f-497b-aa51-b4f931a5e06d",
+                "FileMetadata": {
+                    "CreationDate": "1965-04-06T06:28:22",
+                    "DataSetId": "3",
+                    "Description": "Et nam qui quam. Ullam nam ducimus eaque similique laborum et nihil qui. Perspiciatis eum id earum. Eveniet fugiat ut aut quod mollitia. Sint magni architecto similique quibusdam suscipit et eaque.",
+                    "FileExternalUrl": "http://test.com/Download/Organisation/1/Dataset/4/File/f82379eb-aa2f-497b-aa51-b4f931a5e06d/Version/727b1018-0d4b-405e-b96b-2417850d59e7",
+                    "FileName": "beatae.magni",
+                    "FileUrl": "7f18dfcd-9802-4656-95fe-20e09df3c16c/beatae.magni",
+                    "License": "http://beattyharber.info/rohanreynolds/jenkinskutch.html",
+                    "OpennessRating": "1",
+                    "Quality": "0",
+                    "StandardName": "Molestiae est possimus rem amet reprehenderit",
+                    "StandardRating": "0",
+                    "StandardVersion": "7.7.62",
+                    "Title": "Aliquam dolorum voluptatem ipsam delectus repellat vel sunt",
+                    "Type": "pfefferjohnson/kunzeshields"
+                },
+                "ModifiedTime": "0001-01-01T00:00:00",
+                "Status": 0,
+                "Title": "Aliquam dolorum voluptatem ipsam delectus repellat vel sunt",
+                "Version": "727b1018-0d4b-405e-b96b-2417850d59e7"
+            }
+        ],
+    }
+
+    files = metadata_result_set.get((org_id, dataset_id), [])
+    return flask.jsonify(**{
+        "MetadataResultSet": files[skip:],
         "ErrorMessage": None,
         "IsErrorResponse": False,
         "IsRetryRequested": False

@@ -1,7 +1,6 @@
 import logging
 import json
 
-
 import dateutil.parser
 from pylons import config
 import requests
@@ -87,7 +86,10 @@ class EcInitialHarvester(HarvesterBase):
                             {'key': 'ec_api_id', 'value': org['Id']},
                         ]
                     }
-                    toolkit.get_action('organization_create')(context, data_dict)
+                    try:
+                        toolkit.get_action('organization_create')(context, data_dict)
+                    except toolkit.ValidationError:
+                        pass
 
             skip += len(orgs)
             request = requests.get(api_endpoint, params={'$skip': skip})
@@ -97,10 +99,9 @@ class EcInitialHarvester(HarvesterBase):
 
         return toolkit.get_action('organization_list')(context, {})
 
-    def _fetch_from_ec(self, harvest_job, request):
-
+    def _fetch_from_ec(self, harvest_job, request, error_handler):
         if request.status_code != 200:
-            self._save_gather_error(
+            error_handler(
                 'Unable to get content for URL: {0}:'.format(request.url),
                 harvest_job
             )
@@ -108,7 +109,7 @@ class EcInitialHarvester(HarvesterBase):
 
         result = json.loads(request.content)
         if result.get('IsErrorResponse', False):
-            self._save_gather_error(
+            error_handler(
                 'EC API Error: {0}:'.format(result.get('ErrorMessage', '')),
                 harvest_job
             )
@@ -157,7 +158,8 @@ class EcInitialHarvester(HarvesterBase):
 
             endpoint = api_endpoint.format(ec_api_org_id)
             request = requests.get(endpoint)
-            result = self._fetch_from_ec(harvest_job, request)
+            result = self._fetch_from_ec(harvest_job, request,
+                                         self._save_gather_error)
             if not result:
                 return False
 
@@ -184,7 +186,8 @@ class EcInitialHarvester(HarvesterBase):
                     params={'$skip': skip}
                 )
 
-                result = self._fetch_from_ec(harvest_job, request)
+                result = self._fetch_from_ec(harvest_job, request,
+                                             self._save_gather_error)
                 if not result:
                     return False
 
@@ -193,6 +196,37 @@ class EcInitialHarvester(HarvesterBase):
         return harvest_object_ids
 
     def fetch_stage(self, harvest_object):
+        api_url = config.get('ckanext.glasgow.read_ec_api', '').rstrip('/')
+        # NB: this end point does not seem to support the $skip parameter
+        api_endpoint = api_url + '/Metadata/Organisation/{0}/Dataset/{1}/File'
+
+        try:
+            content = json.loads(harvest_object.content)
+            org = content['OrganisationId']
+            dataset = content['Id']
+            request = requests.get(api_endpoint.format(org, dataset))
+
+        except requests.exception.RequestException, e:
+            self._save_object_error('Error fetching file metadata for package %s: %r' % (harvest_object.guid, e.error_dict), harvest_object, 'Import')
+            return False
+        except ValueError:
+            self._save_object_error('Could not load json when fetching file metada for package %s: %r' % (harvest_object.guid, e.error_dict), harvest_object, 'Import')
+            return False
+
+
+        result = self._fetch_from_ec(harvest_object, request,
+                                     self._save_object_error)
+        if not result:
+            return False
+
+        for file_metadata in result['MetadataResultSet']:
+            #create harvest object extra for each file
+            ckan_dict = glasgow_schema.convert_ec_file_to_ckan_resource(
+                file_metadata['FileMetadata'])
+            harvest_object.extras.append(
+                HarvestObjectExtra(key='file', value=json.dumps(ckan_dict))
+            )
+        harvest_object.save()
         return True
 
     def import_stage(self, harvest_object):
@@ -225,8 +259,30 @@ class EcInitialHarvester(HarvesterBase):
         try:
             owner_org = self._get_object_extra(harvest_object, 'owner_org')
             ckan_data_dict['owner_org'] = owner_org
-            pkg = toolkit.get_action('package_create')(context,
-                                                       ckan_data_dict)
+
+
+            try:
+                pkg = toolkit.get_action('package_create')(context,
+                                                           ckan_data_dict)
+            except toolkit.ValidationError, e:
+                self._save_object_error('Error saving package %s: %r' % (harvest_object.guid, e.error_dict), harvest_object, 'Import')
+                return False
+
+            resources = []
+            for extra in harvest_object.extras:
+                if extra.key == 'file':
+                    res_dict = json.loads(extra.value)
+                    res_dict['package_id'] = pkg['id']
+                    resources.append(res_dict)
+
+            pkg['resources'] = resources
+            try:
+                toolkit.get_action('package_update')(context, pkg)
+            except toolkit.ValidationError, e:
+                self._save_object_error('Error saving resources for package %s: %r' % (harvest_object.guid, e.error_dict), harvest_object, 'Import')
+                return False
+
+
 
             from ckanext.harvest.model import harvest_object_table
             conn = model.Session.connection()
