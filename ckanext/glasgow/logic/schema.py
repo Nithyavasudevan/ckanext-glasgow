@@ -15,6 +15,7 @@ from ckanext.glasgow.logic.validators import (
     trim_string,
     iso_date,
     no_pending_dataset_with_same_name,
+    url_or_upload_not_empty,
 )
 
 
@@ -62,7 +63,7 @@ ckan_to_ec_resource_mapping = {
     'standard_rating': 'StandardRating',
     'standard_version': 'StandardVersion',
     'creation_date': 'CreationDate',
-    'url': 'FileExternalUrl',
+    'url': 'ExternalUrl',
 }
 
 
@@ -211,6 +212,7 @@ def _modify_schema(schema):
 
     schema['resources'] = resource_schema()
 
+
 def show_package_schema():
 
     schema = default_show_package_schema()
@@ -258,10 +260,11 @@ def resource_schema():
 
     schema['format'] = [not_empty, string_max_length(255), unicode]
 
-    # Optional fields
+    schema['url'] = [url_or_upload_not_empty, unicode]
 
-    # TODO: sort this vs uploads
-    schema['url'] = [ignore_missing, unicode]
+    schema['upload'] = [url_or_upload_not_empty]
+
+    # Optional fields
 
     schema['license_id'] = [ignore_missing, unicode]
 

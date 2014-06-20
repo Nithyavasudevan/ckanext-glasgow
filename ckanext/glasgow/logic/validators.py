@@ -1,3 +1,4 @@
+import cgi
 import datetime
 
 from dateutil.parser import parse as date_parser
@@ -160,3 +161,24 @@ def iso_date(value, context):
     except ValueError:
         raise Invalid(_('Invalid date'))
     return date_value.isoformat()
+
+
+def url_or_upload_not_empty(key, data, errors, context):
+
+    check_url = (key == ('url', )
+                 and not data.get(('url', ))
+                 and not isinstance(data.get(('upload', )), cgi.FieldStorage))
+
+    check_upload = (key == ('upload', )
+                    and not isinstance(data.get(('upload', )),
+                                       cgi.FieldStorage)
+                    and not data.get(('url', )))
+
+    check_none = (not isinstance(data.get(('upload', )), cgi.FieldStorage)
+                  and not data.get(('url', )))
+
+    check_both = (isinstance(data.get(('upload', )), cgi.FieldStorage)
+                  and data.get(('url', )))
+
+    if (check_url or check_upload or check_none or check_both):
+        raise Invalid(_('Please provide either a file upload or a URL'))

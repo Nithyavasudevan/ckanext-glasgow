@@ -386,6 +386,8 @@ def handle_dataset_request(organization_id):
 
 def handle_file_request(organization_id, dataset_id):
 
+    # TODO: handle external url case
+
     if app.debug:
         app.logger.debug('Headers received:\n{0}'
                          .format(flask.request.headers))

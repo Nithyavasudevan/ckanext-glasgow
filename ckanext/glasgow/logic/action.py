@@ -408,19 +408,12 @@ def file_request_create(context, data_dict):
     if errors:
         raise p.toolkit.ValidationError(errors)
 
-    if 'upload' not in data_dict:
-        raise p.toolkit.ValidationError({'upload': ['No file uploaded']})
-
-    if not isinstance(data_dict.get('upload'), cgi.FieldStorage):
-        raise p.toolkit.ValidationError({'upload': ['Wrong file provided']})
-
     # Get parent org and dataset EC API ids
 
     ec_api_org_id = validated_data_dict.get('ec_api_org_id') or \
                     _get_ec_api_org_id(dataset_dict['owner_org'])
     ec_api_dataset_id = validated_data_dict.get('ec_api_dataset_id') or \
                     dataset_dict['ec_api_id']
-
 
     if not ec_api_org_id:
         raise p.toolkit.ValidationError(
@@ -433,6 +426,8 @@ def file_request_create(context, data_dict):
 
     key = '{0}@{1}'.format(validated_data_dict.get('package_id', 'file'),
                            datetime.datetime.now().isoformat())
+
+    uploaded_file = validated_data_dict.pop('upload', None)
     task_dict = _create_task_status(context,
                                     task_type='file_request_create',
                                     entity_id=_make_uuid(),
@@ -463,9 +458,11 @@ def file_request_create(context, data_dict):
         'Authorization': _get_api_auth_token(),
     }
 
+    # TODO: Modify this once we know how MS handles the external url case
     files = {
-        'file': (data_dict['upload'].filename, data_dict['upload'].file)
-    }
+        'file': (uploaded_file.filename,
+                 uploaded_file.file)
+    } if uploaded_file is not None else None
 
     response = requests.request(method, url,
                                 data=data,
@@ -498,6 +495,7 @@ def file_request_create(context, data_dict):
     # Store data in task status table
 
     request_id = content.get('RequestId')
+
     task_dict = _update_task_status_success(context, task_dict, {
         'data_dict': validated_data_dict,
         'request_id': request_id,

@@ -1,3 +1,4 @@
+import cgi
 import nose
 import datetime
 
@@ -141,6 +142,74 @@ class TestValidators(object):
         for value in values:
             nose.tools.assert_raises(p.toolkit.Invalid,
                                      validators.iso_date, value, context)
+
+    def test_url_or_upload_not_empty_upload_only(self):
+
+        mock_upload = cgi.FieldStorage()
+        data = {
+            ('upload',): mock_upload,
+            ('url',): '',
+        }
+        errors = {}
+        context = {}
+
+        for key in (('upload', ), ('url', )):
+            validators.url_or_upload_not_empty(key, data, errors, context)
+
+    def test_url_or_upload_not_empty_url_only(self):
+
+        data = {
+            ('upload',): '',
+            ('url',): 'http://some.url',
+        }
+        errors = {}
+        context = {}
+
+        for key in (('upload', ), ('url', )):
+            validators.url_or_upload_not_empty(key, data, errors, context)
+
+    def test_url_or_upload_not_empty_upload_not_a_file(self):
+
+        data = {
+            ('upload',): 'text',
+            ('url',): '',
+        }
+        errors = {}
+        context = {}
+
+        for key in (('upload', ), ('url', )):
+            nose.tools.assert_raises(p.toolkit.Invalid,
+                                     validators.url_or_upload_not_empty,
+                                     key, data, errors, context)
+
+    def test_url_or_upload_not_empty_none(self):
+
+        data = {
+            ('upload',): '',
+            ('url',): '',
+        }
+        errors = {}
+        context = {}
+
+        for key in (('upload', ), ('url', )):
+            nose.tools.assert_raises(p.toolkit.Invalid,
+                                     validators.url_or_upload_not_empty,
+                                     key, data, errors, context)
+
+    def test_url_or_upload_not_empty_both(self):
+
+        mock_upload = cgi.FieldStorage()
+        data = {
+            ('upload',): mock_upload,
+            ('url',): 'http://some.url',
+        }
+        errors = {}
+        context = {}
+
+        for key in (('upload', ), ('url', )):
+            nose.tools.assert_raises(p.toolkit.Invalid,
+                                     validators.url_or_upload_not_empty,
+                                     key, data, errors, context)
 
 
 class TestNameValidators(object):

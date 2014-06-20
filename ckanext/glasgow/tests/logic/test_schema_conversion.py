@@ -103,7 +103,7 @@ class TestSchemaConversion(object):
 
         ec_dict = custom_schema.convert_ckan_dataset_to_ec_dataset(ckan_dict)
 
-        assert not 'Title' in ec_dict
+        assert 'Title' not in ec_dict
 
     def test_convert_ec_dataset_to_ckan_dataset_missing_fields(self):
 
@@ -112,13 +112,14 @@ class TestSchemaConversion(object):
 
         ckan_dict = custom_schema.convert_ec_dataset_to_ckan_dataset(ec_dict)
 
-        assert not 'title' in ec_dict
+        assert 'title' not in ec_dict
 
     def test_convert_ckan_resource_to_ec_file(self):
 
         ckan_dict = {
             'package_id': 'test-dataset-id',
             'name': 'Test File name',
+            'url': 'http://some.file.com',
             'description': 'Some longer description',
             'format': 'application/csv',
             'license_id': 'uk-ogl',
@@ -138,6 +139,7 @@ class TestSchemaConversion(object):
         eq_(ec_dict['Id'], 2)
         eq_(ec_dict['DatasetId'], 1)
         eq_(ec_dict['Title'], 'Test File name')
+        eq_(ec_dict['ExternalUrl'], 'http://some.file.com')
         eq_(ec_dict['Description'], 'Some longer description')
         eq_(ec_dict['Type'], 'application/csv')
         eq_(ec_dict['License'], 'uk-ogl')
@@ -184,6 +186,7 @@ class TestSchemaConversion(object):
         ckan_dict = {
             'package_id': 'test_dataset',
             'name': 'Test File name',
+            'url': 'http://some.file.com',
             'description': 'Some longer description',
             'format': 'application/csv',
             'license_id': 'uk-ogl',
@@ -202,6 +205,7 @@ class TestSchemaConversion(object):
         eq_(ec_dict['Id'], 2)
         eq_(ec_dict['DatasetId'], '4')
         eq_(ec_dict['Title'], 'Test File name')
+        eq_(ec_dict['ExternalUrl'], 'http://some.file.com')
         eq_(ec_dict['Description'], 'Some longer description')
         eq_(ec_dict['Type'], 'application/csv')
         eq_(ec_dict['License'], 'uk-ogl')
@@ -221,6 +225,7 @@ class TestSchemaConversion(object):
             'DatasetId': 1,
             'Title': 'Test File name',
             'Description': 'Some longer description',
+            'ExternalUrl': 'http://some.file.com',
             'Type': 'application/csv',
             'License': 'uk-ogl',
             'OpennessRating': 3,
@@ -237,6 +242,7 @@ class TestSchemaConversion(object):
         eq_(ckan_dict['ec_api_dataset_id'], 1)
         eq_(ckan_dict['name'], 'Test File name')
         eq_(ckan_dict['description'], 'Some longer description')
+        eq_(ckan_dict['url'], 'http://some.file.com')
         eq_(ckan_dict['format'], 'application/csv')
         eq_(ckan_dict['license_id'], 'uk-ogl')
         eq_(ckan_dict['openness_rating'], 3)
@@ -253,7 +259,7 @@ class TestSchemaConversion(object):
 
         ec_dict = custom_schema.convert_ckan_resource_to_ec_file(ckan_dict)
 
-        assert not 'Title' in ec_dict
+        assert 'Title' not in ec_dict
 
     def test_convert_ec_file_to_ckan_resource_missing_fields(self):
 
@@ -262,4 +268,4 @@ class TestSchemaConversion(object):
 
         ckan_dict = custom_schema.convert_ec_dataset_to_ckan_dataset(ec_dict)
 
-        assert not 'name' in ec_dict
+        assert 'name' not in ec_dict
