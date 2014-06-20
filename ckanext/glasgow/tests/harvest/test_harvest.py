@@ -9,7 +9,8 @@ import ckan.new_tests.factories as factories
 import ckanext.harvest.model as harvest_model
 from ckanext.harvest.tests.factories import HarvestJobFactory
 
-from ckanext.glasgow.harvesters.ec_harvester import EcInitialHarvester
+from ckanext.glasgow.harvesters.ec_harvester import (
+    EcInitialHarvester, EcApiException)
 from ckanext.glasgow.tests import run_mock_ec
 
 
@@ -39,9 +40,64 @@ class TestDatasetCreate(object):
 
     def test_create_orgs(self):
         harvester = EcInitialHarvester()
-        job = HarvestJobFactory()
-        orgs = harvester._create_orgs(job)
+        orgs = harvester._create_orgs()
         nt.assert_equals(len(orgs), 3)
+
+    @mock.patch('requests.get')
+    def test_create_orgs_bad_response(self, m):
+        # setup a mock for requests.get that returns an object
+        # with a status_code of 500
+        req = mock.MagicMock()
+        req.status_code = 500
+        m.return_value = req
+        harvester = EcInitialHarvester()
+        nt.assert_raises(
+            EcApiException,
+            harvester._create_orgs)
+
+    @mock.patch('requests.get')
+    def test_create_orgs_non_json_response(self, m):
+        req = mock.MagicMock()
+        req.status_code = 200
+        req.content = '<html>not json</html>'
+        m.return_value = req
+        harvester = EcInitialHarvester()
+        nt.assert_raises(
+            EcApiException,
+            harvester._create_orgs)
+
+    @mock.patch('requests.get')
+    def test_create_orgs_api_error(self, m):
+        req = mock.MagicMock()
+        req.status_code = 200
+        req.content = '''{
+            "IsRetryRequested": false,
+            "ErrorMessage": "an error occured",
+            "IsErrorResponse": true,
+            "MetadataResultSet": []}
+        '''
+        m.return_value = req
+        harvester = EcInitialHarvester()
+        nt.assert_raises(
+            EcApiException,
+            harvester._create_orgs)
+
+    @mock.patch('requests.get')
+    def test_create_orgs_no_metadataresultset(self, m):
+        # setup a mock for requests.get that returns an object
+        # with a status_code of 500
+        req = mock.MagicMock()
+        req.status_code = 200
+        req.content = '''{
+            "IsRetryRequested": false,
+            "ErrorMessage": "an error occured",
+            "IsErrorResponse": true}
+        '''
+        m.return_value = req
+        harvester = EcInitialHarvester()
+        nt.assert_raises(
+            EcApiException,
+            harvester._create_orgs)
 
     def test_gather(self):
         harvester = EcInitialHarvester()
