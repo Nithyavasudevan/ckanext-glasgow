@@ -46,14 +46,15 @@ def ec_api(endpoint):
         request = requests.get(endpoint, params={'$skip': skip})
         result = _fetch_from_ec(request)
 
+        if not result.get('MetadataResultSet'):
+            raise StopIteration
+
         try:
             for i in result['MetadataResultSet']:
                 yield i
         except KeyError:
             raise EcApiException('No MetadataResultSet in JSON response')
 
-        if not result['MetadataResultSet']:
-            raise StopIteration
 
         skip += len(result['MetadataResultSet'])
 
