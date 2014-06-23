@@ -82,25 +82,36 @@ class EcInitialHarvester(HarvesterBase):
     def _create_orgs(self):
         api_url = config.get('ckanext.glasgow.read_ec_api', '').rstrip('/')
         api_endpoint = '{0}/Metadata/Organisation'.format(api_url)
-
+        done = []
+        duplicates = []
         for org in ec_api(api_endpoint):
             context = {
                 'model': model,
                 'session': model.Session,
                 'user': self._get_site_user()['name']
             }
+            org_name = slugify.slugify(org['Title'])
             data_dict = {
                 'title': org['Title'],
-                'name': slugify.slugify(org['Title']),
+                'name': org_name,
                 'extras': [
                     {'key': 'ec_api_id', 'value': org['Id']},
                 ]
             }
             try:
-                toolkit.get_action('organization_create')(context, data_dict)
-            except toolkit.ValidationError:
-                pass
+                if org['Title'] in done:
+                    duplicates.append(org['Title'])
 
+                toolkit.get_action('organization_show')(context, {'id': org_name})
+                log.debug('Organization {0} ({1}) exists, skipping...'.format(org['Title'], org_name))
+                done.append(org['Title'])
+
+            except toolkit.ObjectNotFound:
+                try:
+                    toolkit.get_action('organization_create')(context, data_dict)
+                except toolkit.ValidationError:
+                    pass
+        log.warn('Duplicate Organizations found: {0}'.format(', '.join(duplicates)))
         return toolkit.get_action('organization_list')(context, {})
 
     def info(self):
