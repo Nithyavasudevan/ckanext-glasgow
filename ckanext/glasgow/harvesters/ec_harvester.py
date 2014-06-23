@@ -160,22 +160,18 @@ class EcInitialHarvester(HarvesterBase):
                 endpoint = api_endpoint.format(ec_api_org_id)
 
                 for dataset in ec_api(endpoint):
-                    modified = dup.parse(dataset.get('ModifiedTime'))
 
-                    if (not previous_job or not modified
-                            or modified > previous_job.gather_finished):
+                    harvest_object = HarvestObject(
+                        guid=dataset['Id'],
+                        content=json.dumps(dataset),
+                        job=harvest_job,
+                        # Add reference to CKAN org to use on import stage
+                        extras=[HarvestObjectExtra(
+                            key='owner_org', value=org['id'])]
+                    )
 
-                        harvest_object = HarvestObject(
-                            guid=dataset['Id'],
-                            content=json.dumps(dataset),
-                            job=harvest_job,
-                            # Add reference to CKAN org to use on import stage
-                            extras=[HarvestObjectExtra(
-                                key='owner_org', value=org['id'])]
-                        )
-
-                        harvest_object.save()
-                        harvest_object_ids.append(harvest_object.id)
+                    harvest_object.save()
+                    harvest_object_ids.append(harvest_object.id)
 
         except EcApiException, e:
             self._save_gather_error(e.message, harvest_job)
@@ -217,6 +213,9 @@ class EcInitialHarvester(HarvesterBase):
             # create harvest object extra for each file
             ckan_dict = glasgow_schema.convert_ec_file_to_ckan_resource(
                 file_metadata['FileMetadata'])
+            #TODO: This needs to be removed once MS api is using the proper ExternalURL field
+            if not ckan_dict.get('url') and file_metadata['FileMetadata'].get('FileExternalUrl'):
+                ckan_dict['url'] = file_metadata['FileMetadata'].get('FileExternalUrl')
             harvest_object.extras.append(
                 HarvestObjectExtra(key='file', value=json.dumps(ckan_dict))
             )
@@ -253,35 +252,61 @@ class EcInitialHarvester(HarvesterBase):
 
         try:
             owner_org = self._get_object_extra(harvest_object, 'owner_org')
+
             ckan_data_dict['owner_org'] = owner_org
 
+
             try:
-                pkg = toolkit.get_action('package_create')(context,
-                                                           ckan_data_dict)
-            except toolkit.ValidationError, e:
-                self._save_object_error('Error saving package {0}: {1}'.format(
-                    harvest_object.guid, e.error_dict),
-                    harvest_object, 'Import')
-                return False
+                pkg = toolkit.get_action('package_show')(context, {'id': ckan_data_dict['name']})
+
+                try:
+                    resources = []
+                    for extra in harvest_object.extras:
+                        if extra.key == 'file':
+                            res_dict = json.loads(extra.value)
+                            res_dict['package_id'] = pkg['id']
+                            resources.append(res_dict)
+
+                    ckan_data_dict['resources'] = resources
+
+                    log.debug('Dataset {0} ({1}) exists and needs to be updated,'.format(
+                                ckan_data_dict['title'], ckan_data_dict['name']))
+                    toolkit.get_action('package_update')(context, ckan_data_dict)
+                except toolkit.ValidationError, e:
+                    self._save_object_error(
+                        'Error saving resources for package {0}: {1}'.format(
+                            harvest_object.guid, e.error_dict),
+                        harvest_object,
+                        'Import'
+                    )
+                    return False
+                else:
+                    log.debug('Dataset {0} ({1}) unchanged, skipping...'.format(
+                                ckan_data_dict['title'], ckan_data_dict['name']))
+
+            except toolkit.ObjectNotFound:
+                log.debug('Dataset {0} ({1}) does not exist, creating it...'.format(ckan_data_dict['title'], ckan_data_dict['name']))
+                resources = []
+                for extra in harvest_object.extras:
+                    if extra.key == 'file':
+                        res_dict = json.loads(extra.value)
+                        res_dict['package_id'] = ckan_data_dict['name']
+                        resources.append(res_dict)
+
+                ckan_data_dict['resources'] = resources
+
+                # See ckan/ckanext-harvest#84
+                context.pop('__auth_audit', None)
+                try:
+                    pkg = toolkit.get_action('package_create')(context,
+                                                               ckan_data_dict)
+                except toolkit.ValidationError, e:
+                    self._save_object_error('Error saving package {0}: {1}'.format(
+                        harvest_object.guid, e.error_dict),
+                        harvest_object, 'Import')
+                    return False
 
             resources = []
-            for extra in harvest_object.extras:
-                if extra.key == 'file':
-                    res_dict = json.loads(extra.value)
-                    res_dict['package_id'] = pkg['id']
-                    resources.append(res_dict)
-
-            pkg['resources'] = resources
-            try:
-                toolkit.get_action('package_update')(context, pkg)
-            except toolkit.ValidationError, e:
-                self._save_object_error(
-                    'Error saving resources for package {0}: {1}'.format(
-                        harvest_object.guid, e.error_dict),
-                    harvest_object,
-                    'Import'
-                )
-                return False
 
             from ckanext.harvest.model import harvest_object_table
             conn = model.Session.connection()
