@@ -55,7 +55,6 @@ def ec_api(endpoint):
         except KeyError:
             raise EcApiException('No MetadataResultSet in JSON response')
 
-
         skip += len(result['MetadataResultSet'])
 
 
@@ -242,13 +241,16 @@ class EcInitialHarvester(HarvesterBase):
             ec_data_dict.get('Metadata', {}))
         ckan_data_dict['__local_action'] = True
 
-        # double check name
-        if 'name' not in ckan_data_dict:
-            ckan_data_dict['name'] = slugify.slugify(ec_data_dict['Title'])
-
         # Add EC APU ids
         ckan_data_dict['ec_api_org_id'] = ec_data_dict['OrganisationId']
         ckan_data_dict['ec_api_id'] = ec_data_dict['Id']
+
+        # double check name
+        if 'name' not in ckan_data_dict:
+            org_id = str(ckan_data_dict['ec_api_org_id'])
+            ckan_data_dict['name'] = slugify.slugify(
+                '-'.join([ec_data_dict['Title'][:100-len(org_id)], org_id])
+            )
 
         try:
             owner_org = self._get_object_extra(harvest_object, 'owner_org')
