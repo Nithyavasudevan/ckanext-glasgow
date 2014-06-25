@@ -483,9 +483,18 @@ def file_request_create(context, data_dict):
         error_dict = {
             'message': ['The CTPEC API returned an error code'],
             'status': [status_code],
-            'content': [content]
+            'content': [content],
         }
-        task_dict = _update_task_status_error(context, task_dict, error_dict)
+        # Log the details of the request to the error_dict when
+        # stored to the task_status.
+        task_error_dict = error_dict.copy()
+        task_error_dict.update({
+            'data': data,
+            'url': [url],
+            'headers': headers,
+        })
+        task_dict = _update_task_status_error(context, task_dict,
+                                              task_error_dict)
 
         if status_code == 401:
             raise ECAPINotAuthorized(error_dict)
