@@ -218,7 +218,7 @@ class TestDatasetCreate(object):
                 }))
         harvest_object.save()
         harvester.import_stage(harvest_object)
-        pkg = helpers.call_action('package_show', name_or_id=u'raj-data-set-001')
+        pkg = helpers.call_action('package_show', name_or_id=u'raj-data-set-001-4')
         nt.assert_equals(pkg['title'], u'Raj Data Set 001')
 
         nt.assert_equals(pkg['ec_api_id'], u'3')
@@ -226,4 +226,4 @@ class TestDatasetCreate(object):
 
         org = helpers.call_action('organization_show', id=u'test-org-2')
         nt.assert_equals(len(org['packages']), 1)
-        nt.assert_equals(org['packages'][0]['name'], u'raj-data-set-001')
+        nt.assert_equals(org['packages'][0]['name'], u'raj-data-set-001-4')

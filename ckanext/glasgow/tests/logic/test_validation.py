@@ -101,12 +101,13 @@ class TestDatasetValidation(object):
         data, errors = validate(data_dict, create_dataset_schema, context)
 
         eq_(sorted(errors.keys()), ['license_id', 'maintainer',
-            'maintainer_email', 'name', 'notes', 'openness_rating', 
-                'owner_org', 'quality', 'title'])
+            'maintainer_email', 'name', 'notes', 'openness_rating',
+                                    'owner_org', 'quality', 'title'])
 
         for k, v in errors.iteritems():
             if k == 'owner_org':
-                eq_(errors[k], ['A organization must be supplied', 'Missing value'])
+                eq_(errors[k], ['A organization must be supplied',
+                                'Missing value'])
             else:
                 eq_(errors[k], ['Missing value'])
 
@@ -285,6 +286,7 @@ class TestResourceValidation(object):
         data_dict = {
             'package_id': 'test_dataset_id',
             'name': 'Test File name',
+            'url': 'http://some.file.org',
             'description': 'Some longer description',
             'format': 'application/csv',
             'license_id': 'uk-ogl',
@@ -317,16 +319,21 @@ class TestResourceValidation(object):
         data, errors = validate(data_dict, resource_schema, context)
 
         eq_(sorted(errors.keys()), ['description', 'format', 'name',
-                                    'package_id'])
+                                    'package_id', 'upload', 'url'])
 
         for k, v in errors.iteritems():
-            eq_(errors[k], ['Missing value'])
+            if k not in ('upload', 'url'):
+                eq_(errors[k], ['Missing value'])
+            else:
+                eq_(errors[k],
+                    ['Please provide either a file upload or a URL'])
 
     def test_create_only_mandatory_fields(self):
 
         data_dict = {
             'package_id': 'test_dataset_id',
             'name': 'Test File name',
+            'url': 'http://some.file.org',
             'description': 'Some longer description',
             'format': 'application/csv',
         }
@@ -343,6 +350,7 @@ class TestResourceValidation(object):
         data_dict = {
             'package_id': 'test_dataset_id',
             'name': 'a' * 256,
+            'url': 'http://some.file.org',
             'description': 'Some longer descripiton',
             'format': 'a' * 256,
             'maintainer': 'a' * 256,
@@ -365,6 +373,7 @@ class TestResourceValidation(object):
         data_dict = {
             'package_id': 'test_dataset_id',
             'name': 'Test File name',
+            'url': 'http://some.file.org',
             'description': 'a' * 4001,
             'format': 'application/csv',
             'license_id': 'uk-ogl',
@@ -388,6 +397,7 @@ class TestResourceValidation(object):
         data_dict = {
             'package_id': 'test_dataset_id',
             'name': 'Test File name',
+            'url': 'http://some.file.org',
             'description': 'Some longer description',
             'format': 'application/csv',
             'license_id': 'uk-ogl',
@@ -415,6 +425,7 @@ class TestResourceValidation(object):
         data_dict = {
             'package_id': 'test_dataset_id',
             'name': 'Test File name',
+            'url': 'http://some.file.org',
             'description': 'Some longer description',
             'format': 'application/csv',
             'license_id': 'uk-ogl',

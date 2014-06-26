@@ -260,9 +260,9 @@ def resource_schema():
 
     schema['format'] = [not_empty, string_max_length(255), unicode]
 
-    schema['url'] = [url_or_upload_not_empty, unicode]
+    schema['url'] = [url_or_upload_not_empty, ignore_missing, unicode]
 
-    schema['upload'] = [url_or_upload_not_empty]
+    schema['upload'] = [url_or_upload_not_empty, ignore_missing]
 
     # Optional fields
 

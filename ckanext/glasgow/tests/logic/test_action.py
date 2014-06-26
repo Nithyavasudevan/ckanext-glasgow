@@ -491,6 +491,33 @@ class TestFileCreate(object):
         assert 'task_id' in request_dict
         assert 'request_id' in request_dict
 
+    def test_create_with_url(self):
+
+        data_dict = {
+            'dataset_id': self.dataset['id'],
+            'name': 'Test File name',
+            'url': 'http://some.file.org',
+            'description': 'Some longer description',
+            'format': 'application/csv',
+            'license_id': 'uk-ogl',
+            'openness_rating': 3,
+            'quality': 5,
+            'standard_name': 'Test standard name',
+            'standard_rating': 1,
+            'standard_version': 'Test standard version',
+            'creation_date': '2014-03-22T05:42:00',
+            'ec_api_id': 3,
+            'ec_api_dataset_id': 1,
+        }
+
+        context = {'user': self.normal_user['name']}
+        request_dict = helpers.call_action('file_request_create',
+                                           context=context,
+                                           **data_dict)
+
+        assert 'task_id' in request_dict
+        assert 'request_id' in request_dict
+
     def test_create_no_dataset_id(self):
 
         data_dict = {

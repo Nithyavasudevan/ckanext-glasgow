@@ -305,8 +305,6 @@ class EcInitialHarvester(HarvesterBase):
                         harvest_object, 'Import')
                     return False
 
-            resources = []
-
             from ckanext.harvest.model import harvest_object_table
             conn = model.Session.connection()
             u = update(

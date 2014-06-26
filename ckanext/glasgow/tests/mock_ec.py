@@ -386,7 +386,9 @@ def handle_dataset_request(organization_id):
 
 def handle_file_request(organization_id, dataset_id):
 
-    # TODO: handle external url case
+    ec_api_error_msg = ('The request is invalid. Content of type ' +
+                       'multipart/form-data is required. It must contain ' +
+                       'file content and file metadata parts')
 
     if app.debug:
         app.logger.debug('Headers received:\n{0}'
@@ -402,26 +404,10 @@ def handle_file_request(organization_id, dataset_id):
         response.status_code = 401
         return response
 
-    # Check for files
-    if not len(flask.request.files):
-        response = flask.jsonify(
-            # TODO: use actual message
-            Message='File Missing'
-        )
-        response.status_code = 400
-        return response
-
-    uploaded_file = flask.request.files.values()[0]
-    if app.debug:
-        app.logger.debug('File headers received:\n{0}'
-                         .format(uploaded_file.headers))
-
-    file_name = uploaded_file.filename
-
+    # Get metadata
     if not len(flask.request.form):
         response = flask.jsonify(
-            # TODO: use actual message
-            Message='Metadata Missing'
+            Message=ec_api_error_msg
         )
         response.status_code = 400
         return response
@@ -432,14 +418,29 @@ def handle_file_request(organization_id, dataset_id):
         metadata = json.loads(metadata_fields)
     except ValueError:
         response = flask.jsonify(
-            # TODO: use actual message
-            Message='Wrong File Metadata'
+            Message=ec_api_error_msg
         )
         response.status_code = 400
         return response
     if app.debug:
         app.logger.debug('File metadata received:\n{0}'
                          .format(metadata))
+
+    if not metadata.get('ExternalUrl'):
+        # Check for files
+        if not len(flask.request.files):
+            response = flask.jsonify(
+                Message=ec_api_error_msg
+            )
+            response.status_code = 400
+            return response
+
+        uploaded_file = flask.request.files.values()[0]
+        if app.debug:
+            app.logger.debug('File headers received:\n{0}'
+                             .format(uploaded_file.headers))
+
+        file_name = uploaded_file.filename
 
     for field in file_mandatory_fields:
         if not metadata.get(field):
