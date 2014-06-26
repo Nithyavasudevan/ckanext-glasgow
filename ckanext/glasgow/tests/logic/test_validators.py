@@ -143,6 +143,15 @@ class TestValidators(object):
             nose.tools.assert_raises(p.toolkit.Invalid,
                                      validators.iso_date, value, context)
 
+    def test_iso_date_empty(self):
+
+        value = ''
+        context = {}
+
+        new_value = validators.iso_date(value, context)
+
+        eq_(new_value, '')
+
     def test_url_or_upload_not_empty_upload_only(self):
 
         mock_upload = cgi.FieldStorage()

@@ -153,7 +153,8 @@ def iso_date(value, context):
         transformed to ISO 8601
 
     '''
-
+    if not value:
+        return value
     default_date = datetime.datetime(
         datetime.datetime.today().year, 1, 1, 0, 0, 0)
     try:
