@@ -282,9 +282,6 @@ class EcInitialHarvester(HarvesterBase):
                         'Import'
                     )
                     return False
-                else:
-                    log.debug('Dataset {0} ({1}) unchanged, skipping...'.format(
-                                ckan_data_dict['title'], ckan_data_dict['name']))
 
             except toolkit.ObjectNotFound:
                 log.debug('Dataset {0} ({1}) does not exist, creating it...'.format(ckan_data_dict['title'], ckan_data_dict['name']))
