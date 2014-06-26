@@ -352,7 +352,7 @@ def handle_dataset_request(organization_id):
     # Basic Validation
 
     for field in dataset_mandatory_fields:
-        if not data.get(field):
+        if not field in data:
             response = flask.jsonify(
                 Message='Missing fields',
                 ModelState={
@@ -363,7 +363,7 @@ def handle_dataset_request(organization_id):
             return response
 
     for field in dataset_fields_under_255_characters:
-        if data.get(field) and len(data.get(field, '')) > 255:
+        if field in data and len(data.get(field, '')) > 255:
             response = flask.jsonify(
                 Message='Field too long',
                 ModelState={

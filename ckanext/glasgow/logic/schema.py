@@ -72,7 +72,7 @@ def convert_ckan_dataset_to_ec_dataset(ckan_dict):
     ec_dict = {}
 
     for ckan_name, ec_name in ckan_to_ec_dataset_mapping.iteritems():
-        if ckan_name != 'tags' and ckan_dict.get(ckan_name):
+        if ckan_name != 'tags' and ckan_name in ckan_dict:
             ec_dict[ec_name] = ckan_dict.get(ckan_name)
 
     if ckan_dict.get('tags'):
@@ -89,7 +89,7 @@ def convert_ec_dataset_to_ckan_dataset(ec_dict):
     ckan_dict = {}
 
     for ckan_name, ec_name in ckan_to_ec_dataset_mapping.iteritems():
-        if ec_name != 'Tags' and ec_dict.get(ec_name):
+        if ec_name != 'Tags' and ec_name in ec_dict:
             ckan_dict[ckan_name] = ec_dict.get(ec_name)
 
     if ec_dict.get('Tags'):
