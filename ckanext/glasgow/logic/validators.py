@@ -165,20 +165,30 @@ def iso_date(value, context):
 
 def url_or_upload_not_empty(key, data, errors, context):
 
-    check_url = (key == ('url', )
-                 and not data.get(('url', ))
-                 and not isinstance(data.get(('upload', )), cgi.FieldStorage))
+    if len(key) == 1:
+        # Single resource
+        url_key = ('url', )
+        upload_key = ('upload', )
+    elif len(key) == 3:
+        # Part of a dataset
+        index = key[1]
+        url_key = ('resources', index, 'url')
+        upload_key = ('resources', index, 'upload')
 
-    check_upload = (key == ('upload', )
-                    and not isinstance(data.get(('upload', )),
+    check_url = (key == url_key
+                 and not data.get(url_key)
+                 and not isinstance(data.get(upload_key), cgi.FieldStorage))
+
+    check_upload = (key == upload_key
+                    and not isinstance(data.get(upload_key),
                                        cgi.FieldStorage)
-                    and not data.get(('url', )))
+                    and not data.get(url_key))
 
-    check_none = (not isinstance(data.get(('upload', )), cgi.FieldStorage)
-                  and not data.get(('url', )))
+    check_none = (not isinstance(data.get(upload_key), cgi.FieldStorage)
+                  and not data.get(url_key))
 
-    check_both = (isinstance(data.get(('upload', )), cgi.FieldStorage)
-                  and data.get(('url', )))
+    check_both = (isinstance(data.get(upload_key), cgi.FieldStorage)
+                  and data.get(url_key))
 
     if (check_url or check_upload or check_none or check_both):
         raise Invalid(_('Please provide either a file upload or a URL'))

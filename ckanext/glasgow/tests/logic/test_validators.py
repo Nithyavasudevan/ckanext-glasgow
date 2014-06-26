@@ -211,6 +211,73 @@ class TestValidators(object):
                                      validators.url_or_upload_not_empty,
                                      key, data, errors, context)
 
+    def test_url_or_upload_not_empty_upload_only_flattened(self):
+
+        mock_upload = cgi.FieldStorage()
+        data = {
+            ('resources', 0, 'upload'): mock_upload,
+            ('resources', 0, 'url'): '',
+        }
+        errors = {}
+        context = {}
+
+        for key in (('resources', 0, 'upload'), ('resources', 0, 'url')):
+            validators.url_or_upload_not_empty(key, data, errors, context)
+
+    def test_url_or_upload_not_empty_url_only_flattened(self):
+
+        data = {
+            ('resources', 0, 'upload'): '',
+            ('resources', 0, 'url'): 'http://some.url',
+        }
+        errors = {}
+        context = {}
+
+        for key in (('resources', 0, 'upload'), ('resources', 0, 'url')):
+            validators.url_or_upload_not_empty(key, data, errors, context)
+
+    def test_url_or_upload_not_empty_upload_not_a_file_flattened(self):
+
+        data = {
+            ('resources', 0, 'upload'): 'text',
+            ('resources', 0, 'url'): '',
+        }
+        errors = {}
+        context = {}
+
+        for key in (('resources', 0, 'upload'), ('resources', 0, 'url')):
+            nose.tools.assert_raises(p.toolkit.Invalid,
+                                     validators.url_or_upload_not_empty,
+                                     key, data, errors, context)
+
+    def test_url_or_upload_not_empty_none_flattened(self):
+
+        data = {
+            ('resources', 0, 'upload'): '',
+            ('resources', 0, 'url'): '',
+        }
+        errors = {}
+        context = {}
+
+        for key in (('resources', 0, 'upload'), ('resources', 0, 'url')):
+            nose.tools.assert_raises(p.toolkit.Invalid,
+                                     validators.url_or_upload_not_empty,
+                                     key, data, errors, context)
+
+    def test_url_or_upload_not_empty_both_flattened(self):
+
+        mock_upload = cgi.FieldStorage()
+        data = {
+            ('resources', 0, 'upload'): mock_upload,
+            ('resources', 0, 'url'): 'http://some.url',
+        }
+        errors = {}
+        context = {}
+
+        for key in (('resources', 0, 'upload'), ('resources', 0, 'url')):
+            nose.tools.assert_raises(p.toolkit.Invalid,
+                                     validators.url_or_upload_not_empty,
+                                     key, data, errors, context)
 
 class TestNameValidators(object):
 
