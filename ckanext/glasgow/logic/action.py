@@ -1,5 +1,4 @@
 import os
-import cgi
 import logging
 import json
 import datetime
@@ -111,7 +110,7 @@ def _get_api_endpoint(operation):
         path = '/Datasets/Organisation/{organization_id}'
     elif operation == 'dataset_request_update':
         method = 'PUT'
-        path = '/Datasets/Organisation/{organization_id}'
+        path = '/Datasets/Organisation/{organization_id}/Dataset/{dataset_id}'
     elif operation == 'file_request_create':
         method = 'POST'
         path = '/Files/Organisation/{organization_id}/Dataset/{dataset_id}'

@@ -116,10 +116,10 @@ def request_dataset_create(organization_id):
     return handle_dataset_request(organization_id)
 
 
-@app.route('/Datasets/Organisation/<int:organization_id>', methods=['PUT'])
-def request_dataset_update(organization_id):
+@app.route('/Datasets/Organisation/<int:organization_id>/Dataset/<int:dataset_id>', methods=['PUT'])
+def request_dataset_update(organization_id, dataset_id):
 
-    return handle_dataset_request(organization_id)
+    return handle_dataset_request(organization_id, dataset_id)
 
 
 @app.route('/Files/Organisation/<int:organization_id>/Dataset/<int:dataset_id>', methods=['POST'])

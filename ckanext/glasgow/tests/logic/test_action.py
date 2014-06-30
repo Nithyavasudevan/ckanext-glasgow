@@ -42,7 +42,7 @@ class TestGetAPIEndpoint(object):
         eq_(_get_api_endpoint('dataset_request_create'),
             ('POST', base_api + '/Datasets/Organisation/{organization_id}'))
         eq_(_get_api_endpoint('dataset_request_update'),
-            ('PUT', base_api + '/Datasets/Organisation/{organization_id}'))
+            ('PUT', base_api + '/Datasets/Organisation/{organization_id}/Dataset/{dataset_id}'))
         eq_(_get_api_endpoint('file_request_create'),
             ('POST', base_api + '/Files/Organisation/{organization_id}/Dataset/{dataset_id}'))
         eq_(_get_api_endpoint('file_request_update'),
