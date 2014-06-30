@@ -51,8 +51,8 @@ ckan_to_ec_dataset_mapping = {
 }
 
 ckan_to_ec_resource_mapping = {
-    'ec_api_id': 'Id',
-    'ec_api_dataset_id': 'DatasetId',
+    'ec_api_id': 'FileId',
+    'ec_api_dataset_id': 'DataSetId',
     'name': 'Title',
     'description': 'Description',
     'format': 'Type',
@@ -63,7 +63,7 @@ ckan_to_ec_resource_mapping = {
     'standard_rating': 'StandardRating',
     'standard_version': 'StandardVersion',
     'creation_date': 'CreationDate',
-    'url': 'ExternalUrl',
+    'url': 'FileExternalUrl',
 }
 
 
@@ -285,7 +285,7 @@ def resource_schema():
 
     # Internal fields
 
-    schema['ec_api_id'] = [ignore_missing, int_validator, unicode]
+    schema['ec_api_id'] = [ignore_missing, unicode]
 
     schema['ec_api_dataset_id'] = [ignore_missing, int_validator, unicode]
 

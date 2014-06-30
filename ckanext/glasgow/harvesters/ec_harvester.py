@@ -212,6 +212,10 @@ class EcInitialHarvester(HarvesterBase):
             # create harvest object extra for each file
             ckan_dict = glasgow_schema.convert_ec_file_to_ckan_resource(
                 file_metadata['FileMetadata'])
+
+            #TODO: make this part of convert_ec_file_to_ckan_resource?
+            ckan_dict['ec_api_id'] = file_metadata['FileId']
+
             #TODO: This needs to be removed once MS api is using the proper ExternalURL field
             if not ckan_dict.get('url') and file_metadata['FileMetadata'].get('FileExternalUrl'):
                 ckan_dict['url'] = file_metadata['FileMetadata'].get('FileExternalUrl')

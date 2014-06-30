@@ -323,6 +323,79 @@ def request_orgs():
         }
     )
 
+@app.route('/Metadata/Organisation/<org_id>/Dataset/<dataset_id>/File/<file_id>/Version',
+           methods=['GET'])
+def file_versions(org_id, dataset_id, file_id):
+    skip = int(flask.request.args.get('$skip', 0))
+    metadata_result_set = {
+        ('1', '1', '1'): [
+            {
+                "CreatedTime": "2014-06-13T09:23:27.763",
+                "DataSetId": 1,
+                "FileId": "1",
+                "FileMetadata": {
+                    "CreationDate": "1966-05-29T17:51:20",
+                    "DataSetId": "1",
+                    "Description": 'test_description',
+                    "FileExternalUrl": "http://test.com/Download/Organisation/1/Dataset/1/File/1/Version/3afb06b1-4331-4abd-b88e-055492e21bab",
+                    "FileName": "culpa.maxime",
+                    "FileUrl": "http://test.com",
+                    "License": "license",
+                    "OpennessRating": "1",
+                    "Quality": "2",
+                    "StandardName": "Accusamus aspernatur ut minima rem natus hic expedita voluptatibus",
+                    "StandardRating": "4",
+                    "StandardVersion": "7.4.30",
+                    "Title": "Voluptates ex non quo itaque est quidem praesentium",
+                    "Type": "leannonvonrueden/bechtelarfritsch"
+                },
+                "ModifiedTime": "0001-01-01T00:00:00",
+                "Status": 0,
+                "Title": "Voluptates ex non quo itaque est quidem praesentium",
+                "Version": "3afb06b1-4331-4abd-b88e-055492e21bab"
+            },
+            {
+                "CreatedTime": "2014-06-13T09:23:27.763",
+                "DataSetId": 1,
+                "FileId": "1",
+                "FileMetadata": {
+                    "CreationDate": "1966-05-29T17:51:20",
+                    "DataSetId": "1",
+                    "Description": 'test_description 2',
+                    "FileExternalUrl": "http://test.com/2",
+                    "FileName": "file 2",
+                    "FileUrl": "http://test.com.2",
+                    "License": "license",
+                    "OpennessRating": "2",
+                    "Quality": "2",
+                    "StandardName": "test 2",
+                    "StandardRating": "2",
+                    "StandardVersion": "7.4.30",
+                    "Title": "title 2",
+                    "Type": "type 2"
+                },
+                "ModifiedTime": "0001-01-01T00:00:00",
+                "Status": 0,
+                "Title": "Voluptates ex non quo itaque est quidem praesentium",
+                "Version": "44444444444-4444444-44"
+            }
+        ]
+    }
+
+    try:
+        #result = metadata_result_set[(org_id, dataset_id, file_id)]
+        result = metadata_result_set[('1', '1', '1')]
+    except KeyError:
+        flask.abort(400)
+
+    return flask.jsonify(**{
+        "MetadataResultSet": result[skip:],
+        "ErrorMessage": None,
+        "IsErrorResponse": False,
+        "IsRetryRequested": False
+        }
+    )
+
 
 def handle_dataset_request(organization_id):
     data = flask.request.json

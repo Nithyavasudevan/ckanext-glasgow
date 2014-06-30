@@ -581,3 +581,82 @@ class TestFileCreate(object):
                                  helpers.call_action,
                                  'file_request_create',
                                  context=context, **data_dict)
+
+class TestFileVersions(object):
+    @classmethod
+    def setup_class(cls):
+
+        # Create test user
+        cls.normal_user = helpers.call_action('user_create',
+                                              name='normal_user',
+                                              email='test@test.com',
+                                              password='test')
+
+        # Create test org
+        test_org = helpers.call_action('organization_create',
+                                       context={'user': 'normal_user'},
+                                       name='test_org',
+                                       extras=[{'key': 'ec_api_id',
+                                                'value': 1}])
+
+        context = {'local_action': True, 'user': 'normal_user'}
+        data_dict = {
+            'name': 'test_dataset',
+            'owner_org': 'test_org',
+            'title': 'Test Dataset',
+            'notes': 'Some longer description',
+            'maintainer': 'Test maintainer',
+            'maintainer_email': 'Test maintainer email',
+            'license_id': 'OGL-UK-2.0',
+            'openness_rating': 3,
+            'quality': 5,
+            'ec_api_id': 1,
+            'ec_api_org_id': 1,
+        }
+
+        pkg = helpers.call_action('package_create', context=context,
+                                          **data_dict)
+
+        pkg['resources'] = [{
+                'package_id': pkg['id'],
+                'name': 'test_resource',
+                'description': 'description',
+                'format': 'csv',
+                'url': 'http//test.com',
+                'ec_api_id': '1',
+            }
+        ]
+
+        cls.dataset = helpers.call_action('package_update', context=context,
+                                          **pkg)
+
+
+        # Start mock EC API
+        run_mock_ec()
+
+    @classmethod
+    def teardown_class(cls):
+        helpers.reset_db()
+
+    def test_resource_versions_show(self):
+        res = self.dataset['resources'][0]
+        versions = helpers.call_action('resource_version_show',
+                                       package_id=self.dataset['id'],
+                                       resource_id=res['id'])
+
+        expected_output = {
+            'creation_date': u'1966-05-29T17:51:20',
+            'description': u'test_description',
+            'format': u'leannonvonrueden/bechtelarfritsch',
+            'license_id': u'http://treuteldurgan.com/lesch/runte.html',
+            'name': u'Voluptates ex non quo itaque est quidem praesentium',
+            'openness_rating': u'1',
+            'quality': u'2',
+            'standard_name': u'Accusamus aspernatur ut minima rem natus hic expedita voluptatibus',
+            'standard_rating': u'4',
+            'standard_version': u'7.4.30',
+            'version': u'3afb06b1-4331-4abd-b88e-055492e21bab'
+        }
+        version = versions[0]
+        nose.tools.assert_equals(sorted(expected_output.items()),
+                                 sorted(version.items()))
