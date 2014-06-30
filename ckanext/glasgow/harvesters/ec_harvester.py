@@ -102,7 +102,7 @@ class EcInitialHarvester(HarvesterBase):
                     duplicates.append(org['Title'])
 
                 toolkit.get_action('organization_show')(context, {'id': org_name})
-                log.debug('Organization {0} ({1}) exists, skipping...'.format(org['Title'], org_name))
+                log.debug('Organization {0} ({1}) exists, skipping...'.format(org['Title'].encode('utf8'), org_name))
                 done.append(org['Title'])
 
             except toolkit.ObjectNotFound:
@@ -110,7 +110,7 @@ class EcInitialHarvester(HarvesterBase):
                     toolkit.get_action('organization_create')(context, data_dict)
                 except toolkit.ValidationError:
                     pass
-        log.warn('Duplicate Organizations found: {0}'.format(', '.join(duplicates)))
+        log.warn('Duplicate Organizations found: {0}'.format(', '.join(duplicates).encode('utf8')))
         return toolkit.get_action('organization_list')(context, {})
 
     def info(self):
@@ -272,7 +272,7 @@ class EcInitialHarvester(HarvesterBase):
                     ckan_data_dict['resources'] = resources
 
                     log.debug('Dataset {0} ({1}) exists and needs to be updated,'.format(
-                                ckan_data_dict['title'], ckan_data_dict['name']))
+                                ckan_data_dict['title'].encode('utf8'), ckan_data_dict['name']))
                     toolkit.get_action('package_update')(context, ckan_data_dict)
                 except toolkit.ValidationError, e:
                     self._save_object_error(
@@ -284,7 +284,7 @@ class EcInitialHarvester(HarvesterBase):
                     return False
 
             except toolkit.ObjectNotFound:
-                log.debug('Dataset {0} ({1}) does not exist, creating it...'.format(ckan_data_dict['title'], ckan_data_dict['name']))
+                log.debug('Dataset {0} ({1}) does not exist, creating it...'.format(ckan_data_dict['title'].encode('utf8'), ckan_data_dict['name']))
                 resources = []
                 for extra in harvest_object.extras:
                     if extra.key == 'file':

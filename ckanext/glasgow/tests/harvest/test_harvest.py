@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import json
 import mock
 
@@ -162,7 +163,7 @@ class TestDatasetCreate(object):
                     "StandardRating": "4",
                     "StandardVersion": "4.4.0",
                     "Tags": "beatae consequatur sunt ducimus mollitia",
-                    "Title": "Raj Data Set 001",
+                    "Title": "Raj Data Set 001 with spéciàl çhãrs",
                     "Theme": "assumenda",
                     "UsageGuidance": "Sed magnam labore voluptatem accusamus aut dicta eos et. Et omnis aliquam fugit sed iusto. Consectetur esse et tempora."
                     },
