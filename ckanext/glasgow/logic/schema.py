@@ -16,6 +16,7 @@ from ckanext.glasgow.logic.validators import (
     iso_date,
     no_pending_dataset_with_same_name,
     url_or_upload_not_empty,
+    tag_string_convert,
 )
 
 
@@ -152,6 +153,10 @@ def _modify_schema(schema):
 
     name_validator = get_validator('name_validator')
     package_name_validator = get_validator('package_name_validator')
+    not_missing = get_validator('not_missing')
+    not_empty = get_validator('not_empty')
+    tag_length_validator = get_validator('tag_length_validator')
+
     convert_to_extras = get_converter('convert_to_extras')
 
     # Mandatory fields
@@ -211,6 +216,10 @@ def _modify_schema(schema):
                                convert_to_extras]
 
     schema['resources'] = resource_schema()
+
+    schema['tag_string'] = [ignore_missing, tag_string_convert]
+    schema['tags']['name'] = [not_missing, not_empty, unicode,
+                              tag_length_validator]
 
 
 def show_package_schema():

@@ -1,5 +1,6 @@
 import cgi
 import datetime
+from itertools import count
 
 from dateutil.parser import parse as date_parser
 
@@ -193,3 +194,23 @@ def url_or_upload_not_empty(key, data, errors, context):
 
     if (check_url or check_upload or check_none or check_both):
         raise Invalid(_('Please provide either a file upload or a URL'))
+
+
+def tag_string_convert(key, data, errors, context):
+    '''Takes a list of tags that is a comma-separated string (in data[key])
+    and parses tag names. These are added to the data dict, enumerated. They
+    are also validated.'''
+
+    if isinstance(data[key], basestring):
+        tags = [tag.strip()
+                for tag in data[key].split(',')
+                if tag.strip()]
+    else:
+        tags = data[key]
+
+    current_index = max([int(k[1])
+                         for k in data.keys()
+                         if len(k) == 3 and k[0] == 'tags'] + [-1])
+
+    for num, tag in zip(count(current_index+1), tags):
+        data[('tags', num, 'name')] = tag

@@ -278,6 +278,32 @@ class TestDatasetValidation(object):
         for k, v in errors.iteritems():
             eq_(errors[k], ['Value must be an integer between 0 and 5'])
 
+    def test_create_tags_special_characters_allowed(self):
+
+        data_dict = {
+            'name': 'test_dataset',
+            'owner_org': 'test_org',
+            'title': 'Test Dataset',
+            'notes': 'Some longer description',
+            'maintainer': 'Test maintainer',
+            'maintainer_email': 'Test maintainer email',
+            'license_id': 'OGL-UK-2.0',
+            'openness_rating': 3,
+            'quality': 5,
+            'tags': [
+                {'name': '%%%\u00a3\u00a3'},
+                {'name': '10%'},
+            ],
+
+        }
+
+        context = {'model': model, 'session': model.Session,
+                   'user': 'normal_user'}
+
+        data, errors = validate(data_dict, create_dataset_schema, context)
+
+        eq_(errors, {})
+
 
 class TestResourceValidation(object):
 
