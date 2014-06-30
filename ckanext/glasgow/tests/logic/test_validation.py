@@ -27,11 +27,29 @@ class TestDatasetValidation(object):
                                               password='test')
 
         # Create test org
-        test_org = helpers.call_action('organization_create',
-                                       context={'user': 'normal_user'},
-                                       name='test_org',
-                                       extras=[{'key': 'ec_api_id',
-                                                'value': 1}])
+        cls.test_org = helpers.call_action('organization_create',
+                                           context={'user': 'normal_user'},
+                                           name='test_org',
+                                           extras=[{'key': 'ec_api_id',
+                                                    'value': 1}])
+
+        # Create existing dataset
+        data_dict = {
+            'name': 'existing_test_dataset',
+            'owner_org': 'test_org',
+            'title': 'Existing Test Dataset',
+            'notes': 'Some longer description',
+            'maintainer': 'Test maintainer',
+            'maintainer_email': 'Test maintainer email',
+            'license_id': 'OGL-UK-2.0',
+            'openness_rating': 3,
+            'quality': 5,
+        }
+        context = {'ignore_auth': True, 'local_action': True,
+                   'user': cls.normal_user['name']}
+        cls.existing_dataset = helpers.call_action('package_create',
+                                                   context=context,
+                                                   **data_dict)
 
     @classmethod
     def teardown_class(cls):
@@ -303,6 +321,29 @@ class TestDatasetValidation(object):
         data, errors = validate(data_dict, create_dataset_schema, context)
 
         eq_(errors, {})
+
+    def test_create_same_title_in_org(self):
+
+        data_dict = {
+            'name': 'test_dataset',
+            'owner_org': self.test_org['id'],
+            'title': self.existing_dataset['title'],
+            'notes': 'Some longer description',
+            'maintainer': 'Test maintainer',
+            'maintainer_email': 'Test maintainer email',
+            'license_id': 'OGL-UK-2.0',
+            'openness_rating': 3,
+            'quality': 5,
+        }
+
+        context = {'model': model, 'session': model.Session,
+                   'user': 'normal_user'}
+
+        data, errors = validate(data_dict, create_dataset_schema, context)
+
+        eq_(errors,
+            {'title':
+             ['There is a dataset with the same title in this organization']})
 
 
 class TestResourceValidation(object):

@@ -51,7 +51,7 @@ class TestDatasetController(object):
         data_dict = {
             'name': 'test_dataset_pending',
             'owner_org': 'test_org',
-            'title': 'Test Dataset',
+            'title': 'Test Dataset Pending',
             'notes': 'Some longer description',
             'maintainer': 'Test maintainer',
             'maintainer_email': 'Test maintainer email',

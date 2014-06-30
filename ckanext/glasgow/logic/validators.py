@@ -13,6 +13,39 @@ get_validator = p.toolkit.get_validator
 get_converter = p.toolkit.get_converter
 
 
+def unique_title_within_organization(key, data, errors, context):
+    '''
+    Checks if there is another dataset with the same title in the included
+    organization.
+
+    :raises: :py:exc:`~ckan.plugins.toolkit.Invalid` if there is another
+        dataset with the same title
+
+    '''
+    value = data.get(key)
+
+    org_id = data.get(('owner_org', ))
+    if not org_id:
+        raise Invalid(
+            _('Please provide an organization for the dataset')
+        )
+    # We need to use title_string rather the title otherwise we cannot query
+    # by exact match
+    search_dict = {
+        'q': 'title_string:"%s"' % value,
+        'fq': 'owner_org:{0}'.format(org_id),
+    }
+
+    query = p.toolkit.get_action('package_search')({
+        'ignore_auth': True}, search_dict)
+
+    if query['count'] > 0:
+        raise Invalid(
+            _('There is a dataset with the same title in this organization')
+        )
+    return value
+
+
 def no_pending_dataset_with_same_name(value, context):
     '''
     Checks if there is a pending request for a dataset with the same name

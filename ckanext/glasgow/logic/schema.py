@@ -17,6 +17,7 @@ from ckanext.glasgow.logic.validators import (
     no_pending_dataset_with_same_name,
     url_or_upload_not_empty,
     tag_string_convert,
+    unique_title_within_organization,
 )
 
 
@@ -167,7 +168,8 @@ def _modify_schema(schema):
                       package_name_validator,
                       no_pending_dataset_with_same_name]
 
-    schema['title'] = [not_empty, string_max_length(255), unicode]
+    schema['title'] = [not_empty, string_max_length(255), unicode,
+                       unique_title_within_organization]
 
     schema['notes'] = [not_empty, string_max_length(4000), unicode]
 

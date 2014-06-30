@@ -1,8 +1,6 @@
 import re
 import nose
 
-from webtest import Upload
-
 import ckan.new_tests.helpers as helpers
 
 from ckanext.glasgow.tests import run_mock_ec
@@ -41,6 +39,24 @@ class TestCreateDataset(object):
         helpers.call_action('organization_member_create',
                             context={'user': 'sysadmin_user'},
                             **member)
+
+        # Create existing dataset
+        data_dict = {
+            'name': 'existing_test_dataset',
+            'owner_org': 'test_org',
+            'title': 'Existing Test Dataset',
+            'notes': 'Some longer description',
+            'maintainer': 'Test maintainer',
+            'maintainer_email': 'Test maintainer email',
+            'license_id': 'OGL-UK-2.0',
+            'openness_rating': 3,
+            'quality': 5,
+        }
+        context = {'ignore_auth': True, 'local_action': True,
+                   'user': cls.normal_user['name']}
+        cls.existing_dataset = helpers.call_action('package_create',
+                                                   context=context,
+                                                   **data_dict)
 
         # Start mock EC API
         run_mock_ec()
@@ -142,6 +158,44 @@ class TestCreateDataset(object):
 
         assert error_div
         assert 'Missing value' in error_div.text
+
+    def test_create_dataset_same_title_in_org(self):
+
+        data_dict = {
+            'name': 'test_dataset',
+            'owner_org': self.test_org['id'],
+            'title': self.existing_dataset['title'],
+            'notes': 'Some longer description',
+            'maintainer': 'Test maintainer',
+            'maintainer_email': 'Test maintainer email',
+            'license_id': 'uk-ogl',
+            'openness_rating': '3',
+            'quality': '5',
+        }
+
+        extra_environ = {'REMOTE_USER': str(self.normal_user['name'])}
+        response = self.app.get('/dataset/new', extra_environ=extra_environ)
+
+        eq_(response.status_int, 200)
+
+        form = response.forms[1]
+
+        # Make sure we are using the custom form
+        assert 'openness_rating' in form.fields.keys()
+
+        for field, value in data_dict.iteritems():
+            form[field] = value
+
+        response = form.submit('save', extra_environ=extra_environ)
+
+        eq_(response.status_int, 200)
+
+        error_div = response.html.find(
+            attrs={'class': re.compile(r".*\berror-explanation\b.*")})
+
+        assert error_div
+        assert ('There is a dataset with the same title in this organization'
+                in error_div.text)
 
 
 class TestCreateFile(object):

@@ -316,3 +316,86 @@ class TestNameValidators(object):
         nose.tools.assert_raises(p.toolkit.Invalid,
                                  validators.no_pending_dataset_with_same_name,
                                  value, context)
+
+
+class TestUniqueTitleValidators(object):
+
+    @classmethod
+    def setup_class(cls):
+        helpers.reset_db()
+
+        # Create test user
+        cls.normal_user = helpers.call_action('user_create',
+                                              name='normal_user',
+                                              email='test@test.com',
+                                              password='test')
+
+        # Create test org
+        cls.test_org = helpers.call_action('organization_create',
+                                           context={'user': 'normal_user'},
+                                           name='test_org',
+                                           extras=[{'key': 'ec_api_id',
+                                                    'value': 1}])
+
+        # Create existing dataset
+        data_dict = {
+            'name': 'test_dataset',
+            'owner_org': 'test_org',
+            'title': 'Test Dataset',
+            'notes': 'Some longer description',
+            'maintainer': 'Test maintainer',
+            'maintainer_email': 'Test maintainer email',
+            'license_id': 'OGL-UK-2.0',
+            'openness_rating': 3,
+            'quality': 5,
+        }
+        context = {'ignore_auth': True, 'local_action': True,
+                   'user': cls.normal_user['name']}
+        cls.existing_dataset = helpers.call_action('package_create',
+                                                   context=context,
+                                                   **data_dict)
+
+    def test_create_same_title_same_org(self):
+
+        key = ('title',)
+        data = {
+            ('title',): self.existing_dataset['title'],
+            ('owner_org',): self.test_org['id'],
+        }
+        errors = {}
+        context = {}
+        nose.tools.assert_raises(p.toolkit.Invalid,
+                                 validators.unique_title_within_organization,
+                                 key, data, errors, context)
+
+    def test_create_same_title_different_org(self):
+
+        key = ('title',)
+        data = {
+            ('title',): self.existing_dataset['title'],
+            ('owner_org',): 'another_org',
+        }
+        errors = {}
+        context = {}
+
+        new_value = validators.unique_title_within_organization(key,
+                                                                data,
+                                                                errors,
+                                                                context)
+        eq_(new_value, self.existing_dataset['title'])
+
+    def test_create_different_title_different_org(self):
+
+        key = ('title',)
+        data = {
+            ('title',): 'Another Title',
+            ('owner_org',): 'another_org',
+        }
+        errors = {}
+        context = {}
+
+        new_value = validators.unique_title_within_organization(key,
+                                                                data,
+                                                                errors,
+                                                                context)
+        eq_(new_value, 'Another Title')
