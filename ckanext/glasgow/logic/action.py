@@ -282,10 +282,21 @@ def dataset_request_create(context, data_dict):
         'Content-Type': 'application/json',
     }
 
-    response = requests.request(method, url,
-                                data=json.dumps(ec_dict),
-                                headers=headers,
-                                )
+    try:
+        response = requests.request(method, url,
+                                    data=json.dumps(ec_dict),
+                                    headers=headers,
+                                    )
+    except requests.exceptions.RequestException, e:
+        error_dict = {
+            'message': ['Request exception: {0}'.format(e)],
+            'task_id': [task_dict['id']]
+        }
+        task_dict = _update_task_status_error(context, task_dict, {
+            'data_dict': validated_data_dict,
+            'error': error_dict
+        })
+        raise p.toolkit.ValidationError(error_dict)
 
     status_code = response.status_code
 
@@ -463,11 +474,22 @@ def file_request_create(context, data_dict):
                  uploaded_file.file)
     } if uploaded_file is not None else None
 
-    response = requests.request(method, url,
-                                data=data,
-                                files=files,
-                                headers=headers,
-                                )
+    try:
+        response = requests.request(method, url,
+                                    data=data,
+                                    files=files,
+                                    headers=headers,
+                                    )
+    except requests.exceptions.RequestException, e:
+        error_dict = {
+            'message': ['Request exception: {0}'.format(e)],
+            'task_id': [task_dict['id']]
+        }
+        task_dict = _update_task_status_error(context, task_dict, {
+            'data_dict': validated_data_dict,
+            'error': error_dict
+        })
+        raise p.toolkit.ValidationError(error_dict)
 
     status_code = response.status_code
 
