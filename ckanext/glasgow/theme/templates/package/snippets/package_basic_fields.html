@@ -55,9 +55,9 @@
 <fieldset>
   <legend>{{ _('Optional fields') }}</legend>
 
-  {# Keywords #}
+  {# Tags #}
    {% set tag_attrs = {'data-module': 'autocomplete', 'data-module-tags': '', 'data-module-source': '/api/2/util/tag/autocomplete?incomplete=?'} %}
-  {{ form.input('tag_string', id='field-tags', label=_('Keywords'), placeholder=_('eg. economy, mental health, government'), value=data.tag_string, error=errors.tags, classes=['control-full'], attrs=tag_attrs) }}
+  {{ form.input('tag_string', id='field-tags', label=_('Tags'), placeholder=_('eg. economy, mental health, government'), value=data.tag_string, error=errors.tags, classes=['control-full'], attrs=tag_attrs) }}
 
   {# Published on behalf of #}
   {{ form.input('published_on_behalf_of', label=_('Published on behalf of'), id='field-published_on_behalf_of', value=data.published_on_behalf_of, error=errors.published_on_behalf_of, classes=['control-medium']) }}
