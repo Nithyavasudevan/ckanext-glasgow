@@ -270,7 +270,7 @@ def resource_schema():
 
     schema['name'] = [not_empty, string_max_length(255), unicode]
 
-    schema['description'] = [not_empty, string_max_length(4000), unicode]
+    schema['description'] = [not_empty, string_max_length(64000), unicode]
 
     schema['format'] = [not_empty, string_max_length(255), unicode]
 

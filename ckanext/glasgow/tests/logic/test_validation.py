@@ -441,7 +441,7 @@ class TestResourceValidation(object):
             'package_id': 'test_dataset_id',
             'name': 'Test File name',
             'url': 'http://some.file.org',
-            'description': 'a' * 4001,
+            'description': 'a' * 64001,
             'format': 'application/csv',
             'license_id': 'uk-ogl',
             'openness_rating': 3,
@@ -457,7 +457,7 @@ class TestResourceValidation(object):
         data, errors = validate(data_dict, resource_schema, context)
 
         eq_(errors,
-            {'description': ['Length must be less than 4000 characters']})
+            {'description': ['Length must be less than 64000 characters']})
 
     def test_create_wrong_integers(self):
 
