@@ -1,8 +1,10 @@
 import cgi
 import nose
 import datetime
+import json
 
 import ckan.plugins as p
+import ckan.model as model
 import ckan.new_tests.helpers as helpers
 
 from ckanext.glasgow.logic import validators
@@ -288,7 +290,8 @@ class TestValidators(object):
                                      validators.url_or_upload_not_empty,
                                      key, data, errors, context)
 
-class TestNameValidators(object):
+
+class TestPendingNameValidators(object):
 
     def setup(cls):
         helpers.reset_db()
@@ -316,6 +319,50 @@ class TestNameValidators(object):
         nose.tools.assert_raises(p.toolkit.Invalid,
                                  validators.no_pending_dataset_with_same_name,
                                  value, context)
+
+
+class TestPendingTitleValidators(object):
+
+    def setup(cls):
+        helpers.reset_db()
+
+    def test_no_pending_dataset_with_same_title_valid(self):
+
+        key = ('title',)
+        data = {
+            ('title',): 'Test Title',
+            ('owner_org',): 'test_org',
+        }
+        errors = {}
+        context = {'model': model}
+
+        validators.no_pending_dataset_with_same_title_in_same_org(
+            key, data, errors, context)
+
+    def test_no_pending_dataset_with_same_title_invalid(self):
+
+        data = {'data_dict': {'title': 'Test Title', 'owner_org': 'test_org'}}
+
+        _create_task_status({'user': 'test'},
+                            task_type='test_task_type',
+                            entity_id='test_dataset_id',
+                            entity_type='dataset',
+                            key='test_dataset_name',
+                            value=json.dumps(data)
+                            )
+
+        key = ('title',)
+        data = {
+            ('title',): 'Test Title',
+            ('owner_org',): 'test_org',
+        }
+        errors = {}
+        context = {'model': model}
+
+        nose.tools.assert_raises(
+            p.toolkit.Invalid,
+            validators.no_pending_dataset_with_same_title_in_same_org,
+            key, data, errors, context)
 
 
 class TestUniqueTitleValidators(object):

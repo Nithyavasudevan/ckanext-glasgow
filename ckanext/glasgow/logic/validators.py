@@ -64,6 +64,42 @@ def no_pending_dataset_with_same_name(value, context):
     return value
 
 
+def no_pending_dataset_with_same_title_in_same_org(key, data, errors, context):
+    '''
+    Checks if there is a pending request for a dataset with the same title
+    in the same organization as the one you are creating.
+
+    :raises: :py:exc:`~ckan.plugins.toolkit.Invalid` if there is a pending
+        request with the same dataset title in the same organization
+
+    '''
+    value = data.get(key)
+
+    org_id = data.get(('owner_org', ))
+    if not org_id:
+        raise Invalid(
+            _('Please provide an organization for the dataset')
+        )
+    from sqlalchemy import or_
+
+    model = context.get('model')
+    task = model.Session.query(model.TaskStatus) \
+        .filter(model.TaskStatus.entity_type == 'dataset') \
+        .filter(or_(model.TaskStatus.state == 'new',
+                model.TaskStatus.state == 'sent')) \
+        .filter(model.TaskStatus.value.like('%"owner_org": "{0}"%'.format(org_id))) \
+        .filter(model.TaskStatus.value.like('%"title": "{0}"%'.format(value)))\
+        .order_by(model.TaskStatus.last_updated.desc()) \
+        .first()
+
+    if task:
+        raise Invalid(
+            _('There is a pending request for a dataset with the same ' +
+              'title in the same organization')
+        )
+    return value
+
+
 def string_max_length(max_length):
     '''
     Checks if a string is longer than a certain length
