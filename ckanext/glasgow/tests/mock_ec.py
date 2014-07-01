@@ -323,8 +323,6 @@ def request_orgs():
         }
     )
 
-
-
 @app.route('/Metadata/Organisation/<org_id>/Dataset/<dataset_id>/File/<file_id>/Versions',
            methods=['GET'])
 def file_versions(org_id, dataset_id, file_id):
@@ -400,7 +398,7 @@ def file_versions(org_id, dataset_id, file_id):
 
 
 @app.route('/ChangeLog/RequestStatus/<request_id>', methods=['GET'])
-def request_changelog(request_id):
+def request_changelog_status(request_id):
     return flask.jsonify(**{
         'Operations': [{
             'AuditId': 1,
@@ -427,6 +425,7 @@ def request_changelog(request_id):
         "IsErrorResponse": False,
         "IsRetryRequested": False
         }
+    )
 
 
 @app.route('/ChangeLog/RequestChanges')

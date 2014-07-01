@@ -1,5 +1,3 @@
-import ckan.plugins as p
-
 import ckan.logic.auth as auth_core
 
 
@@ -38,3 +36,8 @@ def task_status_show(context, data_dict):
 def pending_task_for_dataset(context, data_dict):
     return {'success': False,
             'msg': 'Only sysadmins can see task statuses'}
+
+
+def changelog_show(context, data_dict):
+    return {'success': False,
+            'msg': 'Only sysadmins can see the change log'}
