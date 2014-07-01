@@ -581,3 +581,93 @@ class TestFileCreate(object):
                                  helpers.call_action,
                                  'file_request_create',
                                  context=context, **data_dict)
+
+
+class TestChangelog(object):
+
+    @classmethod
+    def setup_class(cls):
+
+        # Create sysadmin user
+        cls.sysadmin_user = helpers.call_action('user_create',
+                                                name='sysadmin_user',
+                                                email='test@test.com',
+                                                password='test',
+                                                sysadmin=True)
+
+        # Start mock EC API
+        run_mock_ec()
+
+    @classmethod
+    def teardown_class(cls):
+        helpers.reset_db()
+
+    def test_changelog_show(self):
+
+        data_dict = {}
+        context = {'user': self.sysadmin_user['name']}
+        audit_list = helpers.call_action('changelog_show',
+                                         context=context,
+                                         **data_dict)
+
+        eq_(len(audit_list), 3)
+
+        audit_dict = audit_list[0]
+
+        assert 'AuditId' in audit_dict
+        assert 'Command' in audit_dict
+        assert 'ObjectType' in audit_dict
+        assert audit_dict['ObjectType'] in ('Dataset', 'File', 'Organisation')
+        assert 'RequestId' in audit_dict
+        assert 'Timestamp' in audit_dict
+
+    def test_changelog_show_starting_id(self):
+
+        data_dict = {
+            'audit_id': 1010,
+        }
+        context = {'user': self.sysadmin_user['name']}
+        audit_list = helpers.call_action('changelog_show',
+                                         context=context,
+                                         **data_dict)
+
+        eq_(len(audit_list), 2)
+
+    def test_changelog_show_top_results(self):
+
+        data_dict = {
+            'top': 2,
+        }
+        context = {'user': self.sysadmin_user['name']}
+        audit_list = helpers.call_action('changelog_show',
+                                         context=context,
+                                         **data_dict)
+
+        eq_(len(audit_list), 2)
+
+    def test_changelog_show_starting_and_top_results(self):
+
+        data_dict = {
+            'audit_id': 1010,
+            'top': 1,
+        }
+        context = {'user': self.sysadmin_user['name']}
+        audit_list = helpers.call_action('changelog_show',
+                                         context=context,
+                                         **data_dict)
+
+        eq_(len(audit_list), 1)
+
+    def test_changelog_show_object_type(self):
+
+        data_dict = {
+            'object_type': 'File',
+        }
+        context = {'user': self.sysadmin_user['name']}
+        audit_list = helpers.call_action('changelog_show',
+                                         context=context,
+                                         **data_dict)
+
+        eq_(len(audit_list), 1)
+
+        eq_(audit_list[0]['ObjectType'], 'File')

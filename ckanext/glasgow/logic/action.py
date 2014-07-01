@@ -117,6 +117,9 @@ def _get_api_endpoint(operation):
     elif operation == 'file_request_update':
         method = 'PUT'
         path = '/Files/Organisation/{organization_id}/Dataset/{dataset_id}'
+    elif operation == 'changelog_show':
+        method = 'GET'
+        path = '/ChangeLog/RequestChanges'
     else:
         return None, None
 
@@ -620,3 +623,70 @@ def _expire_task_status(context, task_id):
 
 def dataset_request_update(context, data_dict):
     pass
+
+
+@p.toolkit.side_effect_free
+def changelog_show(context, data_dict):
+    '''
+    Requests audit entries to the EC API Changelog API
+
+    :param audit_id: The starting audit_id to return a set of changelog
+                     records for. All records created since this audit_id
+                     are returned (up until `top`)
+                     If omitted then the single most recent changelog
+                     record is returned.
+    :type operation: int
+    :param top: Number of records to return (defaults to 20)
+    :type operation: int
+    :param object_type: Limit records to this particular type (valid values
+                        are `Dataset`, `File` or `Organisation`)
+    :type operation: string
+
+    :returns: a list with the returned audit objects
+    :rtype: list
+    '''
+
+    p.toolkit.check_access('changelog_show', context, data_dict)
+
+    audit_id = data_dict.get('audit_id')
+    top = data_dict.get('top', 20)
+    object_type = data_dict.get('object_type')
+
+    # Send request to EC Audit API
+
+    method, url = _get_api_endpoint('changelog_show')
+
+    if audit_id:
+        url += '/{0}'.format(audit_id)
+
+    params = {}
+    if top:
+        params['$top'] = top
+    if object_type:
+        params['$ObjectType'] = object_type
+
+    headers = {
+        'Authorization': _get_api_auth_token(),
+        'Content-Type': 'application/json',
+    }
+
+    response = requests.request(method, url, headers=headers, params=params)
+
+    content = response.json()
+
+    # Check status codes
+
+    status_code = response.status_code
+
+    if status_code != 200:
+        error_dict = {
+            'message': ['The CTPEC API returned an error code'],
+            'status': [status_code],
+            'content': [content],
+        }
+        if status_code == 401:
+            raise ECAPINotAuthorized(error_dict)
+        else:
+            raise p.toolkit.ValidationError(error_dict)
+
+    return content.get('Operations')

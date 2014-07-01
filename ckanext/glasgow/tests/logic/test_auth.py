@@ -150,3 +150,53 @@ class TestCreate(object):
         }
 
         p.toolkit.check_access('package_create', context, data_dict)
+
+
+class TestChangelog(object):
+
+    @classmethod
+    def setup_class(cls):
+
+        # Create test user
+
+        cls.sysadmin_user = helpers.call_action('user_create',
+                                                name='sysadmin_user',
+                                                email='test@test.com',
+                                                password='test',
+                                                sysadmin=True)
+
+        cls.normal_user = helpers.call_action('user_create',
+                                              name='normal_user',
+                                              email='test@test.com',
+                                              password='test')
+
+    @classmethod
+    def teardown_class(cls):
+        helpers.reset_db()
+
+    def test_changelog_show_anon(self):
+
+        context = {}
+        data_dict = {}
+
+        nose.tools.assert_raises(p.toolkit.NotAuthorized,
+                                 p.toolkit.check_access,
+                                 'changelog_show', context, data_dict)
+
+    def test_changelog_show_normal_user(self):
+
+        context = {}
+        context['user'] = 'normal_user'
+        data_dict = {}
+
+        nose.tools.assert_raises(p.toolkit.NotAuthorized,
+                                 p.toolkit.check_access,
+                                 'changelog_show', context, data_dict)
+
+    def test_changelog_show_sysadmin(self):
+
+        context = {}
+        context['user'] = 'sysadmin_user'
+        data_dict = {}
+
+        p.toolkit.check_access('changelog_show', context, data_dict)
