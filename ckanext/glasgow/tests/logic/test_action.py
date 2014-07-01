@@ -323,7 +323,7 @@ class TestDatasetCreate(object):
         data_dict = {
             'name': 'test_dataset-401',
             'owner_org': 'test_org',
-            'title': 'Test Dataset',
+            'title': 'Test Dataset 401',
             'notes': 'Some longer description',
             'maintainer': 'Test maintainer',
             'maintainer_email': 'Test maintainer email',

@@ -88,7 +88,7 @@ def no_pending_dataset_with_same_title_in_same_org(key, data, errors, context):
         .filter(or_(model.TaskStatus.state == 'new',
                 model.TaskStatus.state == 'sent')) \
         .filter(model.TaskStatus.value.like('%"owner_org": "{0}"%'.format(org_id))) \
-        .filter(model.TaskStatus.value.like('%"title": "{0}"%'.format(value)))\
+        .filter(model.TaskStatus.value.like('%%\"title\": \"%s\"%%' % value))\
         .order_by(model.TaskStatus.last_updated.desc()) \
         .first()
 
