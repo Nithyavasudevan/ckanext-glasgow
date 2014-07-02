@@ -34,6 +34,11 @@ class GlasgowSchemaPlugin(p.SingletonPlugin, p.toolkit.DefaultDatasetForm):
         map.connect('auth token', '/auth_token', controller=controller,
                     action='auth_token')
 
+        controller = 'ckanext.glasgow.controllers.changelog:ChangelogController'
+
+        map.connect('show changelog', '/changelog', controller=controller,
+                    action='index')
+
         return map
 
     # IConfigurer
