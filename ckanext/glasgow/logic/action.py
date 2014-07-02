@@ -689,4 +689,9 @@ def changelog_show(context, data_dict):
         else:
             raise p.toolkit.ValidationError(error_dict)
 
-    return content.get('Operations')
+    changelog = content.get('Operations', [])
+
+    # Reverse list so we get the most recent operations first
+    changelog.reverse()
+
+    return changelog
