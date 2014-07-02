@@ -68,3 +68,22 @@ class TestChangelog(object):
         eq_(cells[1].text, audit['ObjectType'])
         eq_(cells[2].text, audit['Command'])
         eq_(cells[3].text, audit['Owner'])
+
+    def test_changelog_show_filter_object_type(self):
+
+        extra_environ = {'REMOTE_USER': str(self.sysadmin_user['name'])}
+
+        for object_type in ('Dataset', 'File'):
+            response = self.app.get(
+                '/changelog?object_type={0}'.format(object_type),
+                extra_environ=extra_environ)
+
+            eq_(response.status_int, 200)
+
+            tables = response.html.findAll('table')
+
+            eq_(len(tables), 1)
+
+            for row in tables[0].findAll('tr')[1:]:
+                cell = row.findAll('td')[1]
+                eq_(cell.text, object_type)

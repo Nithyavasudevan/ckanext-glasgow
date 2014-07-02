@@ -13,6 +13,8 @@ class ChangelogController(p.toolkit.BaseController):
 
             extra_vars = {
                 'changelog': changelog,
+                'object_type_selected':
+                    p.toolkit.request.params.get('object_type')
             }
             return p.toolkit.render('changelog.html',
                                     extra_vars=extra_vars)

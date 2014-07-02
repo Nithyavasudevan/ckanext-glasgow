@@ -107,6 +107,7 @@ class GlasgowSchemaPlugin(p.SingletonPlugin, p.toolkit.DefaultDatasetForm):
 
         function_names = (
             'get_licenses',
+            'get_ec_api_id_from_audit',
         )
         return _get_module_functions(custom_helpers, function_names)
 
