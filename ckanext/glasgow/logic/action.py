@@ -102,8 +102,8 @@ def _get_api_endpoint(operation):
     :rtype: tuple
     '''
 
-    write_base = config.get('ckanext.glasgow.write_ec_api', '').rstrip('/')
-    read_base = config.get('ckanext.glasgow.read_ec_api', '').rstrip('/')
+    write_base = config.get('ckanext.glasgow.data_collection_api', '').rstrip('/')
+    read_base = config.get('ckanext.glasgow.metadata_api', '').rstrip('/')
 
     if operation == 'dataset_request_create':
         method = 'POST'

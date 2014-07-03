@@ -33,8 +33,8 @@ class TestGetAPIEndpoint(object):
         cls._base_write_api = 'https://base.write.api/'
         cls._base_read_api = 'https://base.read.api/'
 
-        config['ckanext.glasgow.write_ec_api'] = cls._base_write_api
-        config['ckanext.glasgow.read_ec_api'] = cls._base_read_api
+        config['ckanext.glasgow.data_collection_api'] = cls._base_write_api
+        config['ckanext.glasgow.metadata_api'] = cls._base_read_api
 
     def test_get_api_endpoint(self):
         base_api = self._base_write_api.rstrip('/')

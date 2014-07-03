@@ -79,7 +79,7 @@ class EcInitialHarvester(HarvesterBase):
             }, {})
 
     def _create_orgs(self):
-        api_url = config.get('ckanext.glasgow.read_ec_api', '').rstrip('/')
+        api_url = config.get('ckanext.glasgow.metadata_api', '').rstrip('/')
         api_endpoint = '{0}/Metadata/Organisation'.format(api_url)
         done = []
         duplicates = []
@@ -132,7 +132,7 @@ class EcInitialHarvester(HarvesterBase):
         try:
             orgs = self._create_orgs()
 
-            api_url = config.get('ckanext.glasgow.read_ec_api', '').rstrip('/')
+            api_url = config.get('ckanext.glasgow.metadata_api', '').rstrip('/')
             api_endpoint = api_url + '/Organisations/{0}/Datasets'
 
             harvest_object_ids = []
@@ -179,7 +179,7 @@ class EcInitialHarvester(HarvesterBase):
         return harvest_object_ids
 
     def fetch_stage(self, harvest_object):
-        api_url = config.get('ckanext.glasgow.read_ec_api', '').rstrip('/')
+        api_url = config.get('ckanext.glasgow.metadata_api', '').rstrip('/')
         # NB: this end point does not seem to support the $skip parameter
         api_endpoint = api_url + '/Metadata/Organisation/{0}/Dataset/{1}/File'
 
