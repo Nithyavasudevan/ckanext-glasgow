@@ -1,4 +1,5 @@
 import os
+import cgi
 import logging
 import json
 import datetime
@@ -461,19 +462,23 @@ def file_request_create(context, data_dict):
         dataset_id=ec_api_dataset_id,
     )
 
-    data = {
-        'metadata': json.dumps(ec_dict)
-    }
-
     headers = {
         'Authorization': _get_api_auth_token(),
     }
 
-    # TODO: Modify this once we know how MS handles the external url case
-    files = {
-        'file': (uploaded_file.filename,
-                 uploaded_file.file)
-    } if uploaded_file is not None else None
+
+    if isinstance(uploaded_file, cgi.FieldStorage):
+        files = {
+            'file': (uploaded_file.filename,
+                     uploaded_file.file)
+        }
+        data = {
+            'metadata': json.dumps(ec_dict)
+        }
+    else:
+        headers['Content-Type'] = 'application/json'
+        files = None
+        data = json.dumps(ec_dict)
 
     try:
         response = requests.request(method, url,
