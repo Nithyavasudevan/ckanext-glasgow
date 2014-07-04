@@ -136,7 +136,7 @@ class TestSchemaConversion(object):
 
         ec_dict = custom_schema.convert_ckan_resource_to_ec_file(ckan_dict)
 
-        eq_(ec_dict['Id'], 2)
+        eq_(ec_dict['FileId'], 2)
         eq_(ec_dict['DatasetId'], 1)
         eq_(ec_dict['Title'], 'Test File name')
         eq_(ec_dict['ExternalUrl'], 'http://some.file.com')
@@ -202,7 +202,7 @@ class TestSchemaConversion(object):
 
         ec_dict = custom_schema.convert_ckan_resource_to_ec_file(ckan_dict)
 
-        eq_(ec_dict['Id'], 2)
+        eq_(ec_dict['FileId'], 2)
         eq_(ec_dict['DatasetId'], '4')
         eq_(ec_dict['Title'], 'Test File name')
         eq_(ec_dict['ExternalUrl'], 'http://some.file.com')
@@ -221,7 +221,7 @@ class TestSchemaConversion(object):
     def test_convert_ec_file_to_ckan_resource(self):
 
         ec_dict = {
-            'Id': 2,
+            'FileId': 2,
             'DatasetId': 1,
             'Title': 'Test File name',
             'Description': 'Some longer description',
