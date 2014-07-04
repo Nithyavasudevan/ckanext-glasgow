@@ -185,7 +185,8 @@ def package_create(context, data_dict):
         context['local_action'] = True
         data_dict.pop('__local_action', None)
 
-    if context.get('local_action', False):
+    if (context.get('local_action', False) or
+            data_dict.get('type') == 'harvest'):
 
         return core_actions.create.package_create(context, data_dict)
 
