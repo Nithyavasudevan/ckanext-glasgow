@@ -54,7 +54,7 @@ ckan_to_ec_dataset_mapping = {
 }
 
 ckan_to_ec_resource_mapping = {
-    'ec_api_id': 'Id',
+    'ec_api_id': 'FileId',
     'ec_api_dataset_id': 'DatasetId',
     'name': 'Title',
     'description': 'Description',
