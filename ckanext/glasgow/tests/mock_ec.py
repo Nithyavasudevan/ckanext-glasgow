@@ -405,23 +405,20 @@ def handle_file_request(organization_id, dataset_id):
         return response
 
     # Get metadata
-    if not len(flask.request.form):
-        response = flask.jsonify(
-            Message=ec_api_error_msg
-        )
-        response.status_code = 400
-        return response
+    if len(flask.request.form):
+        metadata_fields = flask.request.form.values()[0]
+        try:
+            metadata = json.loads(metadata_fields)
+        except ValueError:
+            response = flask.jsonify(
+                Message=ec_api_error_msg
+            )
+            response.status_code = 400
+            return response
 
-    metadata_fields = flask.request.form.values()[0]
+    else:
+        metadata = flask.request.json
 
-    try:
-        metadata = json.loads(metadata_fields)
-    except ValueError:
-        response = flask.jsonify(
-            Message=ec_api_error_msg
-        )
-        response.status_code = 400
-        return response
     if app.debug:
         app.logger.debug('File metadata received:\n{0}'
                          .format(metadata))
