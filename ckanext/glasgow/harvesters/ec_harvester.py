@@ -110,12 +110,13 @@ class EcInitialHarvester(HarvesterBase):
                     toolkit.get_action('organization_create')(context, data_dict)
                 except toolkit.ValidationError:
                     pass
-        log.warn('Duplicate Organizations found: {0}'.format(', '.join(duplicates).encode('utf8')))
+        if len(duplicates):
+            log.warn('Duplicate Organizations found: {0}'.format(', '.join(duplicates).encode('utf8')))
         return toolkit.get_action('organization_list')(context, {})
 
     def info(self):
         return {
-            'name': 'ec_orgs',
+            'name': 'ec_initial_harvester',
             'title': 'EC Initial Import Harvester',
             'description': 'Harvester for initial import of Glasgow Project',
 
@@ -241,7 +242,7 @@ class EcInitialHarvester(HarvesterBase):
             ec_data_dict.get('Metadata', {}))
         ckan_data_dict['__local_action'] = True
 
-        # Add EC APU ids
+        # Add EC API ids
         ckan_data_dict['ec_api_org_id'] = ec_data_dict['OrganisationId']
         ckan_data_dict['ec_api_id'] = ec_data_dict['Id']
 
@@ -249,7 +250,7 @@ class EcInitialHarvester(HarvesterBase):
         if 'name' not in ckan_data_dict:
             org_id = str(ckan_data_dict['ec_api_org_id'])
             ckan_data_dict['name'] = slugify.slugify(
-                '-'.join([ec_data_dict['Title'][:100-len(org_id)], org_id])
+                '-'.join([ec_data_dict['Title'][:95], org_id[:4]])
             )
 
         try:
