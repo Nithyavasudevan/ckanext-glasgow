@@ -657,11 +657,17 @@ def resource_version_show(context, data_dict):
 
     method, url = _get_api_endpoint('file_version_show')
 
+    try:
+        ec_api_org_id = dataset['ec_api_org_id']
+        ec_api_dataset_id = dataset['ec_api_id']
+        ec_api_file_id = resource['ec_api_id'] 
+    except KeyError:
+        raise ECAPIValidationError(['EC API Error: {0} not in resource metadata'])
+
     url = url.format(
-        organization_id=dataset['ec_api_org_id'],
-        dataset_id=dataset['ec_api_id'],
-        file_id=resource['ec_api_id'],
-        #version_id=version_id,
+        organization_id=ec_api_org_id,
+        dataset_id=ec_api_dataset_id,
+        file_id=ec_api_file_id,
     )
 
     headers = {
@@ -670,8 +676,11 @@ def resource_version_show(context, data_dict):
     }
 
     response = requests.request(method, url, headers=headers)
-    status_code = response.status_code
-    content = response.json()
+    if response.status_code == requests.codes.ok:
+        try:
+            content = response.json()
+        except ValueError:
+            raise ECAPIValidationError(['EC API Error: response not JSON'])
 
     res_ec_to_ckan = custom_schema.convert_ec_file_to_ckan_resource
     try:
