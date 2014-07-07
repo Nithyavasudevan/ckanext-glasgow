@@ -118,6 +118,9 @@ def _get_api_endpoint(operation):
     elif operation == 'file_request_update':
         method = 'PUT'
         path = '/Files/Organisation/{organization_id}/Dataset/{dataset_id}'
+    elif operation == 'file_version_show':
+        method = 'GET'
+        path = '/Metadata/Organisation/{organization_id}/Dataset/{dataset_id}/File/{file_id}/Version'
     else:
         return None, None
 
@@ -626,3 +629,49 @@ def _expire_task_status(context, task_id):
 
 def dataset_request_update(context, data_dict):
     pass
+
+def resource_version_show(context, data_dict):
+    '''Show files versions as listed on EC API'''
+    try:
+        resource_id = data_dict['resource_id']
+        package_id = data_dict['package_id']
+        #version_id = data_dict['version_id']
+    except KeyError, e:
+        raise p.toolkit.ValidationError(['No {0} provided'.format(e.msg)])
+
+    resource = p.toolkit.get_action('resource_show')(context,
+                                                     {'id': resource_id})
+    #TODO: store ec_api_dataset_id in resource extra
+    package_show = p.toolkit.get_action('package_show')
+    dataset = package_show(context, {'name_or_id': package_id})
+
+    method, url = _get_api_endpoint('file_version_show')
+
+    url = url.format(
+        organization_id=dataset['ec_api_org_id'],
+        dataset_id=dataset['ec_api_id'],
+        file_id=resource['ec_api_id'],
+        #version_id=version_id,
+    )
+
+    headers = {
+        'Authorization': _get_api_auth_token(),
+        'Content-Type': 'application/json',
+    }
+
+    response = requests.request(method, url, headers=headers)
+    status_code = response.status_code
+    content = response.json()
+
+    res_ec_to_ckan = custom_schema.convert_ec_file_to_ckan_resource
+    try:
+        metadata = content['MetadataResultSet']
+    except IndexError:
+        return {}
+
+    versions = []
+    for version in metadata:
+        ckan_resource = res_ec_to_ckan(version['FileMetadata'])
+        ckan_resource['version'] = version['Version']
+        versions.append(ckan_resource)
+    return versions

@@ -2,6 +2,7 @@ import json
 
 from pylons import config
 
+import ckan.model as model
 from ckan.controllers.package import PackageController
 
 import ckan.plugins as p
@@ -79,3 +80,21 @@ class DatasetController(PackageController):
                 log.critical(error)
                 vars = {'error': error}
                 return p.toolkit.render('auth_token.html', extra_vars=vars)
+
+    def resource_version(self, dataset, resource, version=0):
+        context = {
+            'model': model,
+            'session': model.Session,
+        }
+        try:
+            pkg =p.toolkit.get_action('package_show')(context, {'name_or_id': dataset})
+        except p.toolkit.NotFound:
+            return p.toolkit.abort(404, p.toolkit._('Package not found'))
+
+        vars = {
+            'pkg': pkg,
+            'resource_id': resource,
+            'version_id': int(version),
+        }
+        return p.toolkit.render('package/resource_versions.html',
+                                extra_vars=vars)

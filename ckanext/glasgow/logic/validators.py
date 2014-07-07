@@ -40,9 +40,13 @@ def unique_title_within_organization(key, data, errors, context):
         'ignore_auth': True}, search_dict)
 
     if query['count'] > 0:
-        raise Invalid(
-            _('There is a dataset with the same title in this organization')
-        )
+        if query['count'] == 1 and query['results'][0]['id'] == data.get(('id', )):
+            # If we are updating the dataset then having the same title is ok!
+            pass
+        else:
+            raise Invalid(
+                _('There is a dataset with the same title in this organization')
+            )
     return value
 
 

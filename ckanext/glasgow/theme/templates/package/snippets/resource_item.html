@@ -1,0 +1,11 @@
+{% ckan_extends %}
+
+{% block resource_item_explore_links %}
+{{ super() }}
+<li>
+  <a href="{%  url_for controller='ckanext.glasgow.controllers.dataset:DatasetController', action='resource_version', dataset=pkg.id, resource=res.id, version=0 %}">
+    <i class="icon-file"></i>
+    {{ _('Revisions') }}
+  </a>
+</li>
+{% endblock %}
