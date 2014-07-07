@@ -13,7 +13,7 @@ def get_resource_versions(dataset_id, resource_id):
             'session': model.Session,
             'user': toolkit.c.user,
         }
-        resource_versions_show = toolkit.get_action('resource_versions_show')
+        resource_versions_show = toolkit.get_action('resource_version_show')
         return resource_versions_show(context, {
             'package_id': dataset_id,
             'resource_id': resource_id,

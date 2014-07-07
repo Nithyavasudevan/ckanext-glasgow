@@ -325,7 +325,7 @@ def request_orgs():
 
 
 
-@app.route('/Metadata/Organisation/<org_id>/Dataset/<dataset_id>/File/<file_id>/Version',
+@app.route('/Metadata/Organisation/<org_id>/Dataset/<dataset_id>/File/<file_id>/Versions',
            methods=['GET'])
 def file_versions(org_id, dataset_id, file_id):
     skip = int(flask.request.args.get('$skip', 0))

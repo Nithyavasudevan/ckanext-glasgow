@@ -661,8 +661,9 @@ def resource_version_show(context, data_dict):
         ec_api_org_id = dataset['ec_api_org_id']
         ec_api_dataset_id = dataset['ec_api_id']
         ec_api_file_id = resource['ec_api_id'] 
-    except KeyError:
-        raise ECAPIValidationError(['EC API Error: {0} not in resource metadata'])
+    except KeyError, e:
+        raise ECAPIValidationError(
+            ['EC API Error: {0} not in resource metadata'.format(e.message)])
 
     url = url.format(
         organization_id=ec_api_org_id,
