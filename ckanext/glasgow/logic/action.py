@@ -816,6 +816,7 @@ def on_task_status_success(context, task_status_dict):
         raise NoSuchTaskType('no such task type {0}'.format(task_type))
 
 
+@p.toolkit.side_effect_free
 def get_change_request(context, data_dict):
     try:
         request_id = data_dict['request_id']
