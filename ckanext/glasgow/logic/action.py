@@ -775,8 +775,8 @@ def check_for_task_status_update(context, data_dict):
             return  p.toolkit.get_action('task_status_update')(context,
                                                                task_status)
     else:
-        raise ECAPIError('EC API returned an error: {0}'.format(
-            response.status_code))
+        raise ECAPIError('EC API returned an error: {0} - {1}'.format(
+            response.status_code, url))
 
 
 class NoSuchTaskType(Exception):
@@ -814,3 +814,31 @@ def on_task_status_success(context, task_status_dict):
         functions[task_type]()
     except KeyError:
         raise NoSuchTaskType('no such task type {0}'.format(task_type))
+
+
+def get_change_request(context, data_dict):
+    try:
+        request_id = data_dict['request_id']
+    except KeyError:
+        raise p.toolkit.ValidationError(['request_id missing'])
+
+    method, url = _get_api_endpoint('request_status_show')
+    url = url.format(request_id=request_id)
+
+    headers = {
+        'Authorization': _get_api_auth_token(),
+        'Content-Type': 'application/json',
+    }
+    
+    response = requests.request(method, url, headers=headers)
+    if response.status_code == requests.codes.ok:
+        try:
+            result = response.json()
+            return result
+        except ValueError:
+            raise ECAPIValidationError(['EC API Error: response not JSON'])
+
+    else:
+        raise ECAPIValidationError(['EC API Error: {0} - {1}'.format(
+            response.status_code, response.content)])
+

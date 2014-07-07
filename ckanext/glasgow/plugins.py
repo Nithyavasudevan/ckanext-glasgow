@@ -80,6 +80,7 @@ class GlasgowSchemaPlugin(p.SingletonPlugin, p.toolkit.DefaultDatasetForm):
             'pending_task_for_dataset',
             'resource_version_show',
             'check_for_task_status_update',
+            'get_change_request',
         )
         return _get_module_functions(custom_actions, function_names)
 
