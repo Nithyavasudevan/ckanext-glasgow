@@ -89,9 +89,8 @@
     <ul class="unstyled nav nav-simple">
       {% for version in versions %}
         <li class="nav-item{{ ' active' if version_id|int == loop.index0 }}">
-          <a class="heading" title="{{version.name}}" href="{% url_for controller='ckanext.glasgow.controllers.dataset:DatasetController', action='resource_version', dataset=pkg.id, resource=resource_id,version=loop.index0 %}">
-            {{ version.version }}
-
+          <a class="heading" title="{{ version.creation_date or version.name }}" href="{% url_for controller='ckanext.glasgow.controllers.dataset:DatasetController', action='resource_version', dataset=pkg.id, resource=resource_id,version=loop.index0 %}">
+            {{ version.creation_date or version.name }}
           </a>
         </li>
       {% endfor %}
