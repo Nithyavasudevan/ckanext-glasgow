@@ -18,7 +18,7 @@
   {% else %}
   {% endif %}
   <li>{% link_for resource_id|truncate(20), controller='package', action='resource_read', id=pkg.id, resource_id=resource_id %}</li>
-  <li {{ self.breadcrumb_content_selected() }}><a href="">Version {{ version_id|string|truncate(30) }}</a></li>
+  <li {{ self.breadcrumb_content_selected() }}><a href="">Version/{{ versions[version_id].version|string|truncate(30) }}</a></li>
 {% endblock %}
 
 {% block primary_content_inner %}
