@@ -88,7 +88,7 @@ class DatasetController(PackageController):
         }
         try:
             pkg =p.toolkit.get_action('package_show')(context, {'name_or_id': dataset})
-        except p.toolkit.NotFound:
+        except p.toolkit.ObjectNotFound:
             return p.toolkit.abort(404, p.toolkit._('Package not found'))
 
         vars = {
