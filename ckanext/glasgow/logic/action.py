@@ -642,7 +642,6 @@ def dataset_request_update(context, data_dict):
 
 def resource_version_show(context, data_dict):
     '''Show files versions as listed on EC API'''
-    import ipdb; ipdb.set_trace()
     try:
         resource_id = data_dict['resource_id']
         package_id = data_dict['package_id']
