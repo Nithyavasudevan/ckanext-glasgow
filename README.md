@@ -29,7 +29,7 @@ CKAN Extensions specific to Open Glasgow
 
     ## Plugins Settings
 
-    ckan.plugins = stats text_preview recline_preview glasgow_schema oauth2waad
+    ckan.plugins = stats text_preview recline_preview glasgow_schema ec_initial_harvester oauth2waad
 
     # Local mock API
     #ckanext.glasgow.data_collection_api=http://localhost:7070
@@ -47,6 +47,7 @@ CKAN Extensions specific to Open Glasgow
     ckanext.oauth2waad.auth_endpoint = https://login.windows.net/common/oauth2/authorize
     ckanext.oauth2waad.auth_token_endpoint = https://login.windows.net/common/oauth2/token
     ckanext.oauth2waad.resource = http://GCCCTPECServicesINT.cloudapp.net:8080/
+    ckanext.oauth2waad.csrf_secret = ...
 
     ## Storage Settings
 
