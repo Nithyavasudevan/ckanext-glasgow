@@ -20,5 +20,6 @@ def get_resource_versions(dataset_id, resource_id):
             'resource_id': resource_id,
         })
     except (toolkit.ValidationError, toolkit.NotAuthorized, toolkit.ObjectNotFound), e:
+
         helpers.flash_error('{0}'.format(e.error_dict['message']))
         return []
