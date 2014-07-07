@@ -126,7 +126,7 @@ def _get_api_endpoint(operation):
         path = '/Files/Organisation/{organization_id}/Dataset/{dataset_id}'
     elif operation == 'file_version_show':
         method = 'GET'
-        path = '/Metadata/Organisation/{organization_id}/Dataset/{dataset_id}/File/{file_id}/Version'
+        path = '/Metadata/Organisation/{organization_id}/Dataset/{dataset_id}/File/{file_id}/Versions'
     elif operation == 'request_status_show':
         method = 'GET'
         path = '/ChangeLog/RequestStatus/{request_id}'
@@ -680,10 +680,11 @@ def resource_version_show(context, data_dict):
         return {}
 
     versions = []
-    for version in metadata:
-        ckan_resource = res_ec_to_ckan(version['FileMetadata'])
-        ckan_resource['version'] = version['Version']
-        versions.append(ckan_resource)
+    if metadata:
+        for version in metadata:
+            ckan_resource = res_ec_to_ckan(version['FileMetadata'])
+            ckan_resource['version'] = version['Version']
+            versions.append(ckan_resource)
     return versions
 
 def check_for_task_status_update(context, data_dict):
