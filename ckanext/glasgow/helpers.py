@@ -1,5 +1,6 @@
 import json
 from ckan import model
+import ckan.lib.helpers as helpers
 import ckan.plugins.toolkit as toolkit
 
 def get_licenses():
@@ -18,5 +19,6 @@ def get_resource_versions(dataset_id, resource_id):
             'package_id': dataset_id,
             'resource_id': resource_id,
         })
-    except (toolkit.ValidationError, toolkit.NotAuthorized, toolkit.ObjectNotFound):
+    except (toolkit.ValidationError, toolkit.NotAuthorized, toolkit.ObjectNotFound), e:
+        helpers.flash_error('{0}'.format(e.error_dict['message']))
         return []
