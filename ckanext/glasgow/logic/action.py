@@ -660,15 +660,15 @@ def resource_version_show(context, data_dict):
     try:
         ec_api_file_id = resource['ec_api_id'] 
     except KeyError, e:
-        raise ActionError(
-            ['EC API Error: {0} not in dataset metadata'.format(e.message)])
+        raise p.toolkit.ObjectNotFound(
+            ['Error: {0} not in dataset metadata'.format(e.message)])
 
     try:
         ec_api_org_id = dataset['ec_api_org_id']
         ec_api_dataset_id = dataset['ec_api_id']
     except KeyError, e:
-        raise ActionError(
-            ['EC API Error: {0} not in resource metadata'.format(e.message)])
+        raise p.toolkit.ObjectNotFound(
+            ['Error: {0} not in resource metadata'.format(e.message)])
 
     url = url.format(
         organization_id=ec_api_org_id,
