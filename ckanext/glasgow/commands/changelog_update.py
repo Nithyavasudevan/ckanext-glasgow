@@ -23,6 +23,7 @@ class UpdateFromEcApiChangeLog(CkanCommand):
             context = {
                 'model': model,
                 'session': model.Session,
+                'ignore_auth': True,
             }
             try:
                 check_for_update(context, {'task_id': task.id})
