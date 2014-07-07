@@ -658,11 +658,16 @@ def resource_version_show(context, data_dict):
     method, url = _get_api_endpoint('file_version_show')
 
     try:
-        ec_api_org_id = dataset['ec_api_org_id']
-        ec_api_dataset_id = dataset['ec_api_id']
         ec_api_file_id = resource['ec_api_id'] 
     except KeyError, e:
-        raise ECAPIValidationError(
+        raise ActionError(
+            ['EC API Error: {0} not in dataset metadata'.format(e.message)])
+
+    try:
+        ec_api_org_id = dataset['ec_api_org_id']
+        ec_api_dataset_id = dataset['ec_api_id']
+    except KeyError, e:
+        raise ActionError(
             ['EC API Error: {0} not in resource metadata'.format(e.message)])
 
     url = url.format(
