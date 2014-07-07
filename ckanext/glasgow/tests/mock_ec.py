@@ -324,6 +324,7 @@ def request_orgs():
     )
 
 
+
 @app.route('/Metadata/Organisation/<org_id>/Dataset/<dataset_id>/File/<file_id>/Version',
            methods=['GET'])
 def file_versions(org_id, dataset_id, file_id):
@@ -398,6 +399,35 @@ def file_versions(org_id, dataset_id, file_id):
     )
 
 
+@app.route('/ChangeLog/RequestStatus/<request_id>', methods=['GET'])
+def request_changelog(request_id):
+    return flask.jsonify(**{
+        'Operations': [{
+            'AuditId': 1,
+            'RequestId': 'REQUEST-ID',
+            'Timestamp': '3000-05-21T00:00:10',
+            'AuditType': 'FileCreated',
+            'Command': 'CreateFile',
+            'ObjectType': 'File',
+            'OperationState': 'Succeeded',
+            'Component': 'DataPublication',
+            'Owner': 'Admin',
+            'Message': 'File Create Operation completed',
+            'CustomProperties': [
+                {   
+                    'OrganisationId': '1',
+                    'DatasetId': '1',
+                    'FileId': '1',
+                    'Versionid': 'VERSION-ID',
+                    }
+                ]
+            }
+            ],
+        "ErrorMessage": None,
+        "IsErrorResponse": False,
+        "IsRetryRequested": False
+        }
+    )
 def handle_dataset_request(organization_id):
     data = flask.request.json
 

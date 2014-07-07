@@ -1,9 +1,11 @@
 import cgi
+import datetime
 import os
 import StringIO
 import json
 
 import nose
+import mock
 
 from pylons import config
 
@@ -580,9 +582,7 @@ class TestFileCreate(object):
         nose.tools.assert_raises(p.toolkit.ObjectNotFound,
                                  helpers.call_action,
                                  'file_request_create',
-                                  context=context, **data_dict)
-                                
-
+                                 context=context, **data_dict)
 
 class TestFileVersions(object):
     @classmethod
@@ -665,3 +665,130 @@ class TestFileVersions(object):
         version = versions[0]
         nose.tools.assert_equals(sorted(expected_output.items()),
                                  sorted(version.items()))
+
+
+class TestCheckForTaskStatusUpdate(object):
+    def setup(self):
+        self.normal_user = helpers.call_action('user_create',
+                                              name='normal_user',
+                                              email='test@test.com',
+                                              password='test')
+        test_org = helpers.call_action('organization_create',
+                                       context={'user': 'normal_user'},
+                                       name='test_org',
+                                       extras=[{'key': 'ec_api_id',
+                                                'value': 1}])
+
+    @mock.patch('requests.request')
+    def test_update(self, mock_request):
+        # setup a mock response from the EC API platform
+        mock_result = mock.Mock()
+        mock_result.status_code = 200
+        mock_result.json.return_value = {
+            'Operations': [
+                {
+                    'AuditId': 998,
+                    'RequestId': 'D3C86B10-90F8-4CA6-A943-1404FB6C06BF',
+                    'Timestamp': '2014-05-21T00:00:00',
+                    'AuditType': 'FileCreateRequested',
+                    'Command': 'CreateFile',
+                    'ObjectType': 'File',
+                    'OperationState': 'InProgress',
+                    'Component': 'DataCollection',
+                    'Owner': 'Admin',
+                    'Message': 'File Creation request started',
+                    'CustomProperties': [
+                        {   
+                            'OrganisationId': '1',
+                            'DatasetId': '1',
+                            }
+                        ]
+                    },
+                {
+                    'AuditId': 1000,
+                    'RequestId': 'D3C86B10-90F8-4CA6-A943-1404FB6C06BF',
+                    'Timestamp': '2014-05-21T00:00:00',
+                    'AuditType': 'VirusScanThreatNotDetected',
+                    'Command': 'CreateFile',
+                    'ObjectType': 'File',
+                    'OperationState': 'InProgress',
+                    'Component': 'Antivirus',
+                    'Owner': 'Admin',
+                    'Message': 'Anti Virus scan complete',
+                    'CustomProperties': [
+                        {   
+                            'OrganisationId': '1',
+                            'DatasetId': '1',
+                            }
+                        ]
+                    },
+                {
+                    'AuditId': 1005,
+                    'RequestId': 'D3C86B10-90F8-4CA6-A943-1404FB6C06BF',
+                    'Timestamp': '2014-05-21T00:00:10',
+                    'AuditType': 'FileCreated',
+                    'Command': 'CreateFile',
+                    'ObjectType': 'File',
+                    'OperationState': 'Succeeded',
+                    'Component': 'DataPublication',
+                    'Owner': 'Admin',
+                    'Message': 'File Create Operation completed',
+                    'CustomProperties': [
+                        {   
+                            'OrganisationId': '1',
+                            'DatasetId': '1',
+                            'FileId': '2',
+                            'Versionid': 'VERSION-ID',
+                            }
+                        ]
+                    }
+                ]
+        }
+        # make the mock the result of calling requests.request(...)
+        mock_request.return_value = mock_result
+
+        # Create a test task_status here, that will be checked against the
+        # ec api
+        ckan_data_dict = {
+            'name': 'test_dataset',
+            'owner_org': 'test_org',
+            'title': 'Test Dataset',
+            'notes': 'Some longer description',
+            'maintainer': 'Test maintainer',
+            'maintainer_email': 'Test maintainer email',
+            'license_id': 'OGL-UK-2.0',
+            'tags': [
+                {'name': 'Test tag 1'},
+                {'name': 'Test tag 2'},
+            ],
+            'openness_rating': 3,
+            'quality': 5,
+            'published_on_behalf_of': 'Test published on behalf of',
+            'usage_guidance': 'Test usage guidance',
+            'category': 'Test category',
+            'theme': 'Test theme',
+            'standard_name': 'Test standard name',
+            'standard_rating': 5,
+            'standard_version': 'Test standard version',
+        }
+
+        task_status = helpers.call_action(
+            'task_status_update',
+            task_type='dataset_request_create',
+            entity_type='dataset',
+            entity_id='ent_1',
+            key='test_dataset',
+            value=json.dumps({
+                'request_id': 'abc123',
+                'data_dict': ckan_data_dict
+            }),
+            last_updated=datetime.datetime(2000, 1, 1),
+        )
+        
+        # run our action that updates the task status
+        helpers.call_action('check_for_task_status_update',
+                            task_id=task_status['id'])
+
+        # check the dataset was created
+        dataset = helpers.call_action('package_show', 
+                                      name_or_id='test_dataset')

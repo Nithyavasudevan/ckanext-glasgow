@@ -142,6 +142,22 @@ def create_package_schema():
     return schema
 
 
+def ec_create_package_schema():
+    '''Schema for validated data dicts
+
+    This schema is used for creation of the package after it has been sent to
+    the EC platform and been succeesfully created there
+    '''
+    schema = create_package_schema()
+
+    name_validator = get_validator('name_validator')
+    package_name_validator = get_validator('package_name_validator')
+
+    schema['name'] = [not_empty, unicode, trim_string(100), name_validator,
+                      package_name_validator]
+    return schema
+
+
 def update_package_schema():
     schema = default_update_package_schema()
 
