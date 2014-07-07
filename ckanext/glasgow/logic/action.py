@@ -642,6 +642,7 @@ def dataset_request_update(context, data_dict):
 
 def resource_version_show(context, data_dict):
     '''Show files versions as listed on EC API'''
+    import ipdb; ipdb.set_trace()
     try:
         resource_id = data_dict['resource_id']
         package_id = data_dict['package_id']
@@ -661,14 +662,14 @@ def resource_version_show(context, data_dict):
         ec_api_file_id = resource['ec_api_id'] 
     except KeyError, e:
         raise ECAPIValidationError(
-            ['Error: {0} not in dataset metadata'.format(e.message)])
+            ['Error: {0} not in resource metadata'.format(e.message)])
 
     try:
         ec_api_org_id = dataset['ec_api_org_id']
         ec_api_dataset_id = dataset['ec_api_id']
     except KeyError, e:
         raise ECAPIValidationError(
-            ['Error: {0} not in resource metadata'.format(e.message)])
+            ['Error: {0} not in dataset metadata'.format(e.message)])
 
     url = url.format(
         organization_id=ec_api_org_id,
