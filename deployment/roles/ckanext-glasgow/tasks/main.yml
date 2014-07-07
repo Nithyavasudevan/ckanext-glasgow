@@ -6,4 +6,7 @@
 - name: Run setup.py develop for glasgow
   command: chdir=/usr/lib/ckan/default/src/ckanext-glasgow/ ../../bin/python setup.py develop
 
+- name: Install requirements for glasgow
+  pip: requirements=/usr/lib/ckan/default/src/ckanext-harvest/requirements.txt virtualenv=/usr/lib/ckan/default
+
 #TODO: config options
