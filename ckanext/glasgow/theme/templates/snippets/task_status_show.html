@@ -1,0 +1,8 @@
+<ul>
+  <li>CTPEC request id: {{ task.value.request_id }}</li>
+  <li>CKAN task id: {{ task.id }}</li>
+  <li>Status: {{ task.state }}</li>
+{% if task.value.ec_api_message %}
+  <li>EC API Message: {{ task.value.ec_api_message }}</li>
+{% endif %}
+</ul>

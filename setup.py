@@ -26,5 +26,7 @@ setup(
         # Add plugins here, e.g.
         glasgow_schema=ckanext.glasgow.plugins:GlasgowSchemaPlugin
         ec_initial_harvester=ckanext.glasgow.harvesters.ec_harvester:EcInitialHarvester
+	[paste.paster_command]
+	changelog_update=ckanext.glasgow.commands.changelog_update:UpdateFromEcApiChangeLog
     ''',
 )

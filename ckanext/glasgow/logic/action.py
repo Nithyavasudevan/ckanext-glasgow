@@ -5,6 +5,7 @@ import json
 import datetime
 import uuid
 
+import dateutil.parser
 import requests
 from sqlalchemy import or_
 
@@ -17,6 +18,7 @@ import ckan.lib.dictization.model_dictize as model_dictize
 
 import ckan.logic.action as core_actions
 from ckan.logic import ActionError
+import ckan.logic.schema as schema
 
 import ckanext.glasgow.logic.schema as custom_schema
 
@@ -25,6 +27,10 @@ log = logging.getLogger(__name__)
 
 get_action = p.toolkit.get_action
 check_access = p.toolkit.check_access
+
+
+class ECAPIError(ActionError):
+    pass
 
 
 class ECAPINotAuthorized(ActionError):
@@ -121,6 +127,9 @@ def _get_api_endpoint(operation):
     elif operation == 'file_version_show':
         method = 'GET'
         path = '/Metadata/Organisation/{organization_id}/Dataset/{dataset_id}/File/{file_id}/Version'
+    elif operation == 'request_status_show':
+        method = 'GET'
+        path = '/ChangeLog/RequestStatus/{request_id}'
     else:
         return None, None
 
@@ -266,7 +275,7 @@ def dataset_request_create(context, data_dict):
                                     # This will be used for validating datasets
                                     key=validated_data_dict['name'],
                                     value=json.dumps(
-                                        {'data_dict': validated_data_dict})
+                                        {'data_dict': data_dict})
                                     )
 
     # Convert payload from CKAN to EC API spec
@@ -320,7 +329,7 @@ def dataset_request_create(context, data_dict):
             'task_id': [task_dict['id']]
         }
         task_dict = _update_task_status_error(context, task_dict, {
-            'data_dict': validated_data_dict,
+            'data_dict': data_dict,
             'error': error_dict
         })
 
@@ -333,7 +342,7 @@ def dataset_request_create(context, data_dict):
 
     request_id = content.get('RequestId')
     task_dict = _update_task_status_success(context, task_dict, {
-        'data_dict': validated_data_dict,
+        'data_dict': data_dict,
         'request_id': request_id,
     })
 
@@ -442,14 +451,14 @@ def file_request_create(context, data_dict):
     key = '{0}@{1}'.format(validated_data_dict.get('package_id', 'file'),
                            datetime.datetime.now().isoformat())
 
-    uploaded_file = validated_data_dict.pop('upload', None)
+    uploaded_file = data_dict.pop('upload', None)
     task_dict = _create_task_status(context,
                                     task_type='file_request_create',
                                     entity_id=_make_uuid(),
                                     entity_type='file',
                                     key=key,
                                     value=json.dumps(
-                                        {'data_dict': validated_data_dict})
+                                        {'data_dict': data_dict})
                                     )
 
     # Convert payload from CKAN to EC API spec
@@ -536,7 +545,7 @@ def file_request_create(context, data_dict):
     request_id = content.get('RequestId')
 
     task_dict = _update_task_status_success(context, task_dict, {
-        'data_dict': validated_data_dict,
+        'data_dict': data_dict,
         'request_id': request_id,
     })
 
@@ -630,6 +639,7 @@ def _expire_task_status(context, task_id):
 def dataset_request_update(context, data_dict):
     pass
 
+
 def resource_version_show(context, data_dict):
     '''Show files versions as listed on EC API'''
     try:
@@ -675,3 +685,116 @@ def resource_version_show(context, data_dict):
         ckan_resource['version'] = version['Version']
         versions.append(ckan_resource)
     return versions
+
+def check_for_task_status_update(context, data_dict):
+    '''Checks the EC Platform for updates and updates the TaskStatus'''
+    # TODO check access
+    try:
+        task_id = data_dict['task_id']
+    except KeyError:
+        raise p.toolkit.ValidationError(['No task_id provided'])
+
+    task_status = p.toolkit.get_action('task_status_show')(context,
+        {'id': task_id})
+
+    try:
+        request_dict = json.loads(task_status.get('value', ''))
+        method, url = _get_api_endpoint('request_status_show')
+        url = url.format(request_id=request_dict['request_id'])
+    except ValueError:
+        raise p.toolkit.ValidationError(
+            ['task_status value is not valid JSON'])
+    except KeyError:
+        raise p.toolkit.ValidationError(['no request_id in task_status value'])
+
+    headers = {
+        'Authorization': _get_api_auth_token(),
+        'Content-Type': 'application/json',
+    }
+
+    response = requests.request(method, url, headers=headers)
+    if response.status_code == requests.codes.ok:
+        try:
+            result = response.json()
+        except ValueError:
+            raise ECAPIValidationError(['EC API Error: response not JSON'])
+
+        latest = result['Operations'][-1]
+        latest_timestamp = dateutil.parser.parse(latest['Timestamp'],
+                                                 yearfirst=True)
+
+        task_status_timestamp = dateutil.parser.parse(
+            task_status['last_updated'])
+
+
+        if latest_timestamp > task_status_timestamp:
+            if latest['OperationState'] == 'InProgress':
+
+               task_status['state'] = 'in_progress'
+               request_dict['ec_api_message'] = latest['Message']
+
+            elif latest['OperationState'] == 'Failed':
+
+               task_status['state'] = 'error'
+               task_status['error'] = latest['Message']
+
+
+            elif latest['OperationState'] == 'Succeeded':
+                task_status['state'] = 'succeeded'
+                request_dict['ec_api_message'] = latest['Message']
+
+                # call dataset_create/user_create/etc
+                try:
+                    on_task_status_success(context, task_status)
+                except NoSuchTaskType, e:
+                    task_status['state'] = 'error'
+                    # todo: fix abuse of task_status.value
+                    request_dict['ec_api_message'] = e.message
+                    
+            task_status.update({
+                'value': json.dumps(request_dict),
+                'last_updated': latest['Timestamp'],
+            })
+
+            return  p.toolkit.get_action('task_status_update')(context,
+                                                               task_status)
+    else:
+        raise ECAPIError('EC API returned an error: {0}'.format(
+            response.status_code))
+
+
+class NoSuchTaskType(Exception):
+    pass
+
+
+def on_task_status_success(context, task_status_dict):
+    def on_dataset_request_create():
+        request_dict = json.loads(task_status_dict['value'])
+        ckan_data_dict = request_dict['data_dict']
+
+        # TODO: the package should be owned by the user that created the
+        #       request
+        site_user = p.toolkit.get_action('get_site_user')(context, {})
+        pkg_create_context = {
+            'local_action': True,
+            'user': site_user['name'],
+            'model': model,
+            'session': model.Session,
+            'schema': custom_schema.ec_create_package_schema()
+        }
+
+        #todo update extras from successs
+
+        #todo error handling
+        p.toolkit.get_action('package_create')(pkg_create_context,
+                                           ckan_data_dict)
+        
+    functions = {
+        'dataset_request_create': on_dataset_request_create,
+    }
+
+    task_type = task_status_dict['task_type']
+    try:
+        functions[task_type]()
+    except KeyError:
+        raise NoSuchTaskType('no such task type {0}'.format(task_type))
