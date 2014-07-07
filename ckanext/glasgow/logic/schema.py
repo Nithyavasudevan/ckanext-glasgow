@@ -16,6 +16,9 @@ from ckanext.glasgow.logic.validators import (
     iso_date,
     no_pending_dataset_with_same_name,
     url_or_upload_not_empty,
+    tag_string_convert,
+    unique_title_within_organization,
+    no_pending_dataset_with_same_title_in_same_org
 )
 
 
@@ -51,7 +54,7 @@ ckan_to_ec_dataset_mapping = {
 }
 
 ckan_to_ec_resource_mapping = {
-    'ec_api_id': 'Id',
+    'ec_api_id': 'FileId',
     'ec_api_dataset_id': 'DatasetId',
     'name': 'Title',
     'description': 'Description',
@@ -113,7 +116,6 @@ def convert_ckan_resource_to_ec_file(ckan_dict):
             dataset_dict = p.toolkit.get_action('package_show')(
                 {'ignore_auth': True},
                 {'id': ckan_dict.get('package_id')})
-            # TODO: this comes up as string, convert to int?
             ec_dict['DatasetId'] = dataset_dict.get('ec_api_id')
         except p.toolkit.ObjectNotFound:
             pass
@@ -152,6 +154,10 @@ def _modify_schema(schema):
 
     name_validator = get_validator('name_validator')
     package_name_validator = get_validator('package_name_validator')
+    not_missing = get_validator('not_missing')
+    not_empty = get_validator('not_empty')
+    tag_length_validator = get_validator('tag_length_validator')
+
     convert_to_extras = get_converter('convert_to_extras')
 
     # Mandatory fields
@@ -162,7 +168,10 @@ def _modify_schema(schema):
                       package_name_validator,
                       no_pending_dataset_with_same_name]
 
-    schema['title'] = [not_empty, string_max_length(255), unicode]
+    schema['title'] = [not_empty, string_max_length(255), unicode,
+                       unique_title_within_organization,
+                       no_pending_dataset_with_same_title_in_same_org,
+                       ]
 
     schema['notes'] = [not_empty, string_max_length(4000), unicode]
 
@@ -204,13 +213,17 @@ def _modify_schema(schema):
 
     # Internal fields
 
-    schema['ec_api_id'] = [ignore_missing, int_validator, unicode,
+    schema['ec_api_id'] = [ignore_missing, unicode,
                            convert_to_extras]
 
-    schema['ec_api_org_id'] = [ignore_missing, int_validator, unicode,
+    schema['ec_api_org_id'] = [ignore_missing, unicode,
                                convert_to_extras]
 
     schema['resources'] = resource_schema()
+
+    schema['tag_string'] = [ignore_missing, tag_string_convert]
+    schema['tags']['name'] = [not_missing, not_empty, unicode,
+                              tag_length_validator]
 
 
 def show_package_schema():
@@ -256,7 +269,7 @@ def resource_schema():
 
     schema['name'] = [not_empty, string_max_length(255), unicode]
 
-    schema['description'] = [not_empty, string_max_length(4000), unicode]
+    schema['description'] = [not_empty, string_max_length(64000), unicode]
 
     schema['format'] = [not_empty, string_max_length(255), unicode]
 
@@ -285,8 +298,8 @@ def resource_schema():
 
     # Internal fields
 
-    schema['ec_api_id'] = [ignore_missing, int_validator, unicode]
+    schema['ec_api_id'] = [ignore_missing, unicode]
 
-    schema['ec_api_dataset_id'] = [ignore_missing, int_validator, unicode]
+    schema['ec_api_dataset_id'] = [ignore_missing, unicode]
 
     return schema

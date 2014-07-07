@@ -32,10 +32,10 @@ CKAN Extensions specific to Open Glasgow
     ckan.plugins = stats text_preview recline_preview glasgow_schema oauth2waad
 
     # Local mock API
-    #ckanext.glasgow.write_ec_api=http://localhost:7070
-    #ckanext.glasgow.read_ec_api=http://localhost:7070
-    ckanext.glasgow.write_ec_api=http://GCCCTPECServicesINT.cloudapp.net:8080
-    ckanext.glasgow.read_ec_api=http://GCCCTPECServicesINT.cloudapp.net:8081
+    #ckanext.glasgow.data_collection_api=http://localhost:7070
+    #ckanext.glasgow.metadata_api=http://localhost:7070
+    ckanext.glasgow.data_collection_api=http://gccctpecdatacollectionservicesint.cloudapp.net:8080
+    ckanext.glasgow.metadata_api=http://gccctpecmetadataservicesint.cloudapp.net:8081
 
     # Only if auth is not in place
     ckanext.glasgow.tmp_auth_token_file=/home/okfn/tmp_auth_token.txt

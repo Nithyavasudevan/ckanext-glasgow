@@ -33,8 +33,8 @@ class TestGetAPIEndpoint(object):
         cls._base_write_api = 'https://base.write.api/'
         cls._base_read_api = 'https://base.read.api/'
 
-        config['ckanext.glasgow.write_ec_api'] = cls._base_write_api
-        config['ckanext.glasgow.read_ec_api'] = cls._base_read_api
+        config['ckanext.glasgow.data_collection_api'] = cls._base_write_api
+        config['ckanext.glasgow.metadata_api'] = cls._base_read_api
 
     def test_get_api_endpoint(self):
         base_api = self._base_write_api.rstrip('/')
@@ -42,7 +42,7 @@ class TestGetAPIEndpoint(object):
         eq_(_get_api_endpoint('dataset_request_create'),
             ('POST', base_api + '/Datasets/Organisation/{organization_id}'))
         eq_(_get_api_endpoint('dataset_request_update'),
-            ('PUT', base_api + '/Datasets/Organisation/{organization_id}'))
+            ('PUT', base_api + '/Datasets/Organisation/{organization_id}/Dataset/{dataset_id}'))
         eq_(_get_api_endpoint('file_request_create'),
             ('POST', base_api + '/Files/Organisation/{organization_id}/Dataset/{dataset_id}'))
         eq_(_get_api_endpoint('file_request_update'),
@@ -323,7 +323,7 @@ class TestDatasetCreate(object):
         data_dict = {
             'name': 'test_dataset-401',
             'owner_org': 'test_org',
-            'title': 'Test Dataset',
+            'title': 'Test Dataset 401',
             'notes': 'Some longer description',
             'maintainer': 'Test maintainer',
             'maintainer_email': 'Test maintainer email',

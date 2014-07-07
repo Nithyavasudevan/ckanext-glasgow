@@ -1,8 +1,10 @@
 import cgi
 import nose
 import datetime
+import json
 
 import ckan.plugins as p
+import ckan.model as model
 import ckan.new_tests.helpers as helpers
 
 from ckanext.glasgow.logic import validators
@@ -288,7 +290,8 @@ class TestValidators(object):
                                      validators.url_or_upload_not_empty,
                                      key, data, errors, context)
 
-class TestNameValidators(object):
+
+class TestPendingNameValidators(object):
 
     def setup(cls):
         helpers.reset_db()
@@ -316,3 +319,130 @@ class TestNameValidators(object):
         nose.tools.assert_raises(p.toolkit.Invalid,
                                  validators.no_pending_dataset_with_same_name,
                                  value, context)
+
+
+class TestPendingTitleValidators(object):
+
+    def setup(cls):
+        helpers.reset_db()
+
+    def test_no_pending_dataset_with_same_title_valid(self):
+
+        key = ('title',)
+        data = {
+            ('title',): 'Test Title',
+            ('owner_org',): 'test_org',
+        }
+        errors = {}
+        context = {'model': model}
+
+        validators.no_pending_dataset_with_same_title_in_same_org(
+            key, data, errors, context)
+
+    def test_no_pending_dataset_with_same_title_invalid(self):
+
+        data = {'data_dict': {'title': 'Test Title', 'owner_org': 'test_org'}}
+
+        _create_task_status({'user': 'test'},
+                            task_type='test_task_type',
+                            entity_id='test_dataset_id',
+                            entity_type='dataset',
+                            key='test_dataset_name',
+                            value=json.dumps(data)
+                            )
+
+        key = ('title',)
+        data = {
+            ('title',): 'Test Title',
+            ('owner_org',): 'test_org',
+        }
+        errors = {}
+        context = {'model': model}
+
+        nose.tools.assert_raises(
+            p.toolkit.Invalid,
+            validators.no_pending_dataset_with_same_title_in_same_org,
+            key, data, errors, context)
+
+
+class TestUniqueTitleValidators(object):
+
+    @classmethod
+    def setup_class(cls):
+        helpers.reset_db()
+
+        # Create test user
+        cls.normal_user = helpers.call_action('user_create',
+                                              name='normal_user',
+                                              email='test@test.com',
+                                              password='test')
+
+        # Create test org
+        cls.test_org = helpers.call_action('organization_create',
+                                           context={'user': 'normal_user'},
+                                           name='test_org',
+                                           extras=[{'key': 'ec_api_id',
+                                                    'value': 1}])
+
+        # Create existing dataset
+        data_dict = {
+            'name': 'test_dataset',
+            'owner_org': 'test_org',
+            'title': 'Test Dataset',
+            'notes': 'Some longer description',
+            'maintainer': 'Test maintainer',
+            'maintainer_email': 'Test maintainer email',
+            'license_id': 'OGL-UK-2.0',
+            'openness_rating': 3,
+            'quality': 5,
+        }
+        context = {'ignore_auth': True, 'local_action': True,
+                   'user': cls.normal_user['name']}
+        cls.existing_dataset = helpers.call_action('package_create',
+                                                   context=context,
+                                                   **data_dict)
+
+    def test_create_same_title_same_org(self):
+
+        key = ('title',)
+        data = {
+            ('title',): self.existing_dataset['title'],
+            ('owner_org',): self.test_org['id'],
+        }
+        errors = {}
+        context = {}
+        nose.tools.assert_raises(p.toolkit.Invalid,
+                                 validators.unique_title_within_organization,
+                                 key, data, errors, context)
+
+    def test_create_same_title_different_org(self):
+
+        key = ('title',)
+        data = {
+            ('title',): self.existing_dataset['title'],
+            ('owner_org',): 'another_org',
+        }
+        errors = {}
+        context = {}
+
+        new_value = validators.unique_title_within_organization(key,
+                                                                data,
+                                                                errors,
+                                                                context)
+        eq_(new_value, self.existing_dataset['title'])
+
+    def test_create_different_title_different_org(self):
+
+        key = ('title',)
+        data = {
+            ('title',): 'Another Title',
+            ('owner_org',): 'another_org',
+        }
+        errors = {}
+        context = {}
+
+        new_value = validators.unique_title_within_organization(key,
+                                                                data,
+                                                                errors,
+                                                                context)
+        eq_(new_value, 'Another Title')

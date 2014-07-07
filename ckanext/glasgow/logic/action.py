@@ -103,15 +103,15 @@ def _get_api_endpoint(operation):
     :rtype: tuple
     '''
 
-    write_base = config.get('ckanext.glasgow.write_ec_api', '').rstrip('/')
-    read_base = config.get('ckanext.glasgow.read_ec_api', '').rstrip('/')
+    write_base = config.get('ckanext.glasgow.data_collection_api', '').rstrip('/')
+    read_base = config.get('ckanext.glasgow.metadata_api', '').rstrip('/')
 
     if operation == 'dataset_request_create':
         method = 'POST'
         path = '/Datasets/Organisation/{organization_id}'
     elif operation == 'dataset_request_update':
         method = 'PUT'
-        path = '/Datasets/Organisation/{organization_id}'
+        path = '/Datasets/Organisation/{organization_id}/Dataset/{dataset_id}'
     elif operation == 'file_request_create':
         method = 'POST'
         path = '/Files/Organisation/{organization_id}/Dataset/{dataset_id}'
@@ -186,7 +186,8 @@ def package_create(context, data_dict):
         context['local_action'] = True
         data_dict.pop('__local_action', None)
 
-    if context.get('local_action', False):
+    if (context.get('local_action', False) or
+            data_dict.get('type') == 'harvest'):
 
         return core_actions.create.package_create(context, data_dict)
 
@@ -283,10 +284,21 @@ def dataset_request_create(context, data_dict):
         'Content-Type': 'application/json',
     }
 
-    response = requests.request(method, url,
-                                data=json.dumps(ec_dict),
-                                headers=headers,
-                                )
+    try:
+        response = requests.request(method, url,
+                                    data=json.dumps(ec_dict),
+                                    headers=headers,
+                                    )
+    except requests.exceptions.RequestException, e:
+        error_dict = {
+            'message': ['Request exception: {0}'.format(e)],
+            'task_id': [task_dict['id']]
+        }
+        task_dict = _update_task_status_error(context, task_dict, {
+            'data_dict': validated_data_dict,
+            'error': error_dict
+        })
+        raise p.toolkit.ValidationError(error_dict)
 
     status_code = response.status_code
 
@@ -450,25 +462,40 @@ def file_request_create(context, data_dict):
         dataset_id=ec_api_dataset_id,
     )
 
-    data = {
-        'metadata': json.dumps(ec_dict)
-    }
-
     headers = {
         'Authorization': _get_api_auth_token(),
     }
 
-    # TODO: Modify this once we know how MS handles the external url case
-    files = {
-        'file': (uploaded_file.filename,
-                 uploaded_file.file)
-    } if uploaded_file is not None else None
 
-    response = requests.request(method, url,
-                                data=data,
-                                files=files,
-                                headers=headers,
-                                )
+    if isinstance(uploaded_file, cgi.FieldStorage):
+        files = {
+            'file': (uploaded_file.filename,
+                     uploaded_file.file)
+        }
+        data = {
+            'metadata': json.dumps(ec_dict)
+        }
+    else:
+        headers['Content-Type'] = 'application/json'
+        files = None
+        data = json.dumps(ec_dict)
+
+    try:
+        response = requests.request(method, url,
+                                    data=data,
+                                    files=files,
+                                    headers=headers,
+                                    )
+    except requests.exceptions.RequestException, e:
+        error_dict = {
+            'message': ['Request exception: {0}'.format(e)],
+            'task_id': [task_dict['id']]
+        }
+        task_dict = _update_task_status_error(context, task_dict, {
+            'data_dict': validated_data_dict,
+            'error': error_dict
+        })
+        raise p.toolkit.ValidationError(error_dict)
 
     status_code = response.status_code
 

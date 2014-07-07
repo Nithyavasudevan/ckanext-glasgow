@@ -1,5 +1,6 @@
 import cgi
 import datetime
+from itertools import count
 
 from dateutil.parser import parse as date_parser
 
@@ -10,6 +11,39 @@ _ = p.toolkit._
 Invalid = p.toolkit.Invalid
 get_validator = p.toolkit.get_validator
 get_converter = p.toolkit.get_converter
+
+
+def unique_title_within_organization(key, data, errors, context):
+    '''
+    Checks if there is another dataset with the same title in the included
+    organization.
+
+    :raises: :py:exc:`~ckan.plugins.toolkit.Invalid` if there is another
+        dataset with the same title
+
+    '''
+    value = data.get(key)
+
+    org_id = data.get(('owner_org', ))
+    if not org_id:
+        raise Invalid(
+            _('Please provide an organization for the dataset')
+        )
+    # We need to use title_string rather the title otherwise we cannot query
+    # by exact match
+    search_dict = {
+        'q': 'title_string:"%s"' % value,
+        'fq': 'owner_org:{0}'.format(org_id),
+    }
+
+    query = p.toolkit.get_action('package_search')({
+        'ignore_auth': True}, search_dict)
+
+    if query['count'] > 0:
+        raise Invalid(
+            _('There is a dataset with the same title in this organization')
+        )
+    return value
 
 
 def no_pending_dataset_with_same_name(value, context):
@@ -26,6 +60,42 @@ def no_pending_dataset_with_same_name(value, context):
     if pending_task:
         raise Invalid(
             _('There is a pending request for a dataset with the same name')
+        )
+    return value
+
+
+def no_pending_dataset_with_same_title_in_same_org(key, data, errors, context):
+    '''
+    Checks if there is a pending request for a dataset with the same title
+    in the same organization as the one you are creating.
+
+    :raises: :py:exc:`~ckan.plugins.toolkit.Invalid` if there is a pending
+        request with the same dataset title in the same organization
+
+    '''
+    value = data.get(key)
+
+    org_id = data.get(('owner_org', ))
+    if not org_id:
+        raise Invalid(
+            _('Please provide an organization for the dataset')
+        )
+    from sqlalchemy import or_
+
+    model = context.get('model')
+    task = model.Session.query(model.TaskStatus) \
+        .filter(model.TaskStatus.entity_type == 'dataset') \
+        .filter(or_(model.TaskStatus.state == 'new',
+                model.TaskStatus.state == 'sent')) \
+        .filter(model.TaskStatus.value.like('%"owner_org": "{0}"%'.format(org_id))) \
+        .filter(model.TaskStatus.value.like('%%\"title\": \"%s\"%%' % value))\
+        .order_by(model.TaskStatus.last_updated.desc()) \
+        .first()
+
+    if task:
+        raise Invalid(
+            _('There is a pending request for a dataset with the same ' +
+              'title in the same organization')
         )
     return value
 
@@ -193,3 +263,23 @@ def url_or_upload_not_empty(key, data, errors, context):
 
     if (check_url or check_upload or check_none or check_both):
         raise Invalid(_('Please provide either a file upload or a URL'))
+
+
+def tag_string_convert(key, data, errors, context):
+    '''Takes a list of tags that is a comma-separated string (in data[key])
+    and parses tag names. These are added to the data dict, enumerated. They
+    are also validated.'''
+
+    if isinstance(data[key], basestring):
+        tags = [tag.strip()
+                for tag in data[key].split(',')
+                if tag.strip()]
+    else:
+        tags = data[key]
+
+    current_index = max([int(k[1])
+                         for k in data.keys()
+                         if len(k) == 3 and k[0] == 'tags'] + [-1])
+
+    for num, tag in zip(count(current_index+1), tags):
+        data[('tags', num, 'name')] = tag
