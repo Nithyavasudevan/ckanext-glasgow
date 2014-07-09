@@ -44,6 +44,15 @@ class TestDatasetCreate(object):
         orgs = harvester._create_orgs()
         nt.assert_equals(len(orgs), 3)
 
+    def test_create_orgs_same_id_as_platform(self):
+        harvester = EcInitialHarvester()
+        orgs = harvester._create_orgs()
+
+        org = helpers.call_action('organization_show', id=orgs[0])
+
+        assert org['id'] in ('1', '2', '3')  # Ids returned by the mock api
+
+
     @mock.patch('requests.get')
     def test_create_orgs_bad_response(self, m):
         # setup a mock for requests.get that returns an object
@@ -187,7 +196,7 @@ class TestDatasetCreate(object):
     def test_import(self):
         harvester = EcInitialHarvester()
         job = HarvestJobFactory()
-        org = factories.Organization(name='test-org-2')
+        org = factories.Organization(id='4', name='test-org-2')
         harvest_object = harvest_model.HarvestObject(
             guid='3',
             job=job,
@@ -222,9 +231,11 @@ class TestDatasetCreate(object):
         pkg = helpers.call_action('package_show', name_or_id=u'raj-data-set-001-4')
         nt.assert_equals(pkg['title'], u'Raj Data Set 001')
 
-        nt.assert_equals(pkg['ec_api_id'], u'3')
+        nt.assert_equals(pkg['id'], u'3')
         nt.assert_equals(pkg['ec_api_org_id'], u'4')
 
         org = helpers.call_action('organization_show', id=u'test-org-2')
+
+        nt.assert_equals(org['id'], '4')
         nt.assert_equals(len(org['packages']), 1)
         nt.assert_equals(org['packages'][0]['name'], u'raj-data-set-001-4')
