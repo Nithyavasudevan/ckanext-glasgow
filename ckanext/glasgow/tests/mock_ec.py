@@ -412,7 +412,7 @@ def request_changelog_status(request_id):
             'Owner': 'Admin',
             'Message': 'File Create Operation completed',
             'CustomProperties': [
-                {   
+                {
                     'OrganisationId': '1',
                     'DatasetId': '1',
                     'FileId': '1',
@@ -442,8 +442,7 @@ def request_changelog(audit_id=None):
         response.status_code = 401
         return response
 
-    response = {
-        "Operations": [
+    response = [
             {
                 "AuditId": 1005,
                 "AuditType": "FileCreated",
@@ -502,26 +501,27 @@ def request_changelog(audit_id=None):
             }
 
         ]
-    }
 
     top = int(flask.request.args.get('$top', 1000))
     object_type = flask.request.args.get('$ObjectType')
 
     if audit_id:
-        audits = [a for a in response['Operations']
-                  if a['AuditId'] >= audit_id]
-        response = {'Operations': audits}
+        for index, audit in enumerate(response):
+            if audit['AuditId'] == audit_id:
+                response = response[index:]
 
     if object_type:
-        audits = [a for a in response['Operations']
+        audits = [a for a in response
                   if a['ObjectType'] == object_type]
-        response = {'Operations': audits}
+        response = audits
 
     if top:
-        response = {'Operations': response['Operations'][:top]}
+        response = response[:top]
 
-
-    return flask.jsonify(response)
+    return flask.Response(json.dumps(response),
+                          headers={
+                          'Content-type': 'application/json'
+                          })
 
 
 def handle_dataset_request(organization_id):

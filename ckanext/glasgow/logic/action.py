@@ -843,7 +843,7 @@ def changelog_show(context, data_dict):
     p.toolkit.check_access('changelog_show', context, data_dict)
 
     audit_id = data_dict.get('audit_id')
-    top = data_dict.get('top', 20)
+    top = data_dict.get('top')
     object_type = data_dict.get('object_type')
 
     # Send request to EC Audit API
@@ -883,4 +883,4 @@ def changelog_show(context, data_dict):
         else:
             raise p.toolkit.ValidationError(error_dict)
 
-    return content.get('Operations')
+    return content
