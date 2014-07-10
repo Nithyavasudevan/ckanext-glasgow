@@ -1,19 +1,18 @@
 import logging
 import json
 
-import dateutil.parser as dup
 from pylons import config
 import requests
-import slugify
 from sqlalchemy.sql import update, bindparam
 
 import ckan.model as model
 import ckan.plugins.toolkit as toolkit
 
 from ckanext.harvest.model import HarvestJob, HarvestObject, HarvestObjectExtra
-from ckanext.harvest.harvesters.base import HarvesterBase
 
 import ckanext.glasgow.logic.schema as glasgow_schema
+from ckanext.glasgow.harvesters import EcHarvester
+
 
 log = logging.getLogger(__name__)
 
@@ -58,25 +57,7 @@ def ec_api(endpoint):
         skip += len(result['MetadataResultSet'])
 
 
-class EcInitialHarvester(HarvesterBase):
-    def _get_object_extra(self, harvest_object, key):
-        '''
-        Helper function for retrieving the value from a harvest object extra,
-        given the key
-        '''
-        for extra in harvest_object.extras:
-            if extra.key == key:
-                return extra.value
-        return None
-
-    def _get_site_user(self):
-        return toolkit.get_action('get_site_user')(
-            {
-                'model': model,
-                'session': model.Session,
-                'ignore_auth': True,
-                'defer_commit': True
-            }, {})
+class EcInitialHarvester(EcHarvester):
 
     def _create_orgs(self):
         api_url = config.get('ckanext.glasgow.metadata_api', '').rstrip('/')
@@ -254,10 +235,7 @@ class EcInitialHarvester(HarvesterBase):
 
         # double check name
         if 'name' not in ckan_data_dict:
-            org_id = str(ckan_data_dict['ec_api_org_id'])
-            ckan_data_dict['name'] = slugify.slugify(
-                '-'.join([ec_data_dict['Title'][:95], org_id[:4]])
-            )
+            ckan_data_dict['name'] = self._get_dataset_name(ckan_data_dict)
 
         try:
             owner_org = self._get_object_extra(harvest_object, 'owner_org')
