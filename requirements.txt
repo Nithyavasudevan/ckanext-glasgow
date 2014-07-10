@@ -1,1 +1,3 @@
 slugify==0.0.1
+-e git+https://github.com/ckan/ckanext-harvest#egg=ckanext_harvest
+-e git+https://github.com/ckan/ckanext-harvest#egg=ckanext_oauth2waad
