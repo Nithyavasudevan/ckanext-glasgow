@@ -32,23 +32,34 @@ class TestGetAPIEndpoint(object):
     @classmethod
     def setup_class(cls):
 
-        cls._base_write_api = 'https://base.write.api/'
-        cls._base_read_api = 'https://base.read.api/'
+        cls._base_data_collection_api = 'https://base.data_collection.api/'
+        cls._base_metadata_api = 'https://base.metadata.api/'
 
-        config['ckanext.glasgow.data_collection_api'] = cls._base_write_api
-        config['ckanext.glasgow.metadata_api'] = cls._base_read_api
+        config['ckanext.glasgow.data_collection_api'] = cls._base_data_collection_api
+        config['ckanext.glasgow.metadata_api'] = cls._base_metadata_api
 
     def test_get_api_endpoint(self):
-        base_api = self._base_write_api.rstrip('/')
+        write_base_api = self._base_data_collection_api.rstrip('/')
+        read_base_api = self._base_metadata_api.rstrip('/')
 
         eq_(_get_api_endpoint('dataset_request_create'),
-            ('POST', base_api + '/Datasets/Organisation/{organization_id}'))
+            ('POST', write_base_api + '/Datasets/Organisation/{organization_id}'))
         eq_(_get_api_endpoint('dataset_request_update'),
-            ('PUT', base_api + '/Datasets/Organisation/{organization_id}/Dataset/{dataset_id}'))
+            ('PUT', write_base_api + '/Datasets/Organisation/{organization_id}/Dataset/{dataset_id}'))
         eq_(_get_api_endpoint('file_request_create'),
-            ('POST', base_api + '/Files/Organisation/{organization_id}/Dataset/{dataset_id}'))
+            ('POST', write_base_api + '/Files/Organisation/{organization_id}/Dataset/{dataset_id}'))
         eq_(_get_api_endpoint('file_request_update'),
-            ('PUT', base_api + '/Files/Organisation/{organization_id}/Dataset/{dataset_id}'))
+            ('PUT', write_base_api + '/Files/Organisation/{organization_id}/Dataset/{dataset_id}'))
+        eq_(_get_api_endpoint('dataset_show'),
+            ('GET', read_base_api + '/Metadata/Organisation/{organization_id}/Dataset/{dataset_id}'))
+        eq_(_get_api_endpoint('file_show'),
+            ('GET', read_base_api + '/Metadata/Organisation/{organization_id}/Dataset/{dataset_id}/File/{file_id}'))
+        eq_(_get_api_endpoint('file_version_show'),
+            ('GET', read_base_api + '/Metadata/Organisation/{organization_id}/Dataset/{dataset_id}/File/{file_id}/Versions'))
+        eq_(_get_api_endpoint('request_status_show'),
+            ('GET', read_base_api + '/ChangeLog/RequestStatus/{request_id}'))
+        eq_(_get_api_endpoint('changelog_show'),
+            ('GET', read_base_api + '/ChangeLog/RequestChanges'))
 
 
 class TestTaskStatusHelpers(object):

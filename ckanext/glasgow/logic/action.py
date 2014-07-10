@@ -124,6 +124,15 @@ def _get_api_endpoint(operation):
     elif operation == 'file_request_update':
         method = 'PUT'
         path = '/Files/Organisation/{organization_id}/Dataset/{dataset_id}'
+    elif operation == 'organization_show':
+        method = 'GET'
+        path = '/Metadata/Organisation/{organization_id}'
+    elif operation == 'dataset_show':
+        method = 'GET'
+        path = '/Metadata/Organisation/{organization_id}/Dataset/{dataset_id}'
+    elif operation == 'file_show':
+        method = 'GET'
+        path = '/Metadata/Organisation/{organization_id}/Dataset/{dataset_id}/File/{file_id}'
     elif operation == 'file_version_show':
         method = 'GET'
         path = '/Metadata/Organisation/{organization_id}/Dataset/{dataset_id}/File/{file_id}/Versions'
