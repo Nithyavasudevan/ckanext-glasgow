@@ -35,15 +35,16 @@ class EcHarvester(HarvesterBase):
 
         return self._user_name
 
-    def _get_dataset_name(self, data_dict):
-        org_id = data_dict.get('ec_api_org_id',
-                               data_dict.get('owner_org'))
 
-        if org_id:
-            name = slugify.slugify(
-                '-'.join([data_dict['title'][:95], str(org_id)[:4]])
-            )
-        else:
-            name = slugify.slugify(data_dict['title'])
+def get_dataset_name(data_dict):
+    org_id = data_dict.get('ec_api_org_id',
+                           data_dict.get('owner_org'))
 
-        return name
+    if org_id:
+        name = slugify.slugify(
+            '-'.join([data_dict['title'][:95], str(org_id)[:4]])
+        )
+    else:
+        name = slugify.slugify(data_dict['title'])
+
+    return name
