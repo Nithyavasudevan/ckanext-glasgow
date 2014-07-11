@@ -3,6 +3,7 @@ import logging
 import ckan.plugins as p
 
 import ckanext.glasgow.logic.schema as custom_schema
+import ckanext.glasgow.model as custom_model
 
 log = logging.getLogger(__name__)
 
@@ -49,6 +50,9 @@ class GlasgowSchemaPlugin(p.SingletonPlugin, p.toolkit.DefaultDatasetForm):
         # Register the extension template dir
         p.toolkit.add_template_directory(config, 'theme/templates')
 
+        # Create the extension DB tables if not there
+        custom_model.setup()
+
     # IDatasetForm
 
     def package_types(self):
@@ -80,6 +84,7 @@ class GlasgowSchemaPlugin(p.SingletonPlugin, p.toolkit.DefaultDatasetForm):
             'pending_task_for_dataset',
             'resource_version_show',
             'check_for_task_status_update',
+            'changelog_show',
         )
         return _get_module_functions(custom_actions, function_names)
 
@@ -95,6 +100,7 @@ class GlasgowSchemaPlugin(p.SingletonPlugin, p.toolkit.DefaultDatasetForm):
             'dataset_request_update',
             'pending_task_for_dataset',
             'task_status_show',
+            'changelog_show',
         )
         return _get_module_functions(custom_auth, function_names)
 

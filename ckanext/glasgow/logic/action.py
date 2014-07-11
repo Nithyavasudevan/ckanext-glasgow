@@ -15,10 +15,10 @@ import ckan.model as model
 import ckan.plugins as p
 from ckan.lib.navl.dictization_functions import validate
 import ckan.lib.dictization.model_dictize as model_dictize
-
 import ckan.logic.action as core_actions
 from ckan.logic import ActionError
-import ckan.logic.schema as schema
+
+import ckanext.oauth2waad.plugin as oauth2
 
 import ckanext.glasgow.logic.schema as custom_schema
 
@@ -124,12 +124,24 @@ def _get_api_endpoint(operation):
     elif operation == 'file_request_update':
         method = 'PUT'
         path = '/Files/Organisation/{organization_id}/Dataset/{dataset_id}'
+    elif operation == 'organization_show':
+        method = 'GET'
+        path = '/Metadata/Organisation/{organization_id}'
+    elif operation == 'dataset_show':
+        method = 'GET'
+        path = '/Metadata/Organisation/{organization_id}/Dataset/{dataset_id}'
+    elif operation == 'file_show':
+        method = 'GET'
+        path = '/Metadata/Organisation/{organization_id}/Dataset/{dataset_id}/File/{file_id}'
     elif operation == 'file_version_show':
         method = 'GET'
         path = '/Metadata/Organisation/{organization_id}/Dataset/{dataset_id}/File/{file_id}/Versions'
     elif operation == 'request_status_show':
         method = 'GET'
         path = '/ChangeLog/RequestStatus/{request_id}'
+    elif operation == 'changelog_show':
+        method = 'GET'
+        path = '/ChangeLog/RequestChanges'
     else:
         return None, None
 
@@ -814,3 +826,78 @@ def on_task_status_success(context, task_status_dict):
         functions[task_type]()
     except KeyError:
         raise NoSuchTaskType('no such task type {0}'.format(task_type))
+
+
+@p.toolkit.side_effect_free
+def changelog_show(context, data_dict):
+    '''
+    Requests audit entries to the EC API Changelog API
+
+    :param audit_id: The starting audit_id to return a set of changelog
+                     records for. All records created since this audit_id
+                     are returned (up until `top`)
+                     If omitted then the single most recent changelog
+                     record is returned.
+    :type operation: int
+    :param top: Number of records to return (defaults to 20)
+    :type operation: int
+    :param object_type: Limit records to this particular type (valid values
+                        are `Dataset`, `File` or `Organisation`)
+    :type operation: string
+
+    :returns: a list with the returned audit objects
+    :rtype: list
+    '''
+
+    p.toolkit.check_access('changelog_show', context, data_dict)
+
+    audit_id = data_dict.get('audit_id')
+    top = data_dict.get('top')
+    object_type = data_dict.get('object_type')
+
+    # Send request to EC Audit API
+
+    method, url = _get_api_endpoint('changelog_show')
+
+    if audit_id:
+        url += '/{0}'.format(audit_id)
+
+    params = {}
+    if top:
+        params['$top'] = top
+    if object_type:
+        params['$ObjectType'] = object_type
+
+    # Get Service to Service auth token
+
+    try:
+        access_token = oauth2.service_to_service_access_token()
+    except oauth2.ServiceToServiceAccessTokenError:
+        log.warning('Could not get the Service to Service auth token')
+        access_token = None
+
+    headers = {
+        'Authorization': 'Bearer {0}'.format(access_token),
+        'Content-Type': 'application/json',
+    }
+
+    response = requests.request(method, url, headers=headers, params=params)
+
+    content = response.json()
+
+    # Check status codes
+
+    status_code = response.status_code
+
+    if status_code != 200:
+        error_dict = {
+            'message': ['The CTPEC API returned an error code'],
+            'status': [status_code],
+            'content': [content],
+        }
+        if status_code == 401:
+            raise ECAPINotAuthorized(error_dict)
+        else:
+            raise p.toolkit.ValidationError(error_dict)
+
+    return content
