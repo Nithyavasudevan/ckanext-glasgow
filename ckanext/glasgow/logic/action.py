@@ -15,10 +15,10 @@ import ckan.model as model
 import ckan.plugins as p
 from ckan.lib.navl.dictization_functions import validate
 import ckan.lib.dictization.model_dictize as model_dictize
-
 import ckan.logic.action as core_actions
 from ckan.logic import ActionError
-import ckan.logic.schema as schema
+
+import ckanext.oauth2waad.plugin as oauth2
 
 import ckanext.glasgow.logic.schema as custom_schema
 
@@ -868,8 +868,16 @@ def changelog_show(context, data_dict):
     if object_type:
         params['$ObjectType'] = object_type
 
+    # Get Service to Service auth token
+
+    try:
+        access_token = oauth2.service_to_service_access_token()
+    except oauth2.ServiceToServiceAccessTokenError:
+        log.warning('Could not get the Service to Service auth token')
+        access_token = None
+
     headers = {
-        'Authorization': _get_api_auth_token(),
+        'Authorization': 'Bearer {0}'.format(access_token),
         'Content-Type': 'application/json',
     }
 
