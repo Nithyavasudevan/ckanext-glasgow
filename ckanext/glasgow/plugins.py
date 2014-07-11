@@ -3,6 +3,7 @@ import logging
 import ckan.plugins as p
 
 import ckanext.glasgow.logic.schema as custom_schema
+import ckanext.glasgow.model as custom_model
 
 log = logging.getLogger(__name__)
 
@@ -48,6 +49,9 @@ class GlasgowSchemaPlugin(p.SingletonPlugin, p.toolkit.DefaultDatasetForm):
 
         # Register the extension template dir
         p.toolkit.add_template_directory(config, 'theme/templates')
+
+        # Create the extension DB tables if not there
+        custom_model.setup()
 
     # IDatasetForm
 

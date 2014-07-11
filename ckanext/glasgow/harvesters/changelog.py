@@ -10,6 +10,7 @@ from ckanext.harvest.model import HarvestObject
 
 from ckanext.glasgow.logic.action import _get_api_endpoint
 import ckanext.glasgow.logic.schema as custom_schema
+from ckanext.glasgow.model import HarvestLastAudit
 from ckanext.glasgow.harvesters import EcHarvester, get_dataset_name
 
 log = logging.getLogger(__name__)
@@ -31,22 +32,49 @@ class EcChangelogHarvester(EcHarvester):
     def gather_stage(self, harvest_job):
         log.debug('In ChangelogHarvester gather_stage')
 
-        # TODO: get last harvested AuditId
+        # Get the last harvested AuditId
+        last_audit = model.Session.query(HarvestLastAudit) \
+            .order_by(HarvestLastAudit.created.desc()) \
+            .first()
+
+        if last_audit:
+            audit_id = last_audit.audit_id
+        else:
+            audit_id = '0'
 
         # Get all Audits
-#        audits = p.toolkit.get_action('changelog_show')(
-#            {'ignore_auth': True}, {})
+        audits = p.toolkit.get_action('changelog_show')(
+            {'ignore_auth': True},
+            {'audit_id': audit_id, 'top': 1000})
 
-        audits = json.loads(open('../_junk/changelog3.json', 'r').read())
-        # TODO: Use the most recent update only
+        # Check if there are any new audits to process
+        if not len(audits) or (
+           len(audits) == 1 and
+           audits[0]['AuditId'] == audit_id):
+            log.debug(
+                'No new audits to process since last run ' +
+                '(Last audit id {0})'.format(audit_id))
+            return []
+
+        # Ignore the first audit if an audit id was defined as start,
+        # as this one will be included in the results
+        audits = audits[1:] if audit_id != '0' and len(audits) > 1 else audits
 
         ids = []
 
+        # TODO: Use the most recent update only
         for audit in audits:
             obj = HarvestObject(guid=audit['AuditId'], job=harvest_job,
                                 content=json.dumps(audit))
             obj.save()
             ids.append(obj.id)
+
+        # Save the last AuditId to know where to start in the next run
+        new_last_audit = HarvestLastAudit(
+            audit_id=audit['AuditId'],
+            harvest_job_id=harvest_job.id,
+        )
+        new_last_audit.save()
 
         return ids
 
