@@ -1,5 +1,6 @@
 import logging
 import json
+import hashlib
 
 import requests
 
@@ -61,13 +62,20 @@ class EcChangelogHarvester(EcHarvester):
         audits = audits[1:] if audit_id != '0' and len(audits) > 1 else audits
 
         ids = []
-
-        # TODO: Use the most recent update only
+        update_audits = {}
         for audit in audits:
-            obj = HarvestObject(guid=audit['AuditId'], job=harvest_job,
-                                content=json.dumps(audit))
-            obj.save()
-            ids.append(obj.id)
+            # We only want to use the most recent update per object per run
+            # Store the most recent audit against a hash of the id fields
+            if 'update' in audit['Command'].lower():
+                m = hashlib.md5()
+                m.update(json.dumps(audit['CustomProperties']))
+                ids_hash = m.hexdigest()
+                update_audits[ids_hash] = audit
+            else:
+                obj = HarvestObject(guid=audit['AuditId'], job=harvest_job,
+                                    content=json.dumps(audit))
+                obj.save()
+                ids.append(obj.id)
 
         # Save the last AuditId to know where to start in the next run
         new_last_audit = HarvestLastAudit(
@@ -75,6 +83,12 @@ class EcChangelogHarvester(EcHarvester):
             harvest_job_id=harvest_job.id,
         )
         new_last_audit.save()
+
+        for key, audit in update_audits.iteritems():
+            obj = HarvestObject(guid=audit['AuditId'], job=harvest_job,
+                                content=json.dumps(audit))
+            obj.save()
+            ids.append(obj.id)
 
         return ids
 
