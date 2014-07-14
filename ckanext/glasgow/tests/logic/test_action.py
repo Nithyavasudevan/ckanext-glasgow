@@ -13,12 +13,14 @@ import ckan.model as model
 import ckan.plugins as p
 import ckan.new_tests.helpers as helpers
 
+
 from ckanext.glasgow.logic.action import (
     _get_api_endpoint,
     _create_task_status,
     _update_task_status_success,
     _update_task_status_error,
     ECAPINotAuthorized,
+    ECAPIError,
     )
 
 from ckanext.glasgow.tests import run_mock_ec
@@ -587,8 +589,6 @@ class TestFileCreate(object):
 class TestFileVersions(object):
     @classmethod
     def setup_class(cls):
-        helpers.reset_db()
-
 
         # Create test user
         cls.normal_user = helpers.call_action('user_create',
@@ -668,16 +668,25 @@ class TestFileVersions(object):
 
 
 class TestCheckForTaskStatusUpdate(object):
-    def setup(self):
-        self.normal_user = helpers.call_action('user_create',
+    @classmethod
+    def setup_class(cls):
+
+        # Create test user
+        cls.normal_user = helpers.call_action('user_create',
                                               name='normal_user',
                                               email='test@test.com',
                                               password='test')
+
+        # Create test org
         test_org = helpers.call_action('organization_create',
                                        context={'user': 'normal_user'},
                                        name='test_org',
                                        extras=[{'key': 'ec_api_id',
                                                 'value': 1}])
+
+    @classmethod
+    def teardown_class(cls):
+        helpers.reset_db()
 
     @mock.patch('requests.request')
     def test_update(self, mock_request):
@@ -792,3 +801,110 @@ class TestCheckForTaskStatusUpdate(object):
         # check the dataset was created
         dataset = helpers.call_action('package_show', 
                                       name_or_id='test_dataset')
+
+
+class TestGetChangeRequest(object):
+    @mock.patch('ckanext.oauth2waad.plugin.service_to_service_access_token')
+    @mock.patch('requests.request')
+    def test_update(self, mock_request, mock_token):
+        mock_token.return_value = 'mock_token'
+        # setup a mock response from the EC API platform
+        mock_result = mock.Mock()
+        mock_result.status_code = 200
+        mock_result.json.return_value = [
+            {
+                'AuditId': 998,
+                'RequestId': 'D3C86B10-90F8-4CA6-A943-1404FB6C06BF',
+                'Timestamp': '2014-05-21T00:00:00',
+                'AuditType': 'FileCreateRequested',
+                'Command': 'CreateFile',
+                'ObjectType': 'File',
+                'OperationState': 'InProgress',
+                'Component': 'DataCollection',
+                'Owner': 'Admin',
+                'Message': 'File Creation request started',
+                'CustomProperties': [
+                    {   
+                        'OrganisationId': '1',
+                        'DatasetId': '1',
+                        }
+                    ]
+                },
+            {
+                'AuditId': 1000,
+                'RequestId': 'D3C86B10-90F8-4CA6-A943-1404FB6C06BF',
+                'Timestamp': '2014-05-21T00:00:00',
+                'AuditType': 'VirusScanThreatNotDetected',
+                'Command': 'CreateFile',
+                'ObjectType': 'File',
+                'OperationState': 'InProgress',
+                'Component': 'Antivirus',
+                'Owner': 'Admin',
+                'Message': 'Anti Virus scan complete',
+                'CustomProperties': [
+                    {   
+                        'OrganisationId': '1',
+                        'DatasetId': '1',
+                        }
+                    ]
+                },
+            {
+                'AuditId': 1005,
+                'RequestId': 'D3C86B10-90F8-4CA6-A943-1404FB6C06BF',
+                'Timestamp': '2014-05-21T00:00:10',
+                'AuditType': 'FileCreated',
+                'Command': 'CreateFile',
+                'ObjectType': 'File',
+                'OperationState': 'Succeeded',
+                'Component': 'DataPublication',
+                'Owner': 'Admin',
+                'Message': 'File Create Operation completed',
+                'CustomProperties': [
+                    {   
+                        'OrganisationId': '1',
+                        'DatasetId': '1',
+                        'FileId': '2',
+                        'Versionid': 'VERSION-ID',
+                        }
+                    ]
+                }
+            ]
+        # make the mock the result of calling requests.request(...)
+        mock_request.return_value = mock_result
+
+        result = helpers.call_action('get_change_request', id='dummy')
+
+    def test_no_id_parameter(self):
+        nose.tools.assert_raises(
+            p.toolkit.ValidationError,
+            helpers.call_action,
+            'get_change_request'
+        )
+
+    @mock.patch('ckanext.oauth2waad.plugin.service_to_service_access_token')
+    def test_service_to_service_access_token_error(self, mock_token):
+        import ckanext.oauth2waad.plugin as oauth2waad_plugin
+        mock_token.side_effect = oauth2waad_plugin.ServiceToServiceAccessTokenError()
+        nose.tools.assert_raises(
+            ECAPIError,
+            helpers.call_action,
+            'get_change_request',
+            id='dummy'
+        )
+
+    @mock.patch('ckanext.oauth2waad.plugin.service_to_service_access_token')
+    @mock.patch('requests.request')
+    def test_non_json(self, mock_request, mock_token):
+        mock_token.return_value = 'mock_token'
+
+        mock_result = mock.Mock()
+        mock_result.status_code = 200
+        mock_result.json.side_effect = ValueError('Not JSON')
+        mock_request.return_value = mock_result
+
+        nose.tools.assert_raises(
+            ECAPIError,
+            helpers.call_action,
+            'get_change_request',
+            id='dummy'
+        )

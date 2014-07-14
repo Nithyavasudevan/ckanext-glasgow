@@ -7,7 +7,10 @@ from ckan.controllers.package import PackageController
 
 import ckan.plugins as p
 
-from ckanext.glasgow.logic.action import ECAPINotAuthorized
+from ckanext.glasgow.logic.action import (
+    ECAPINotAuthorized,
+    ECAPIError,
+)
 
 
 class DatasetController(PackageController):
@@ -20,13 +23,56 @@ class DatasetController(PackageController):
         if (pending_task and
                 pending_task['task_type'] == 'dataset_request_create'):
             pending_task['value'] = json.loads(pending_task['value'])
+
+            context = {
+                'model': model,
+                'session': model.Session,
+            }
+
+            try:
+                change_request = p.toolkit.get_action('get_change_request')(
+                    context, {'id': pending_task['value'].get('request_id')})[-1]
+            except ECAPIError, e:
+                change_request = None
+                #flash
+
             vars = {
                 'task': pending_task,
+                'change_request': change_request,
             }
             return p.toolkit.render('package/read_pending.html',
                                     extra_vars=vars)
         else:
             return super(DatasetController, self).read(id, format)
+
+    def resource_read(self, dataset_id, resource_id):
+        pending_task = p.toolkit.get_action('pending_task_for_file')({
+            'ignore_auth': True}, {'id': id})
+
+        if (pending_task and
+                pending_task['task_type'] == 'file_request_create'):
+            pending_task['value'] = json.loads(pending_task['value'])
+
+            context = {
+                'model': model,
+                'session': model.Session,
+            }
+
+            try:
+                change_request = p.toolkit.get_action('get_change_request')(
+                    context, {'id': pending_task['value'].get('request_id')})[-1]
+            except ECAPIError, e:
+                change_request = None
+
+            vars = {
+                'task': pending_task,
+                'change_request': change_request,
+            }
+            return p.toolkit.render('package/resource_read_pending.html',
+                                    extra_vars=vars)
+        else:
+            return super(DatasetController, self).resource_read(
+                dataset_id, resource_id)
 
     def new(self, data=None, errors=None, error_summary=None):
         '''Needed to capture custom exceptions'''

@@ -4,6 +4,7 @@ import logging
 import json
 import datetime
 import uuid
+import re
 
 import dateutil.parser
 import requests
@@ -19,6 +20,7 @@ import ckan.lib.dictization.model_dictize as model_dictize
 import ckan.logic.action as core_actions
 from ckan.logic import ActionError
 import ckan.logic.schema as schema
+
 
 import ckanext.glasgow.logic.schema as custom_schema
 
@@ -190,6 +192,39 @@ def pending_task_for_dataset(context, data_dict):
         return model_dictize.task_status_dictize(task, context)
     else:
         return None
+
+
+def pending_files_for_dataset(context, data_dict):
+    '''
+    Returns list of pending file tasks for a dataset
+
+    Returns the most recent TaskStatus with a state of 'new' or 'sent'.
+    Datasets can be identified by id or name.
+
+    :param id: Dataset id (optional if name provided)
+    :type operation: string
+
+    :returns: a task status dict if found, None otherwise.
+    :rtype: dict
+    '''
+
+    p.toolkit.check_access('pending_task_for_dataset', context, data_dict)
+
+    id = data_dict.get('id')
+
+    model = context.get('model')
+    tasks = model.Session.query(model.TaskStatus) \
+        .filter(model.TaskStatus.entity_type == 'file') \
+        .filter(or_(model.TaskStatus.state == 'new',
+                model.TaskStatus.state == 'sent')) \
+        .filter(model.TaskStatus.key.like('{0}@%'.format(id))) \
+        .order_by(model.TaskStatus.last_updated.desc())
+
+    results = []
+    for task in tasks:
+        task_dict = model_dictize.task_status_dictize(task, context)
+        results.append(task_dict)
+    return results
 
 
 def package_create(context, data_dict):
@@ -819,27 +854,40 @@ def on_task_status_success(context, task_status_dict):
 @p.toolkit.side_effect_free
 def get_change_request(context, data_dict):
     try:
-        request_id = data_dict['request_id']
+        request_id = data_dict['id']
     except KeyError:
-        raise p.toolkit.ValidationError(['request_id missing'])
+        raise p.toolkit.ValidationError(['id missing'])
 
     method, url = _get_api_endpoint('request_status_show')
     url = url.format(request_id=request_id)
 
-    headers = {
-        'Authorization': _get_api_auth_token(),
-        'Content-Type': 'application/json',
-    }
+    import ckanext.oauth2waad.plugin as oauth2waad_plugin
+    try:
+        access_token = oauth2waad_plugin.service_to_service_access_token()
+        if not access_token.startswith('Bearer '):
+            access_token = 'Bearer ' + access_token
+        headers = {
+            'Authorization': access_token,
+            'Content-Type': 'application/json',
+        }
+    except oauth2waad_plugin.ServiceToServiceAccessTokenError, e:
+        raise ECAPIError(['EC API Error: Failed to get service auth {0}'.format(e.message)])
     
     response = requests.request(method, url, headers=headers)
     if response.status_code == requests.codes.ok:
         try:
-            result = response.json()
-            return result
+            results = response.json()
         except ValueError:
-            raise ECAPIValidationError(['EC API Error: response not JSON'])
+            raise ECAPIError(['EC API Error: could no decode response as JSON'])
+
+        # change all the keys from CamelCase
+        for result in results:
+            for key in result.keys():
+                key_underscore = re.sub('(?!^)([A-Z]+)', r'_\1', key).lower()
+                result[key_underscore] = result.pop(key)
+
+        return results
 
     else:
-        raise ECAPIValidationError(['EC API Error: {0} - {1}'.format(
+        raise ECAPIError(['EC API Error: {0} - {1}'.format(
             response.status_code, response.content)])
-

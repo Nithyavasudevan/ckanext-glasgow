@@ -401,8 +401,27 @@ def file_versions(org_id, dataset_id, file_id):
 
 @app.route('/ChangeLog/RequestStatus/<request_id>', methods=['GET'])
 def request_changelog(request_id):
-    return flask.jsonify(**{
-        'Operations': [{
+    response_string = json.dumps([{
+            'AuditId': 1,
+            'RequestId': 'REQUEST-ID',
+            'Timestamp': '3000-05-21T00:00:10',
+            'AuditType': 'FileCreated',
+            'Command': 'CreateFile',
+            'ObjectType': 'File',
+            'OperationState': 'Succeeded',
+            'Component': 'DataPublication',
+            'Owner': 'Admin',
+            'Message': 'File Create Operation completed',
+            'CustomProperties': [
+                {   
+                    'OrganisationId': '1',
+                    'DatasetId': '1',
+                    'FileId': '1',
+                    'Versionid': 'VERSION-ID',
+                    }
+                ]
+            },
+{
             'AuditId': 1,
             'RequestId': 'REQUEST-ID',
             'Timestamp': '3000-05-21T00:00:10',
@@ -422,12 +441,9 @@ def request_changelog(request_id):
                     }
                 ]
             }
-            ],
-        "ErrorMessage": None,
-        "IsErrorResponse": False,
-        "IsRetryRequested": False
-        }
-    )
+            ])
+    return flask.Response(response_string, mimetype='application/json')
+
 def handle_dataset_request(organization_id):
     data = flask.request.json
 

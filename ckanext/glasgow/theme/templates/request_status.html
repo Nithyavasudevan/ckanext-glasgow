@@ -1,0 +1,23 @@
+{% extends "page.html" %}
+
+{% block primary %}
+  <h1>Request Status</h1>
+
+  {% if request_status %}
+    <table class="table table-bordered">
+      <thead>
+      <tr>
+        <th>Audit ID</th>
+        <th>State</th>
+      </tr>
+      </thead>
+    {% for change in request_status %}
+      <tbody>
+      {% snippet 'snippets/change_request_item.html', change_request=change %}
+      </tbody>
+    {% endfor %}
+    </table>
+  {% endif %}
+{% endblock %}
+
+{% block secondary %}{%endblock%}

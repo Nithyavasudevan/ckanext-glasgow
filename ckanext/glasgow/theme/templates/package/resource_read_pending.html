@@ -28,7 +28,7 @@
       {% snippet 'snippets/change_request_item.html', change_request=change_request %}
     {% endif %}
 
-    <p>This page will get automatically updated once the request is approved. {% link_for _('Refresh now'), controller='package', action='read', id=dataset.name %}
+    <p>This page will get automatically updated once the request is approved. {% link_for _('Refresh now'), controller='package', action='resource_read', id=dataset.name %}
 
   {% endblock %}
 

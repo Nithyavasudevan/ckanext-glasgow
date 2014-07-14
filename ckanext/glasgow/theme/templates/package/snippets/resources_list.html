@@ -1,0 +1,20 @@
+{% ckan_extends %}
+
+{% set pending_resources = h.get_pending_files_for_dataset(pkg) %}
+{% block resource_list %}
+  {{ super() }}
+  {% if pending_resources %}
+
+  <h3>Pending Resources</h3>
+  <ul class="resource-list">
+    {% for pending_resource in pending_resources %}
+    <li class="resource-item" id="pending-{{ loop.index }}">
+      <a href="{%  url_for controller='ckanext.glasgow.controllers.request_status:RequestStatusController', action='get_status', request_id=pending_resource.id %}">{{ pending_resource.value.data_dict.name }}
+        <span class="format-label" data-format="pending" property="dc:format"></span>
+      </a>
+      <p class="description">{{ pending_resource.value.data_dict.description }}</p>
+    </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+{% endblock %}
