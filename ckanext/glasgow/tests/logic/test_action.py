@@ -34,23 +34,34 @@ class TestGetAPIEndpoint(object):
     @classmethod
     def setup_class(cls):
 
-        cls._base_write_api = 'https://base.write.api/'
-        cls._base_read_api = 'https://base.read.api/'
+        cls._base_data_collection_api = 'https://base.data_collection.api/'
+        cls._base_metadata_api = 'https://base.metadata.api/'
 
-        config['ckanext.glasgow.data_collection_api'] = cls._base_write_api
-        config['ckanext.glasgow.metadata_api'] = cls._base_read_api
+        config['ckanext.glasgow.data_collection_api'] = cls._base_data_collection_api
+        config['ckanext.glasgow.metadata_api'] = cls._base_metadata_api
 
     def test_get_api_endpoint(self):
-        base_api = self._base_write_api.rstrip('/')
+        write_base_api = self._base_data_collection_api.rstrip('/')
+        read_base_api = self._base_metadata_api.rstrip('/')
 
         eq_(_get_api_endpoint('dataset_request_create'),
-            ('POST', base_api + '/Datasets/Organisation/{organization_id}'))
+            ('POST', write_base_api + '/Datasets/Organisation/{organization_id}'))
         eq_(_get_api_endpoint('dataset_request_update'),
-            ('PUT', base_api + '/Datasets/Organisation/{organization_id}/Dataset/{dataset_id}'))
+            ('PUT', write_base_api + '/Datasets/Organisation/{organization_id}/Dataset/{dataset_id}'))
         eq_(_get_api_endpoint('file_request_create'),
-            ('POST', base_api + '/Files/Organisation/{organization_id}/Dataset/{dataset_id}'))
+            ('POST', write_base_api + '/Files/Organisation/{organization_id}/Dataset/{dataset_id}'))
         eq_(_get_api_endpoint('file_request_update'),
-            ('PUT', base_api + '/Files/Organisation/{organization_id}/Dataset/{dataset_id}'))
+            ('PUT', write_base_api + '/Files/Organisation/{organization_id}/Dataset/{dataset_id}'))
+        eq_(_get_api_endpoint('dataset_show'),
+            ('GET', read_base_api + '/Metadata/Organisation/{organization_id}/Dataset/{dataset_id}'))
+        eq_(_get_api_endpoint('file_show'),
+            ('GET', read_base_api + '/Metadata/Organisation/{organization_id}/Dataset/{dataset_id}/File/{file_id}'))
+        eq_(_get_api_endpoint('file_version_show'),
+            ('GET', read_base_api + '/Metadata/Organisation/{organization_id}/Dataset/{dataset_id}/File/{file_id}/Versions'))
+        eq_(_get_api_endpoint('request_status_show'),
+            ('GET', read_base_api + '/ChangeLog/RequestStatus/{request_id}'))
+        eq_(_get_api_endpoint('changelog_show'),
+            ('GET', read_base_api + '/ChangeLog/RequestChanges'))
 
 
 class TestTaskStatusHelpers(object):
@@ -586,6 +597,7 @@ class TestFileCreate(object):
                                  'file_request_create',
                                  context=context, **data_dict)
 
+
 class TestFileVersions(object):
     @classmethod
     def setup_class(cls):
@@ -908,3 +920,93 @@ class TestGetChangeRequest(object):
             'get_change_request',
             id='dummy'
         )
+
+
+class TestChangelog(object):
+
+    @classmethod
+    def setup_class(cls):
+
+        # Create sysadmin user
+        cls.sysadmin_user = helpers.call_action('user_create',
+                                                name='sysadmin_user',
+                                                email='test@test.com',
+                                                password='test',
+                                                sysadmin=True)
+
+        # Start mock EC API
+        run_mock_ec()
+
+    @classmethod
+    def teardown_class(cls):
+        helpers.reset_db()
+
+    def test_changelog_show(self):
+
+        data_dict = {}
+        context = {'user': self.sysadmin_user['name']}
+        audit_list = helpers.call_action('changelog_show',
+                                         context=context,
+                                         **data_dict)
+
+        eq_(len(audit_list), 3)
+
+        audit_dict = audit_list[0]
+
+        assert 'AuditId' in audit_dict
+        assert 'Command' in audit_dict
+        assert 'ObjectType' in audit_dict
+        assert audit_dict['ObjectType'] in ('Dataset', 'File', 'Organisation')
+        assert 'RequestId' in audit_dict
+        assert 'Timestamp' in audit_dict
+
+    def test_changelog_show_starting_id(self):
+
+        data_dict = {
+            'audit_id': 1010,
+        }
+        context = {'user': self.sysadmin_user['name']}
+        audit_list = helpers.call_action('changelog_show',
+                                         context=context,
+                                         **data_dict)
+
+        eq_(len(audit_list), 2)
+
+    def test_changelog_show_top_results(self):
+
+        data_dict = {
+            'top': 2,
+        }
+        context = {'user': self.sysadmin_user['name']}
+        audit_list = helpers.call_action('changelog_show',
+                                         context=context,
+                                         **data_dict)
+
+        eq_(len(audit_list), 2)
+
+    def test_changelog_show_starting_and_top_results(self):
+
+        data_dict = {
+            'audit_id': 1010,
+            'top': 1,
+        }
+        context = {'user': self.sysadmin_user['name']}
+        audit_list = helpers.call_action('changelog_show',
+                                         context=context,
+                                         **data_dict)
+
+        eq_(len(audit_list), 1)
+
+    def test_changelog_show_object_type(self):
+
+        data_dict = {
+            'object_type': 'File',
+        }
+        context = {'user': self.sysadmin_user['name']}
+        audit_list = helpers.call_action('changelog_show',
+                                         context=context,
+                                         **data_dict)
+
+        eq_(len(audit_list), 1)
+
+        eq_(audit_list[0]['ObjectType'], 'File')

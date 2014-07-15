@@ -1,19 +1,18 @@
 import logging
 import json
 
-import dateutil.parser as dup
 from pylons import config
 import requests
-import slugify
 from sqlalchemy.sql import update, bindparam
 
 import ckan.model as model
 import ckan.plugins.toolkit as toolkit
 
 from ckanext.harvest.model import HarvestJob, HarvestObject, HarvestObjectExtra
-from ckanext.harvest.harvesters.base import HarvesterBase
 
 import ckanext.glasgow.logic.schema as glasgow_schema
+from ckanext.glasgow.harvesters import EcHarvester, get_dataset_name
+
 
 log = logging.getLogger(__name__)
 
@@ -58,25 +57,7 @@ def ec_api(endpoint):
         skip += len(result['MetadataResultSet'])
 
 
-class EcInitialHarvester(HarvesterBase):
-    def _get_object_extra(self, harvest_object, key):
-        '''
-        Helper function for retrieving the value from a harvest object extra,
-        given the key
-        '''
-        for extra in harvest_object.extras:
-            if extra.key == key:
-                return extra.value
-        return None
-
-    def _get_site_user(self):
-        return toolkit.get_action('get_site_user')(
-            {
-                'model': model,
-                'session': model.Session,
-                'ignore_auth': True,
-                'defer_commit': True
-            }, {})
+class EcInitialHarvester(EcHarvester):
 
     def _create_orgs(self):
         api_url = config.get('ckanext.glasgow.metadata_api', '').rstrip('/')
@@ -89,8 +70,9 @@ class EcInitialHarvester(HarvesterBase):
                 'session': model.Session,
                 'user': self._get_site_user()['name']
             }
-            org_name = slugify.slugify(org['Title'])
+            org_name = get_dataset_name(org, 'Title')
             data_dict = {
+                'id': org['Id'],
                 'title': org['Title'],
                 'name': org_name,
                 'extras': [
@@ -213,8 +195,8 @@ class EcInitialHarvester(HarvesterBase):
             # create harvest object extra for each file
             ckan_dict = glasgow_schema.convert_ec_file_to_ckan_resource(
                 file_metadata['FileMetadata'])
-            #TODO: make this part of convert_ec_file_to_ckan_resource?
-            ckan_dict['ec_api_id'] = file_metadata['FileId']
+            ckan_dict['id'] = file_metadata['FileId']
+
             #TODO: This needs to be removed once MS api is using the proper ExternalURL field
             if not ckan_dict.get('url') and file_metadata['FileMetadata'].get('FileExternalUrl'):
                 ckan_dict['url'] = file_metadata['FileMetadata'].get('FileExternalUrl')
@@ -242,6 +224,9 @@ class EcInitialHarvester(HarvesterBase):
         ec_data_dict = json.loads(harvest_object.content)
         ckan_data_dict = glasgow_schema.convert_ec_dataset_to_ckan_dataset(
             ec_data_dict.get('Metadata', {}))
+
+        ckan_data_dict['id'] = ec_data_dict['Id']
+
         ckan_data_dict['__local_action'] = True
 
         # Add EC API ids
@@ -250,10 +235,7 @@ class EcInitialHarvester(HarvesterBase):
 
         # double check name
         if 'name' not in ckan_data_dict:
-            org_id = str(ckan_data_dict['ec_api_org_id'])
-            ckan_data_dict['name'] = slugify.slugify(
-                '-'.join([ec_data_dict['Title'][:95], org_id[:4]])
-            )
+            ckan_data_dict['name'] = get_dataset_name(ckan_data_dict)
 
         try:
             owner_org = self._get_object_extra(harvest_object, 'owner_org')

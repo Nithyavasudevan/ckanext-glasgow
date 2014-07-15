@@ -40,7 +40,9 @@ def unique_title_within_organization(key, data, errors, context):
         'ignore_auth': True}, search_dict)
 
     if query['count'] > 0:
-        if query['count'] == 1 and query['results'][0]['id'] == data.get(('id', )):
+        if (query['count'] == 1
+                and len(query['results'])
+                and query['results'][0]['id'] == data.get(('id', ))):
             # If we are updating the dataset then having the same title is ok!
             pass
         else:

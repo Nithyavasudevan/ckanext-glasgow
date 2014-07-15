@@ -35,7 +35,7 @@ ignore_missing = get_validator('ignore_missing')
 # CKAN to EC API mappings
 
 ckan_to_ec_dataset_mapping = {
-    'ec_api_id': 'Id',
+    'id': 'Id',
     'title': 'Title',
     'notes': 'Description',
     'maintainer': 'MaintainerName',
@@ -54,7 +54,7 @@ ckan_to_ec_dataset_mapping = {
 }
 
 ckan_to_ec_resource_mapping = {
-    'ec_api_id': 'FileId',
+    'id': 'FileId',
     'ec_api_dataset_id': 'DatasetId',
     'name': 'Title',
     'description': 'Description',
@@ -111,14 +111,7 @@ def convert_ckan_resource_to_ec_file(ckan_dict):
             ec_dict[ec_name] = ckan_dict.get(ckan_name)
 
     if not ec_dict.get('DatasetId') and ckan_dict.get('package_id'):
-        # Get the EC API from the parent dataset
-        try:
-            dataset_dict = p.toolkit.get_action('package_show')(
-                {'ignore_auth': True},
-                {'id': ckan_dict.get('package_id')})
-            ec_dict['DatasetId'] = dataset_dict.get('ec_api_id')
-        except p.toolkit.ObjectNotFound:
-            pass
+        ec_dict['DatasetId'] = ckan_dict.get('package_id')
 
     return ec_dict
 
@@ -171,6 +164,7 @@ def _modify_schema(schema):
     name_validator = get_validator('name_validator')
     package_name_validator = get_validator('package_name_validator')
     not_missing = get_validator('not_missing')
+    ignore_empty = get_validator('ignore_empty')
     not_empty = get_validator('not_empty')
     tag_length_validator = get_validator('tag_length_validator')
 
@@ -179,6 +173,8 @@ def _modify_schema(schema):
     # Mandatory fields
 
     schema['__before'] = [tags_max_length(64000)]
+
+    schema['id'] = [ignore_empty, unicode]
 
     schema['name'] = [not_empty, unicode, trim_string(100), name_validator,
                       package_name_validator,

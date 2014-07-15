@@ -323,8 +323,6 @@ def request_orgs():
         }
     )
 
-
-
 @app.route('/Metadata/Organisation/<org_id>/Dataset/<dataset_id>/File/<file_id>/Versions',
            methods=['GET'])
 def file_versions(org_id, dataset_id, file_id):
@@ -400,7 +398,7 @@ def file_versions(org_id, dataset_id, file_id):
 
 
 @app.route('/ChangeLog/RequestStatus/<request_id>', methods=['GET'])
-def request_changelog(request_id):
+def request_change_status(request_id):
     response_string = json.dumps([{
             'AuditId': 1,
             'RequestId': 'REQUEST-ID',
@@ -444,6 +442,101 @@ def request_changelog(request_id):
             ])
     return flask.Response(response_string, mimetype='application/json')
 
+
+@app.route('/ChangeLog/RequestChanges')
+@app.route('/ChangeLog/RequestChanges/<int:audit_id>')
+def request_changelog(audit_id=None):
+
+    # Authorization
+
+    if ('Authorization' not in flask.request.headers or
+       flask.request.headers['Authorization'] == 'Bearer unknown_token'):
+        response = flask.jsonify(
+            Message='Not Auhtorized'
+        )
+        response.status_code = 401
+        return response
+
+    response = [
+            {
+                "AuditId": 1005,
+                "AuditType": "FileCreated",
+                "Command": "CreateFile",
+                "Component": "DataPublication",
+                "CustomProperties": [
+                    {
+                        "DatasetId": "691E26D0-BACA-4082-AB2D-59AA0027AAF3",
+                        "FileId": "AB1E26D0-BACA-4082-AB2D-59AA0027AA90",
+                        "OrganisationId": "73612F17-0A19-431F-A86C-F3FE59F86E4A",
+                        "Versionid": "781E26D0-BACA-4082-AB2D-59AA0027AA67"
+                    }
+                ],
+                "Message": "File Create Operation completed",
+                "ObjectType": "File",
+                "OperationState": "Succeeded",
+                "Owner": "Widget Admin",
+                "RequestId": "D3C86B10-90F8-4CA6-A943-1404FB6C06BF",
+                "Timestamp": "2014-05-21T00:00:10"
+            },
+            {
+                "AuditId": 1010,
+                "AuditType": "DatasetCreated",
+                "Command": "CreateDataset",
+                "Component": "DataPublication",
+                "CustomProperties": [
+                    {
+                        "DatasetId": "691E26D0-BACA-4082-AB2D-59AA0027AAF3",
+                        "OrganisationId": "73612F17-0A19-431F-A86C-F3FE59F86E4A"
+                    }
+                ],
+                "Message": "Dataset Create Operation completed",
+                "ObjectType": "Dataset",
+                "OperationState": "Succeeded",
+                "Owner": "Joe",
+                "RequestId": "90C86B10-90F8-4CA6-A943-1404FB6C0645",
+                "Timestamp": "2014-05-21T00:00:10"
+            },
+            {
+                "AuditId": 1012,
+                "AuditType": "DatasetCreated",
+                "Command": "CreateDataset",
+                "Component": "DataPublication",
+                "CustomProperties": [
+                    {
+                        "DatasetId": "691E26D0-BACA-4082-AB2D-XXXXXXXXXXXX",
+                        "OrganisationId": "73612F17-0A19-431F-A86C-F3FE59F86E4A"
+                    }
+                ],
+                "Message": "Dataset Create Operation completed",
+                "ObjectType": "Dataset",
+                "OperationState": "Succeeded",
+                "Owner": "Joe",
+                "RequestId": "90C86B10-90F8-4CA6-A943-YYYYYYYYYYY",
+                "Timestamp": "2014-05-22T13:54:10"
+            }
+
+        ]
+
+    top = int(flask.request.args.get('$top', 1000))
+    object_type = flask.request.args.get('$ObjectType')
+
+    if audit_id:
+        for index, audit in enumerate(response):
+            if audit['AuditId'] == audit_id:
+                response = response[index:]
+
+    if object_type:
+        audits = [a for a in response
+                  if a['ObjectType'] == object_type]
+        response = audits
+
+    if top:
+        response = response[:top]
+
+    return flask.Response(json.dumps(response),
+                          headers={
+                          'Content-type': 'application/json'
+                          })
 def handle_dataset_request(organization_id):
     data = flask.request.json
 
