@@ -1,1 +1,2 @@
 slugify==0.0.1
+-e git+https://github.com/ckan/ckanext-oauth2waad.git#egg=ckanext-oauth2waad
