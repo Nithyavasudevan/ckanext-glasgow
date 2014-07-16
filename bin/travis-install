@@ -42,10 +42,6 @@ pip install -r requirements.txt
 pip install -r requirements-dev.txt
 python setup.py develop
 
-cd $BASE_DIR/ckanext-oauth2waad
-pip install -r requirements.txt
-pip install -r requirements-dev.txt
-
 # Configure Solr
 echo -e "NO_START=0\nJETTY_HOST=127.0.0.1\nJETTY_PORT=8983\nJAVA_HOME=$JAVA_HOME" | sudo tee /etc/default/jetty
 sudo cp "$CKAN_DIR"/ckan/config/solr/schema.xml /etc/solr/conf/schema.xml
