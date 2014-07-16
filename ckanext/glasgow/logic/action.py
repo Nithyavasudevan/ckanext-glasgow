@@ -223,13 +223,15 @@ def pending_files_for_dataset(context, data_dict):
     p.toolkit.check_access('pending_task_for_dataset', context, data_dict)
 
     id = data_dict.get('id')
+    name = data_dict.get('name')
 
     model = context.get('model')
     tasks = model.Session.query(model.TaskStatus) \
         .filter(model.TaskStatus.entity_type == 'file') \
         .filter(or_(model.TaskStatus.state == 'new',
                 model.TaskStatus.state == 'sent')) \
-        .filter(model.TaskStatus.key.like('{0}@%'.format(id))) \
+        .filter(or_(model.TaskStatus.key.like('{0}@%'.format(id)),
+                model.TaskStatus.key.like('{0}@%'.format(name)))) \
         .order_by(model.TaskStatus.last_updated.desc())
 
     results = []
