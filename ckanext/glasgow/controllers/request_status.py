@@ -12,6 +12,9 @@ class RequestStatusController(toolkit.BaseController):
         try:
             request_status = toolkit.get_action('get_change_request')(context,
                 {'id': request_id})
+            if not request_status:
+                toolkit.abort(404, toolkit._(
+                    'Request {0} not found'.format(request_id)))
         except toolkit.ValidationError, e:
             helpers.flash_error('{0}'.format(e.error_dict['message']))
         except ECAPIError:

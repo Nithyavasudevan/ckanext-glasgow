@@ -9,7 +9,7 @@
   <ul class="resource-list">
     {% for pending_resource in pending_resources %}
     <li class="resource-item" id="pending-{{ loop.index }}">
-      <a href="{%  url_for controller='ckanext.glasgow.controllers.request_status:RequestStatusController', action='get_status', request_id=pending_resource.id %}">{{ pending_resource.value.data_dict.name }}
+      <a href="{%  url_for controller='ckanext.glasgow.controllers.request_status:RequestStatusController', action='get_status', request_id=pending_resource.request_id %}">{{ pending_resource.value.data_dict.name }}
         <span class="format-label" data-format="pending" property="dc:format"></span>
       </a>
       <p class="description">{{ pending_resource.value.data_dict.description }}</p>
