@@ -28,6 +28,12 @@ def file_request_create(context, data_dict):
     return dataset_request_create(context, data_dict)
 
 
+def get_change_request(context, data_dict):
+
+    # Forward auth check to the dataset level
+    return dataset_request_create(context, data_dict)
+
+
 def task_status_show(context, data_dict):
     return {'success': False,
             'msg': 'Only sysadmins can see task statuses'}

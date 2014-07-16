@@ -868,6 +868,7 @@ def on_task_status_success(context, task_status_dict):
 
 @p.toolkit.side_effect_free
 def get_change_request(context, data_dict):
+    p.toolkit.check_access('get_change_request', context, data_dict)
     try:
         request_id = data_dict['id']
     except KeyError:

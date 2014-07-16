@@ -106,6 +106,7 @@ class GlasgowSchemaPlugin(p.SingletonPlugin, p.toolkit.DefaultDatasetForm):
             'dataset_request_update',
             'pending_task_for_dataset',
             'task_status_show',
+            'get_change_request',
             'changelog_show',
         )
         return _get_module_functions(custom_auth, function_names)
