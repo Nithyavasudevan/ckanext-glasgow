@@ -33,7 +33,7 @@ def get_resource_versions(dataset_id, resource_id):
 def get_pending_files_for_dataset(pkg_dict):
     try:
         pending_files = toolkit.get_action('pending_files_for_dataset')({
-            'ignore_auth': True}, {'id': pkg_dict['id']})
+            'ignore_auth': True}, {'name': pkg_dict['name']})
         for pending_file in pending_files:
             pending_file['value'] = json.loads(pending_file['value'])
         return pending_files
