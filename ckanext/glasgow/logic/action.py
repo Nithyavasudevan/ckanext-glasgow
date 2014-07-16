@@ -168,6 +168,7 @@ def _get_ec_api_org_id(ckan_org_id):
     return ec_api_org_id
 
 
+@p.toolkit.side_effect_free
 def pending_task_for_dataset(context, data_dict):
     '''
     Returns the most recent pending request for a particular dataset
@@ -230,8 +231,8 @@ def pending_files_for_dataset(context, data_dict):
         .filter(model.TaskStatus.entity_type == 'file') \
         .filter(or_(model.TaskStatus.state == 'new',
                 model.TaskStatus.state == 'sent')) \
-        .filter(or_(model.TaskStatus.key.like('{0}@%'.format(id)),
-                model.TaskStatus.key.like('{0}@%'.format(name)))) \
+        .filter(or_(model.TaskStatus.key.like('{0}%'.format(id)),
+                model.TaskStatus.key.like('{0}%'.format(name)))) \
         .order_by(model.TaskStatus.last_updated.desc())
 
     results = []
