@@ -167,6 +167,9 @@ class DatasetController(PackageController):
             helpers.flash_error('{0}'.format(e.error_dict['message']))
         except ECAPIError:
             helpers.flash_error('{0}'.format(e.error_dict['message']))
+        except p.toolkit.NotAuthorized:
+            return p.toolkit.abort(401, p.toolkit._('Not authorized to view change requests'))
+
 
         return p.toolkit.render('package/change_request_list.html',
                                 extra_vars={'pkg_dict': pkg,
