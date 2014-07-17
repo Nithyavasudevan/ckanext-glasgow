@@ -155,6 +155,9 @@ def update_package_schema():
     schema = default_update_package_schema()
 
     _modify_schema(schema)
+    name_validator = get_validator('name_validator')
+    schema['name'] = [not_empty, unicode, trim_string(100), name_validator,
+                      no_pending_dataset_with_same_name]
 
     return schema
 

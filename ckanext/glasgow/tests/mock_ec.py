@@ -116,7 +116,7 @@ def request_dataset_create(organization_id):
     return handle_dataset_request(organization_id)
 
 
-@app.route('/Datasets/Organisation/<int:organization_id>/Dataset/<int:dataset_id>', methods=['PUT'])
+@app.route('/Datasets/Organisation/<organization_id>/Dataset/<dataset_id>', methods=['PUT'])
 def request_dataset_update(organization_id, dataset_id):
 
     return handle_dataset_request(organization_id, dataset_id)
@@ -537,7 +537,9 @@ def request_changelog(audit_id=None):
                           headers={
                           'Content-type': 'application/json'
                           })
-def handle_dataset_request(organization_id):
+
+
+def handle_dataset_request(organization_id, dataset_id=None):
     data = flask.request.json
 
     if app.debug:

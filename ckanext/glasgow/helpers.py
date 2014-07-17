@@ -43,3 +43,14 @@ def get_pending_files_for_dataset(pkg_dict):
         return []
     except toolkit.NotAuthorized:
         return []
+
+
+def get_pending_task_for_dataset(pkg_name):
+    try:
+        return toolkit.get_action('pending_task_for_dataset')({
+            'user': toolkit.c.user, }, {'name': pkg_name})
+    except (toolkit.ValidationError,  toolkit.ObjectNotFound), e:
+        helpers.flash_error('{0}'.format(e.error_dict['message']))
+        return None
+    except toolkit.NotAuthorized:
+        return None

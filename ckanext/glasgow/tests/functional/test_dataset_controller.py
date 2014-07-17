@@ -71,7 +71,8 @@ class TestDatasetController(object):
 
         assert 'request_id' in request_dict
 
-        response = self.app.get('/dataset/test_dataset_pending')
+        response = self.app.get('/dataset/test_dataset_pending',
+                                extra_environ={'REMOTE_USER': 'sysadmin_user'})
         eq_(response.status_int, 200)
 
         # Check that we got the pending page, not a default dataset page
@@ -157,7 +158,8 @@ class TestDatasetController(object):
                                            **data_dict)
 
 
-        response = self.app.get('/dataset/test_dataset_file_pending')
+        response = self.app.get('/dataset/test_dataset_file_pending',
+                                extra_environ={'REMOTE_USER': 'sysadmin_user'})
         eq_(response.status_int, 200)
 
         soup = BeautifulSoup(response.body)

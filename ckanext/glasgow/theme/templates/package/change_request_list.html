@@ -1,0 +1,22 @@
+{% extends "package/read_base.html" %}
+
+{% block primary_content_inner %}
+  <h2 class="hide-heading">{{ _('Pending Change') }}</h2>
+
+  {% if change_request  %}
+    <table class="table table-bordered">
+      <thead>
+      <tr>
+        <th>Audit ID</th>
+        <th>State</th>
+      </tr>
+      </thead>
+      <tbody>
+      {% snippet 'snippets/change_request_item.html', change_request=change_request %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="empty">{{ _('There is no current change request associated with this dataset') }}</p>
+  {% endif %}
+
+{% endblock %}

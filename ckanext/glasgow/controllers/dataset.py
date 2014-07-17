@@ -3,6 +3,7 @@ import json
 from pylons import config
 
 import ckan.model as model
+import ckan.lib.helpers as helpers
 from ckan.controllers.package import PackageController
 
 import ckan.plugins as p
@@ -35,6 +36,8 @@ class DatasetController(PackageController):
             except ECAPIError, e:
                 change_request = None
                 #flash
+            except p.toolkit.NotAuthorized:
+                change_request = None
 
             vars = {
                 'task': pending_task,
@@ -133,7 +136,7 @@ class DatasetController(PackageController):
             'session': model.Session,
         }
         try:
-            pkg =p.toolkit.get_action('package_show')(context, {'name_or_id': dataset})
+            pkg = p.toolkit.get_action('package_show')(context, {'name_or_id': dataset})
         except p.toolkit.ObjectNotFound:
             return p.toolkit.abort(404, p.toolkit._('Package not found'))
 
@@ -144,3 +147,27 @@ class DatasetController(PackageController):
         }
         return p.toolkit.render('package/resource_versions.html',
                                 extra_vars=vars)
+
+    def dataset_change_requests(self, dataset_name):
+        context = {
+            'model': model,
+            'session': model.Session,
+        }
+        try:
+            pkg = p.toolkit.get_action('package_show')(context, {'name_or_id': dataset_name})
+        except p.toolkit.ObjectNotFound:
+            return p.toolkit.abort(404, p.toolkit._('Package not found'))
+
+        try:
+            task = p.toolkit.get_action('pending_task_for_dataset')(context,
+                {'name': dataset_name})
+            request_status = p.toolkit.get_action('get_change_request')(context,
+                {'id': task['value']})
+        except p.toolkit.ValidationError, e:
+            helpers.flash_error('{0}'.format(e.error_dict['message']))
+        except ECAPIError:
+            helpers.flash_error('{0}'.format(e.error_dict['message']))
+
+        return p.toolkit.render('package/change_request_list.html',
+                                extra_vars={'pkg_dict': pkg,
+                                            'change_request': request_status})

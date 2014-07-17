@@ -225,14 +225,19 @@ def pending_files_for_dataset(context, data_dict):
 
     id = data_dict.get('id')
     name = data_dict.get('name')
+    try:
+        dataset_dict = p.toolkit.get_action('package_show')(context,
+            {'name_or_id': id or name})
+    except p.toolkit.NotFound:
+        raise p.toolkit.ValidationError(['Dataset not found'])
 
     model = context.get('model')
     tasks = model.Session.query(model.TaskStatus) \
         .filter(model.TaskStatus.entity_type == 'file') \
         .filter(or_(model.TaskStatus.state == 'new',
                 model.TaskStatus.state == 'sent')) \
-        .filter(or_(model.TaskStatus.key.like('{0}%'.format(id)),
-                model.TaskStatus.key.like('{0}%'.format(name)))) \
+        .filter(or_(model.TaskStatus.key.like('{0}%'.format(dataset_dict['id'])),
+                model.TaskStatus.key.like('{0}%'.format(dataset_dict['name'])))) \
         .order_by(model.TaskStatus.last_updated.desc())
 
     results = []
@@ -686,8 +691,151 @@ def _expire_task_status(context, task_id):
         model.Session.expire(task)
 
 
+def package_update(context, data_dict):
+
+    if data_dict.get('__local_action', False):
+        context['local_action'] = True
+        data_dict.pop('__local_action', None)
+
+    if (context.get('local_action', False) or
+            data_dict.get('type') == 'harvest'):
+
+        return core_actions.update.package_update(context, data_dict)
+
+    else:
+
+        return p.toolkit.get_action('dataset_request_update')(context,
+                                                              data_dict)
+
+
 def dataset_request_update(context, data_dict):
-    pass
+    '''
+    Requests the update of a dataset to the EC Data Collection API
+
+    This function accepts the same parameters as the default
+    `package_update` and will run the same validation, but instead of
+    creating the dataset in CKAN will store the submitted data in the
+    `task_status` table and forward it to the Data Collection API.
+
+    :raises: :py:exc:`~ckan.plugins.toolkit.ValidationError` if the
+        validation of the submitted data didn't pass, or the EC API returned
+        an error. In this case, the exception will contain the following:
+        {
+            'status': status_code, # HTTP status code returned by the EC API
+            'content': response # JSON response returned by the EC API
+        }
+
+    :raises: :py:exc:`~ckan.plugins.toolkit.NotAuthorized` if the
+        user is not authorized to perform the operaion, or the EC API returned
+        an authorization error. In this case, the exception will contain the
+        following:
+        {
+            'status': status_code, # HTTP status code returned by the EC API
+            'content': response # JSON response returned by the EC API
+        }
+
+
+    :returns: a dictionary with the CKAN `task_id` and the EC API `request_id`
+    :rtype: dictionary
+
+    '''
+
+    # TODO: refactor to reuse code across updates and file creation/udpate
+
+    # Check access
+
+    check_access('dataset_request_update', context, data_dict)
+
+    # Validate data_dict
+
+    context.update({'model': model, 'session': model.Session})
+    create_schema = custom_schema.update_package_schema()
+
+    validated_data_dict, errors = validate(data_dict, create_schema, context)
+
+    if errors:
+        raise p.toolkit.ValidationError(errors)
+
+    # Convert payload from CKAN to EC API spec
+
+    ec_dict = custom_schema.convert_ckan_dataset_to_ec_dataset(
+        validated_data_dict)
+
+    # Send request to EC Data Collection API
+
+    method, url = _get_api_endpoint('dataset_request_update')
+
+    url = url.format(
+        organization_id=validated_data_dict['owner_org'],
+        dataset_id=validated_data_dict['id'],
+    )
+
+    headers = {
+        'Authorization': _get_api_auth_token(),
+        'Content-Type': 'application/json',
+    }
+
+    try:
+        response = requests.request(method, url,
+                                    data=json.dumps(ec_dict),
+                                    headers=headers,
+                                    )
+
+        response.raise_for_status()
+    except requests.exceptions.HTTPError:
+        error_dict = {
+            'message': ['The CTPEC API returned an error code'],
+            'status': [response.status_code],
+            'content': [response.content],
+        }
+        raise p.toolkit.ValidationError(error_dict)
+    except requests.exceptions.RequestException, e:
+        error_dict = {
+            'message': ['Request exception: {0}'.format(e)],
+        }
+        raise p.toolkit.ValidationError(error_dict)
+
+    try:
+        content = response.json()
+        request_id = content['RequestId']
+    except ValueError:
+        error_dict = {
+            'message': ['Error decoding JSON from EC Platform response'],
+            'content': [response.content],
+        }
+        raise p.toolkit.ValidationError(error_dict)
+    except KeyError:
+        error_dict = {
+            'message': ['RequestId not in response from EC Platform'],
+            'content': [response.content],
+        }
+        raise p.toolkit.ValidationError(error_dict)
+
+    # Create a task status entry with the validated data
+    # and store data in task status table
+
+    task_dict = _create_task_status(context,
+                                    task_type='dataset_request_update',
+                                    # This will be used as dataset id
+                                    entity_id=validated_data_dict['id'],
+                                    entity_type='dataset',
+                                    key='request_id',
+                                    value=request_id,
+                                    )
+
+    # Return task id to access it later and the request id returned by the
+    # EC Metadata API
+
+    # _save_edit requires this key even though we have not actually created
+    # a Package object. Model in context is horrible anyway.
+    context['package'] = None
+
+    return {
+        'task_id': task_dict['id'],
+        'request_id': request_id,
+        # This is required by the core controller to do the redirect
+        'name': validated_data_dict['name'],
+    }
 
 
 def resource_version_show(context, data_dict):
@@ -751,6 +899,7 @@ def resource_version_show(context, data_dict):
             ckan_resource['version'] = version['Version']
             versions.append(ckan_resource)
     return versions
+
 
 def check_for_task_status_update(context, data_dict):
     '''Checks the EC Platform for updates and updates the TaskStatus'''

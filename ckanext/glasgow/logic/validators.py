@@ -39,10 +39,12 @@ def unique_title_within_organization(key, data, errors, context):
     query = p.toolkit.get_action('package_search')({
         'ignore_auth': True}, search_dict)
 
+
     if query['count'] > 0:
         if (query['count'] == 1
                 and len(query['results'])
-                and query['results'][0]['id'] == data.get(('id', ))):
+                and (query['results'][0]['id'] == data.get(('id', )))
+                or query['results'][0]['name'] == data.get(('id', ))):
             # If we are updating the dataset then having the same title is ok!
             pass
         else:

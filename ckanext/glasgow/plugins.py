@@ -39,6 +39,9 @@ class GlasgowSchemaPlugin(p.SingletonPlugin, p.toolkit.DefaultDatasetForm):
                     controller=controller,
                     action='resource_version')
 
+        map.connect('dataset_change_requests', '/dataset/change_requests/{dataset_name}',
+                    controller=controller, action='dataset_change_requests')
+
         status_ctl = 'ckanext.glasgow.controllers.request_status:RequestStatusController'
         map.connect('/request/{request_id}', controller=status_ctl,
                     action='get_status')
@@ -81,6 +84,7 @@ class GlasgowSchemaPlugin(p.SingletonPlugin, p.toolkit.DefaultDatasetForm):
 
         function_names = (
             'package_create',
+            'package_update',
             'resource_create',
             'dataset_request_create',
             'file_request_create',
@@ -101,6 +105,7 @@ class GlasgowSchemaPlugin(p.SingletonPlugin, p.toolkit.DefaultDatasetForm):
 
         function_names = (
             'package_create',
+            'package_update',
             'dataset_request_create',
             'file_request_create',
             'dataset_request_update',
@@ -120,6 +125,7 @@ class GlasgowSchemaPlugin(p.SingletonPlugin, p.toolkit.DefaultDatasetForm):
             'get_licenses',
             'get_resource_versions',
             'get_pending_files_for_dataset',
+            'get_pending_task_for_dataset',
         )
         return _get_module_functions(custom_helpers, function_names)
 

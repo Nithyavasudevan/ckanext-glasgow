@@ -12,6 +12,15 @@ def package_create(context, data_dict):
         return dataset_request_create(context, data_dict)
 
 
+def package_update(context, data_dict):
+    if context.get('local_action', False):
+        return {'success': False,
+                'msg': 'Only sysadmins can update datasets directly into CKAN'
+                }
+    else:
+        return dataset_request_update(context, data_dict)
+
+
 def dataset_request_create(context, data_dict):
 
     return auth_core.create.package_create(context, data_dict)
