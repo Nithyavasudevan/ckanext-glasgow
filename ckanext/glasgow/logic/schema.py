@@ -18,7 +18,8 @@ from ckanext.glasgow.logic.validators import (
     url_or_upload_not_empty,
     tag_string_convert,
     unique_title_within_organization,
-    no_pending_dataset_with_same_title_in_same_org
+    no_pending_dataset_with_same_title_in_same_org,
+    tag_length_validator,
 )
 
 
@@ -169,7 +170,6 @@ def _modify_schema(schema):
     not_missing = get_validator('not_missing')
     ignore_empty = get_validator('ignore_empty')
     not_empty = get_validator('not_empty')
-    tag_length_validator = get_validator('tag_length_validator')
 
     convert_to_extras = get_converter('convert_to_extras')
 

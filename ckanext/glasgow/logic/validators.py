@@ -4,7 +4,9 @@ from itertools import count
 
 from dateutil.parser import parse as date_parser
 
+
 import ckan.plugins as p
+from ckan.model import MAX_TAG_LENGTH
 
 # Reference some stuff from the toolkit
 _ = p.toolkit._
@@ -151,6 +153,15 @@ def tags_max_length(max_length):
             )
 
     return callable
+
+
+def tag_length_validator(value, context):
+
+    if len(value) > MAX_TAG_LENGTH:
+        raise Invalid(
+            _('Tag "%s" length is more than maximum %i') % (value, MAX_TAG_LENGTH)
+        )
+    return value
 
 
 # Copied from master (2.3a) as this is not yet in 2.2 (See #1692)

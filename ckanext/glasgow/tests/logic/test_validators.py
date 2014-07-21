@@ -70,6 +70,20 @@ class TestValidators(object):
         eq_(errors['__before'],
             ['Combined length of tags must be less than 10 characters'])
 
+    def test_tags_min_length_valid(self):
+
+        data_dict = {
+            'tags': [{'name': 'a'}, {'name': '1'}]
+        }
+        schema = {
+            'tags': {'name': [validators.tag_length_validator]},
+        }
+        context = {}
+
+        data, errors = validate(data_dict, schema, context)
+
+        eq_(errors, {})
+
     def test_int_validator_valid(self):
 
         valid_values = [0, -2, 3, 4.00, '5', '+6']
