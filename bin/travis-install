@@ -34,6 +34,21 @@ paster db init -c "$CKAN_DIR"/test-core.ini
 sed -i -e 's/.*datastore.read_url.*/ckan.datastore.read_url = postgresql:\/\/datastore_default:pass@\/datastore_test/' "$CKAN_DIR"/test-core.ini
 paster datastore set-permissions postgres -c "$CKAN_DIR"/test-core.ini
 
+# Install ckanext-oauth2waad
+cd $BASE_DIR
+git clone https://github.com/ckan/ckanext-oauth2waad
+cd ckan
+git checkout stable
+pip install -r requirements.txt
+python setup.py develop
+
+# Install ckanext-harvest
+cd $BASE_DIR
+git clone https://github.com/ckan/ckanext-harvest
+cd ckan
+git checkout stable
+pip install -r pip-requirements.txt
+python setup.py develop
 
 # Setup extension
 cd $BASE_DIR/ckanext-glasgow

@@ -1,6 +1,5 @@
 import nose
 import mock
-from bs4 import BeautifulSoup
 
 import ckan.new_tests.helpers as helpers
 
@@ -157,12 +156,10 @@ class TestDatasetController(object):
                                            context=context,
                                            **data_dict)
 
-
         response = self.app.get('/dataset/test_dataset_file_pending',
                                 extra_environ={'REMOTE_USER': 'sysadmin_user'})
         eq_(response.status_int, 200)
 
-        soup = BeautifulSoup(response.body)
-        pending = soup.find('li', {'id': 'pending-1'})
+        pending = response.html.find('li', {'id': 'pending-1'})
         assert 'test_file' in pending.a.text
         assert 'test description' in pending.p.text
