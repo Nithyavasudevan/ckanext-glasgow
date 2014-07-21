@@ -1,0 +1,3 @@
+ckan --plugin=ckanext-harvest harvester source ec-initial-harvester url_initial ec_initial_harvester "EC Initial harvester" -c /etc/ckan/default/production.ini
+# TODO: change this one's frequency to ALWAYS
+ckan --plugin=ckanext-harvest harvester source ec-changelog-harvester url_changelog ec_changelog_harvester "EC Changelog harvester" -c /etc/ckan/default/production.ini
