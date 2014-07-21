@@ -698,7 +698,8 @@ def package_update(context, data_dict):
         data_dict.pop('__local_action', None)
 
     if (context.get('local_action', False) or
-            data_dict.get('type') == 'harvest'):
+            data_dict.get('type') == 'harvest' or
+            data_dict.get('source_type')):
 
         return core_actions.update.package_update(context, data_dict)
 
