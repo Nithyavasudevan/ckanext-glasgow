@@ -29,7 +29,7 @@ CKAN Extensions specific to Open Glasgow
 
     ## Plugins Settings
 
-    ckan.plugins = stats text_preview recline_preview glasgow_schema ec_initial_harvester oauth2waad
+    ckan.plugins = stats text_preview recline_preview glasgow_schema glasgow_harvest ec_changelog_harvester ec_initial_harvester oauth2waad
 
     # Local mock API
     #ckanext.glasgow.data_collection_api=http://localhost:7070

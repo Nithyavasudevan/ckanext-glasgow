@@ -2,6 +2,8 @@ import logging
 
 import ckan.plugins as p
 
+from ckanext.harvest.plugin import Harvest
+
 import ckanext.glasgow.logic.schema as custom_schema
 import ckanext.glasgow.model as custom_model
 
@@ -136,3 +138,33 @@ def _get_module_functions(module, function_names):
         functions[f] = module.__dict__[f]
 
     return functions
+
+
+class CustomHarvestPlugin(Harvest):
+    '''
+    We override the default harvest plugin to tweak the schema used when
+    creating harvest sources. We basically don't need sources to belong to
+    an org, but the rest of datasets should follow the owner_org validation.
+    '''
+
+    def create_package_schema(self):
+
+        schema = super(CustomHarvestPlugin, self).create_package_schema()
+
+        schema['owner_org'] = [p.toolkit.get_validator('ignore_missing'),
+                               p.toolkit.get_validator('ignore_empty'),
+                               p.toolkit.get_validator('owner_org_validator'),
+                               unicode]
+
+        return schema
+
+    def update_package_schema(self):
+
+        schema = super(CustomHarvestPlugin, self).update_package_schema()
+
+        schema['owner_org'] = [p.toolkit.get_validator('ignore_missing'),
+                               p.toolkit.get_validator('ignore_empty'),
+                               p.toolkit.get_validator('owner_org_validator'),
+                               unicode]
+
+        return schema
