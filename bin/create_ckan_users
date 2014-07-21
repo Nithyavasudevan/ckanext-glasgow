@@ -1,22 +1,22 @@
 # These are the test WAAD users that would get created in CKAN when they
 # logged in for the first time. Password is just some random string, as the
 # login is done via WAAD.
-sudo ckan user add 3fc0d4e6-f2b6-46ea-bba3-cb5407f4587e email=foo password="echo `tr -dc A-Za-z0-9 < /dev/urandom | head -c 8 | xargs`" about=SuperAdmin1@GCCCTPECADINT.onmicrosoft.com
-sudo ckan user add f62379a6-5b8d-4767-9c8a-857a1f307135 email=foo password="echo `tr -dc A-Za-z0-9 < /dev/urandom | head -c 8 | xargs`" about=SuperAdmin2@GCCCTPECADINT.onmicrosoft.com
-sudo ckan user add f5613676-f141-4b4d-821a-c0dd4f992948 email=foo password="echo `tr -dc A-Za-z0-9 < /dev/urandom | head -c 8 | xargs`" about=Member1@GCCCTPECADINT.onmicrosoft.com
-sudo ckan user add 5bc10794-0dcf-4256-bc08-7dfc58c7247f email=foo password="echo `tr -dc A-Za-z0-9 < /dev/urandom | head -c 8 | xargs`" about=Member2@GCCCTPECADINT.onmicrosoft.com
-sudo ckan user add 8e828345-e7de-47d5-8e29-40eee1e51860 email=foo password="echo `tr -dc A-Za-z0-9 < /dev/urandom | head -c 8 | xargs`" about=OrgAdminMS1@GCCCTPECADINT.onmicrosoft.com
-sudo ckan user add 13c3e4c8-b10c-4fb7-8c06-54124cffe348 email=foo password="echo `tr -dc A-Za-z0-9 < /dev/urandom | head -c 8 | xargs`" about=OrgAdminMS2@GCCCTPECADINT.onmicrosoft.com
-sudo ckan user add 59d903f8-1a91-49f1-93e1-d538dfb1c3d2 email=foo password="echo `tr -dc A-Za-z0-9 < /dev/urandom | head -c 8 | xargs`" about=EditorMS1@GCCCTPECADINT.onmicrosoft.com
-sudo ckan user add f2999b42-3e17-4f47-8e1e-5bf54c8ea321 email=foo password="echo `tr -dc A-Za-z0-9 < /dev/urandom | head -c 8 | xargs`" about=EditorMS2@GCCCTPECADINT.onmicrosoft.com
-sudo ckan user add 674f8d74-0dd4-4f08-a688-a6755822ae94 email=foo password="echo `tr -dc A-Za-z0-9 < /dev/urandom | head -c 8 | xargs`" about=OrgAdminGCC1@GCCCTPECADINT.onmicrosoft.com
-sudo ckan user add f03272f1-40a8-43fd-b6a4-134c79d14ac6 email=foo password="echo `tr -dc A-Za-z0-9 < /dev/urandom | head -c 8 | xargs`" about=OrgAdminGCC2@GCCCTPECADINT.onmicrosoft.com
-sudo ckan user add 0534dbfd-d144-4504-9b86-22b81f269589 email=foo password="echo `tr -dc A-Za-z0-9 < /dev/urandom | head -c 8 | xargs`" about=EditorGCC1@GCCCTPECADINT.onmicrosoft.com
-sudo ckan user add ae93f7fc-27e3-40a6-b3c0-0872cd579bf2 email=foo password="echo `tr -dc A-Za-z0-9 < /dev/urandom | head -c 8 | xargs`" about=EditorGCC2@GCCCTPECADINT.onmicrosoft.com
-sudo ckan user add 773a8374-341f-4fb4-94bc-073992953917 email=foo password="echo `tr -dc A-Za-z0-9 < /dev/urandom | head -c 8 | xargs`" about=editor1@GCCCTPECADINT.onmicrosoft.com
-sudo ckan user add 5ce133fe-02de-4967-9b15-165ce6fafd59 email=foo password="echo `tr -dc A-Za-z0-9 < /dev/urandom | head -c 8 | xargs`" about=editor2@GCCCTPECADINT.onmicrosoft.com
-sudo ckan user add c1b74f6a-c685-459d-ab1e-9e57db0092d9 email=foo password="echo `tr -dc A-Za-z0-9 < /dev/urandom | head -c 8 | xargs`" about=admin1@GCCCTPECADINT.onmicrosoft.com
-sudo ckan user add 70504871-c6aa-4c04-aa8a-4aa3d5125e3f email=foo password="echo `tr -dc A-Za-z0-9 < /dev/urandom | head -c 8 | xargs`" about=admin2@GCCCTPECADINT.onmicrosoft.com
+sudo ckan user add 3fc0d4e6-f2b6-46ea-bba3-cb5407f4587e email=foo password="echo `tr -dc A-Za-z0-9 < /dev/urandom | head -c 8 | xargs`" about=SuperAdmin1@GCCCTPECADINT.onmicrosoft.com fullname=SuperAdmin1
+sudo ckan user add f62379a6-5b8d-4767-9c8a-857a1f307135 email=foo password="echo `tr -dc A-Za-z0-9 < /dev/urandom | head -c 8 | xargs`" about=SuperAdmin2@GCCCTPECADINT.onmicrosoft.com fullname=SuperAdmin2
+sudo ckan user add f5613676-f141-4b4d-821a-c0dd4f992948 email=foo password="echo `tr -dc A-Za-z0-9 < /dev/urandom | head -c 8 | xargs`" about=Member1@GCCCTPECADINT.onmicrosoft.com fullname=Member1
+sudo ckan user add 5bc10794-0dcf-4256-bc08-7dfc58c7247f email=foo password="echo `tr -dc A-Za-z0-9 < /dev/urandom | head -c 8 | xargs`" about=Member2@GCCCTPECADINT.onmicrosoft.com fullname=Member2
+sudo ckan user add 8e828345-e7de-47d5-8e29-40eee1e51860 email=foo password="echo `tr -dc A-Za-z0-9 < /dev/urandom | head -c 8 | xargs`" about=OrgAdminMS1@GCCCTPECADINT.onmicrosoft.com fullname=OrgAdminMS1
+sudo ckan user add 13c3e4c8-b10c-4fb7-8c06-54124cffe348 email=foo password="echo `tr -dc A-Za-z0-9 < /dev/urandom | head -c 8 | xargs`" about=OrgAdminMS2@GCCCTPECADINT.onmicrosoft.com fullname=OrgAdminMS2
+sudo ckan user add 59d903f8-1a91-49f1-93e1-d538dfb1c3d2 email=foo password="echo `tr -dc A-Za-z0-9 < /dev/urandom | head -c 8 | xargs`" about=EditorMS1@GCCCTPECADINT.onmicrosoft.com fullname=EditorMS1
+sudo ckan user add f2999b42-3e17-4f47-8e1e-5bf54c8ea321 email=foo password="echo `tr -dc A-Za-z0-9 < /dev/urandom | head -c 8 | xargs`" about=EditorMS2@GCCCTPECADINT.onmicrosoft.com fullname=EditorMS2
+sudo ckan user add 674f8d74-0dd4-4f08-a688-a6755822ae94 email=foo password="echo `tr -dc A-Za-z0-9 < /dev/urandom | head -c 8 | xargs`" about=OrgAdminGCC1@GCCCTPECADINT.onmicrosoft.com fullname=OrgAdminGCC1
+sudo ckan user add f03272f1-40a8-43fd-b6a4-134c79d14ac6 email=foo password="echo `tr -dc A-Za-z0-9 < /dev/urandom | head -c 8 | xargs`" about=OrgAdminGCC2@GCCCTPECADINT.onmicrosoft.com fullname=OrgAdminGCC2
+sudo ckan user add 0534dbfd-d144-4504-9b86-22b81f269589 email=foo password="echo `tr -dc A-Za-z0-9 < /dev/urandom | head -c 8 | xargs`" about=EditorGCC1@GCCCTPECADINT.onmicrosoft.com fullname=EditorGCC1
+sudo ckan user add ae93f7fc-27e3-40a6-b3c0-0872cd579bf2 email=foo password="echo `tr -dc A-Za-z0-9 < /dev/urandom | head -c 8 | xargs`" about=EditorGCC2@GCCCTPECADINT.onmicrosoft.com fullname=EditorGCC2
+sudo ckan user add 773a8374-341f-4fb4-94bc-073992953917 email=foo password="echo `tr -dc A-Za-z0-9 < /dev/urandom | head -c 8 | xargs`" about=editor1@GCCCTPECADINT.onmicrosoft.com fullname=editor1
+sudo ckan user add 5ce133fe-02de-4967-9b15-165ce6fafd59 email=foo password="echo `tr -dc A-Za-z0-9 < /dev/urandom | head -c 8 | xargs`" about=editor2@GCCCTPECADINT.onmicrosoft.com fullname=editor2
+sudo ckan user add c1b74f6a-c685-459d-ab1e-9e57db0092d9 email=foo password="echo `tr -dc A-Za-z0-9 < /dev/urandom | head -c 8 | xargs`" about=admin1@GCCCTPECADINT.onmicrosoft.com fullname=admin1
+sudo ckan user add 70504871-c6aa-4c04-aa8a-4aa3d5125e3f email=foo password="echo `tr -dc A-Za-z0-9 < /dev/urandom | head -c 8 | xargs`" about=admin2@GCCCTPECADINT.onmicrosoft.com fullname=admin2
 sudo ckan sysadmin add 3fc0d4e6-f2b6-46ea-bba3-cb5407f4587e
 sudo ckan sysadmin add f62379a6-5b8d-4767-9c8a-857a1f307135
     
