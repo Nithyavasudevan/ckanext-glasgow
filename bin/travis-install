@@ -37,15 +37,14 @@ paster datastore set-permissions postgres -c "$CKAN_DIR"/test-core.ini
 # Install ckanext-oauth2waad
 cd $BASE_DIR
 git clone https://github.com/ckan/ckanext-oauth2waad
-cd ckan
-git checkout stable
+cd ckanext-oauth2waad
 pip install -r requirements.txt
 python setup.py develop
 
 # Install ckanext-harvest
 cd $BASE_DIR
 git clone https://github.com/ckan/ckanext-harvest
-cd ckan
+cd ckanext-harvest
 git checkout stable
 pip install -r pip-requirements.txt
 python setup.py develop
