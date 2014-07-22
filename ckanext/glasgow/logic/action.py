@@ -636,6 +636,21 @@ def _create_task_status(context, task_type, entity_id, entity_type, key,
     return task_dict
 
 
+def resource_update(context, data_dict):
+
+    if data_dict.get('__local_action', False):
+        context['local_action'] = True
+        data_dict.pop('__local_action', None)
+    if context.get('local_action', False):
+
+        return core_actions.create.resource_update(context, data_dict)
+
+    else:
+
+        return p.toolkit.get_action('file_request_update')(context,
+                                                           data_dict)
+
+
 def _update_task_status_success(context, task_dict, value):
 
     context.update({'ignore_auth': True})
@@ -652,6 +667,169 @@ def _update_task_status_success(context, task_dict, value):
     _expire_task_status(context, task_dict['id'])
 
     return task_dict
+
+
+def file_request_update(context, data_dict):
+    '''
+    Requests the update of a file to the EC Data Collection API
+
+    This function accepts the same parameters as the default
+    `package_create` and will run the same validation, but instead of
+    creating the dataset in CKAN will store the submitted data in the
+    `task_status` table and forward it to the Data Collection API.
+
+    :raises: :py:exc:`~ckan.plugins.toolkit.ValidationError` if the
+        validation of the submitted data didn't pass, or the EC API returned
+        an error. In this case, the exception will contain the following:
+        {
+            'status': status_code, # HTTP status code returned by the EC API
+            'content': response # JSON response returned by the EC API
+        }
+
+    :raises: :py:exc:`~ckan.plugins.toolkit.NotAuthorized` if the
+        user is not authorized to perform the operaion, or the EC API returned
+        an authorization error. In this case, the exception will contain the
+        following:
+        {
+            'status': status_code, # HTTP status code returned by the EC API
+            'content': response # JSON response returned by the EC API
+        }
+
+
+    :returns: a dictionary with the CKAN `task_id` and the EC API `request_id`
+    :rtype: dictionary
+
+    '''
+
+    # TODO: refactor to reuse code across updates and file creation/udpate
+
+    # Check if parent dataset exists
+
+    if data_dict.get('dataset_id'):
+        data_dict['package_id'] = data_dict['dataset_id']
+    package_id = p.toolkit.get_or_bust(data_dict, 'package_id')
+
+    try:
+        dataset_dict = p.toolkit.get_action('package_show')(context,
+                                                            {'id': package_id})
+    except p.toolkit.ObjectNotFound:
+        raise p.toolkit.ObjectNotFound('Dataset not found')
+
+    # Check access
+
+    check_access('file_request_update', context, data_dict)
+
+    # Validate data_dict
+
+    context.update({'model': model, 'session': model.Session})
+    create_schema = custom_schema.resource_schema()
+
+    validated_data_dict, errors = validate(data_dict, create_schema, context)
+
+    if errors:
+        raise p.toolkit.ValidationError(errors)
+
+    # Convert payload from CKAN to EC API spec
+
+    ec_dict = custom_schema.convert_ckan_resource_to_ec_file(
+        validated_data_dict)
+
+    # Send request to EC Data Collection API
+
+    method, url = _get_api_endpoint('file_request_update')
+    url = url.format(
+        organization_id=dataset_dict['owner_org'],
+        dataset_id=validated_data_dict['package_id'],
+    )
+
+    headers = {
+        'Authorization': _get_api_auth_token(),
+    }
+
+    uploaded_file = data_dict.pop('upload', None)
+
+
+    if isinstance(uploaded_file, cgi.FieldStorage):
+        files = {
+            'file': (uploaded_file.filename,
+                     uploaded_file.file)
+        }
+        data = {
+            'metadata': json.dumps(ec_dict)
+        }
+    else:
+        headers['Content-Type'] = 'application/json'
+        files = None
+        data = json.dumps(ec_dict)
+
+    try:
+        response = requests.request(method, url,
+                                    data=data,
+                                    files=files,
+                                    headers=headers,
+                                    )
+
+        response.raise_for_status()
+    except requests.exceptions.HTTPError:
+        error_dict = {
+            'message': ['The CTPEC API returned an error code'],
+            'status': [response.status_code],
+            'content': [response.content],
+        }
+        raise p.toolkit.ValidationError(error_dict)
+    except requests.exceptions.RequestException, e:
+        error_dict = {
+            'message': ['Request exception: {0}'.format(e)],
+        }
+        raise p.toolkit.ValidationError(error_dict)
+
+    try:
+        content = response.json()
+        request_id = content['RequestId']
+    except ValueError:
+        error_dict = {
+            'message': ['Error decoding JSON from EC Platform response'],
+            'content': [response.content],
+        }
+        raise p.toolkit.ValidationError(error_dict)
+    except KeyError:
+        error_dict = {
+            'message': ['RequestId not in response from EC Platform'],
+            'content': [response.content],
+        }
+        raise p.toolkit.ValidationError(error_dict)
+
+    # Store data in task status table
+    # Create a task status entry with the validated data
+    key = '{0}@{1}'.format(validated_data_dict.get('package_id', 'file'),
+                           datetime.datetime.now().isoformat())
+
+    request_id = content.get('RequestId')
+
+    task_dict = _create_task_status(context,
+                                    task_type='file_request_update',
+                                    entity_id=validated_data_dict['package_id'],
+                                    entity_type='file',
+                                    key=key,
+                                    value=json.dumps(
+                                        {'data_dict': data_dict})
+                                    )
+                                    #value=request_id)
+
+
+    task_dict = _update_task_status_success(context, task_dict, {
+        'data_dict': data_dict,
+        'request_id': request_id,
+    })
+
+    # Return task id to access it later and the request id returned by the
+    # EC Metadata API
+
+    return {
+        'task_id': task_dict['id'],
+        'request_id': request_id,
+        'name': None,
+    }
 
 
 def _update_task_status_error(context, task_dict, value):

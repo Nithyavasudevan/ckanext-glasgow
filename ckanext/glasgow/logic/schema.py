@@ -234,7 +234,7 @@ def _modify_schema(schema):
     schema['ec_api_org_id'] = [ignore_missing, unicode,
                                convert_to_extras]
 
-    schema['resources'] = resource_schema()
+    schema['resources'] = _modify_resource_schema()
 
     schema['tag_string'] = [ignore_missing, tag_string_convert]
     schema['tags']['name'] = [not_missing, not_empty, unicode,
@@ -265,22 +265,36 @@ def show_package_schema():
 
     schema['standard_version'] = [convert_from_extras]
 
+    schema['resources'] = resource_schema()
+
     # Internal fields
 
     schema['ec_api_id'] = [convert_from_extras]
 
     schema['ec_api_org_id'] = [convert_from_extras]
 
+
     return schema
 
 
 def resource_schema():
+    schema = _modify_resource_schema()
+    schema.update({
+        'package_id': [not_empty, unicode],
+        'created':  [ignore_missing, iso_date, unicode],
+        'last_modified': [ignore_missing, iso_date, unicode],
+        'cache_last_updated': [ignore_missing, iso_date, unicode],
+        'webstore_last_updated': [ignore_missing, iso_date, unicode],
+    })
+    return schema
 
+
+def _modify_resource_schema():
     # Mandatory fields
 
     schema = default_resource_schema()
 
-    schema['package_id'] = [not_empty, unicode]
+    schema['package_id'] = [ignore_missing]
 
     schema['name'] = [not_empty, string_max_length(255), unicode]
 

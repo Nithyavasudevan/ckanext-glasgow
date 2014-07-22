@@ -476,7 +476,7 @@ class TestDatasetUpdate(object):
                 'id':  request_dict['task_id'],
                 'task_type': u'dataset_request_update',
                 'entity_type': u'dataset',
-                'key': u'request_id',
+                #'key': u'request_id',
                 'state': u'new',
                 'value': u'req-id',
             },
@@ -684,6 +684,73 @@ class TestFileCreate(object):
                                  helpers.call_action,
                                  'file_request_create',
                                  context=context, **data_dict)
+        
+
+class TestFileUpdate(object):
+    def setup(self):
+        helpers.reset_db()
+        search.clear()
+        self.normal_user = helpers.call_action('user_create',
+                                              name='normal_user',
+                                              email='test@test.com',
+                                              password='test')
+
+        self.test_org = helpers.call_action('organization_create',
+                                       context={'user': 'normal_user'},
+                                       name='test_org',
+                                       id='ec-org-id-1')
+
+        context = {'local_action': True, 'user': 'normal_user'}
+        data_dict = {
+            'name': 'test_dataset',
+            'owner_org': 'test_org',
+            'title': 'Test Dataset',
+            'notes': 'Some longer description',
+            'maintainer': 'Test maintainer',
+            'maintainer_email': 'Test maintainer email',
+            'license_id': 'OGL-UK-2.0',
+            'openness_rating': 3,
+            'quality': 5,
+        }
+
+        self.dataset = helpers.call_action('package_create', context=context,
+                                          **data_dict)
+
+        self.resource = helpers.call_action('resource_create', context=context,
+                                            package_id=self.dataset['id'],
+                                            name='test_file',
+                                            description='test file description',
+                                            format='csv',
+                                            url='http://test.com')
+
+    def teardown(cls):
+        helpers.reset_db()
+        search.clear()
+
+    @mock.patch('requests.request')
+    def test_update(self, mock_request):
+        # make the mock the result of calling requests.request(...)
+        mock_request.return_value = mock.Mock(
+            status_code=200,
+            content=json.dumps({'RequestId': 'req-id'}),
+            **{
+                'raise_for_status.return_value': None,
+                'json.return_value': {'RequestId': 'req-id'},
+            }
+        )
+
+        resource = helpers.call_action('resource_show', id=self.resource['id'])
+        resource['description'] = 'updated description'
+        resource['package_id'] = self.dataset['id']
+        result = helpers.call_action('resource_update',
+                                     context={'user': 'normal_user'},
+                                     **resource)
+        #check a task was correctly created
+        task = helpers.call_action('task_status_show', id=result['task_id'])
+        nose.tools.assert_equals('file_request_update', task['task_type'])
+        nose.tools.assert_equals('file', task['entity_type'])
+        nose.tools.assert_equals('req-id',
+                                 json.loads(task['value'])['request_id'])
 
 
 class TestFileVersions(object):
