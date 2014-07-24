@@ -225,7 +225,7 @@ class EcInitialHarvester(EcHarvester):
         ckan_data_dict = glasgow_schema.convert_ec_dataset_to_ckan_dataset(
             ec_data_dict.get('Metadata', {}))
 
-        ckan_data_dict['id'] = ec_data_dict['Id']
+        ckan_data_dict['id'] = unicode(ec_data_dict['Id'])
 
         ckan_data_dict['__local_action'] = True
 

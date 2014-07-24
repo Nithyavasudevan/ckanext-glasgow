@@ -100,6 +100,10 @@ def convert_ec_dataset_to_ckan_dataset(ec_dict):
         ckan_dict['tags'] = [{'name': tag}
                              for tag in ec_dict['Tags'].split(',')]
 
+    # Make sure ids are strings, otherwise we might get errors on update
+    if ckan_dict.get('id'):
+        ckan_dict['id'] = unicode(ckan_dict['id'])
+
     return ckan_dict
 
 

@@ -123,7 +123,7 @@ class TestSchemaConversion(object):
 
         ckan_dict = custom_schema.convert_ec_dataset_to_ckan_dataset(ec_dict)
 
-        eq_(ckan_dict['id'], 1)
+        eq_(ckan_dict['id'], '1')
         eq_(ckan_dict['title'], 'Test Dataset')
         eq_(ckan_dict['notes'], 'Some longer description')
         eq_(ckan_dict['maintainer'], 'Test maintainer')
@@ -170,7 +170,7 @@ class TestSchemaConversion(object):
 
         ckan_dict = custom_schema.convert_ec_dataset_to_ckan_dataset(ec_dict)
 
-        eq_(ckan_dict['id'], 1)
+        eq_(ckan_dict['id'], '1')
         eq_(ckan_dict['title'], 'Test Dataset')
         eq_(ckan_dict['notes'], 'Some longer description')
         eq_(ckan_dict['maintainer'], 'Test maintainer')
