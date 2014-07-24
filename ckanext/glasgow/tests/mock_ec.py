@@ -110,7 +110,7 @@ file_fields_under_255_characters = [
 ]
 
 
-@app.route('/Datasets/Organisation/<int:organization_id>', methods=['POST'])
+@app.route('/Datasets/Organisation/<organization_id>', methods=['POST'])
 def request_dataset_create(organization_id):
 
     return handle_dataset_request(organization_id)
@@ -122,18 +122,18 @@ def request_dataset_update(organization_id, dataset_id):
     return handle_dataset_request(organization_id, dataset_id)
 
 
-@app.route('/Files/Organisation/<int:organization_id>/Dataset/<int:dataset_id>', methods=['POST'])
+@app.route('/Files/Organisation/<organization_id>/Dataset/<dataset_id>', methods=['POST'])
 def request_file_create(organization_id, dataset_id):
 
     return handle_file_request(organization_id, dataset_id)
 
 
-@app.route('/Files/Organisation/<int:organization_id>/Dataset/<int:dataset_id>', methods=['PUT'])
+@app.route('/Files/Organisation/<organization_id>/Dataset/<dataset_id>', methods=['PUT'])
 def request_file_update(organization_id, dataset_id):
 
     return handle_file_request(organization_id, dataset_id)
 
-@app.route('/Organisations/<int:org_id>/Datasets', methods=['GET'])
+@app.route('/Organisations/<org_id>/Datasets', methods=['GET'])
 def request_datasets(org_id):
     skip = int(flask.request.args.get('$skip', 0))
     metadata_result_set = {
@@ -222,7 +222,7 @@ def request_datasets(org_id):
     )
 
 
-@app.route('/Metadata/Organisation/<int:org_id>/Dataset/<int:dataset_id>/File',
+@app.route('/Metadata/Organisation/<org_id>/Dataset/<dataset_id>/File',
            methods=['GET'])
 def request_files(org_id, dataset_id):
     skip = int(flask.request.args.get('$skip', 0))
@@ -411,7 +411,7 @@ def request_change_status(request_id):
             'Owner': 'Admin',
             'Message': 'File Create Operation completed',
             'CustomProperties': [
-                {   
+                {
                     'OrganisationId': '1',
                     'DatasetId': '1',
                     'FileId': '1',
@@ -431,7 +431,7 @@ def request_change_status(request_id):
             'Owner': 'Admin',
             'Message': 'File Create Operation completed',
             'CustomProperties': [
-                {   
+                {
                     'OrganisationId': '1',
                     'DatasetId': '1',
                     'FileId': '1',
@@ -444,7 +444,7 @@ def request_change_status(request_id):
 
 
 @app.route('/ChangeLog/RequestChanges')
-@app.route('/ChangeLog/RequestChanges/<int:audit_id>')
+@app.route('/ChangeLog/RequestChanges/<audit_id>')
 def request_changelog(audit_id=None):
 
     # Authorization
