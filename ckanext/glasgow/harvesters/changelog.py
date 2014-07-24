@@ -204,7 +204,7 @@ def get_audit_command_handler(command):
 
     handlers = {
         'CreateDataSet': handle_dataset_create,
-        'UpdateDataset': handle_dataset_update,
+        'UpdateDataSet': handle_dataset_update,
     }
 
     return handlers.get(command)
