@@ -172,10 +172,10 @@ class EcInitialHarvester(EcHarvester):
             dataset = content['Id']
             request = requests.get(api_endpoint.format(org, dataset))
             result = _fetch_from_ec(request)
-        except requests.exception.RequestException, e:
+        except requests.exceptions.RequestException, e:
             self._save_object_error(
                 'Error fetching file metadata for package {0}: {1}'.format(
-                    harvest_object.guid, e.error_dict),
+                    harvest_object.guid, str(e)),
                 harvest_object, 'Fetch')
             return False
         except ValueError:
