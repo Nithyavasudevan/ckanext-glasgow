@@ -1,4 +1,5 @@
 import cgi
+import json
 import datetime
 from itertools import count
 
@@ -41,12 +42,11 @@ def unique_title_within_organization(key, data, errors, context):
     query = p.toolkit.get_action('package_search')({
         'ignore_auth': True}, search_dict)
 
-
     if query['count'] > 0:
         if (query['count'] == 1
                 and len(query['results'])
-                and (query['results'][0]['id'] == data.get(('id', )))
-                or query['results'][0]['name'] == data.get(('id', ))):
+                and (query['results'][0]['id'] == data.get(('id', ))
+                     or query['results'][0]['name'] == data.get(('id', )))):
             # If we are updating the dataset then having the same title is ok!
             pass
         else:
@@ -103,10 +103,18 @@ def no_pending_dataset_with_same_title_in_same_org(key, data, errors, context):
         .first()
 
     if task:
-        raise Invalid(
-            _('There is a pending request for a dataset with the same ' +
-              'title in the same organization')
-        )
+        # We need this to ensure that validation is not applied to the same
+        # dataset when being created by the harvesters
+        task_value = json.loads(task.value)
+        dataset_dict = task_value.get('data_dict')
+
+        name_check = (data.get(('name', )) ==
+                      task.key + '-' + dataset_dict['owner_org'][:4])
+        if not name_check:
+            raise Invalid(
+                _('There is a pending request for a dataset with the same ' +
+                  'title in the same organization')
+            )
     return value
 
 
