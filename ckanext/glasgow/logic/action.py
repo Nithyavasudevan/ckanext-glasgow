@@ -137,7 +137,7 @@ def _get_api_endpoint(operation):
         path = '/Metadata/Organisation/{organization_id}/Dataset/{dataset_id}/File/{file_id}'
     elif operation == 'file_version_show':
         method = 'GET'
-        path = '/Metadata/Organisation/{organization_id}/Dataset/{dataset_id}/File/{file_id}/Versions'
+        path = '/Metadata/Organisation/{organization_id}/Dataset/{dataset_id}/File/{file_id}/Versions/{version_id}'
     elif operation == 'request_status_show':
         method = 'GET'
         path = '/ChangeLog/RequestStatus/{request_id}'
@@ -1247,12 +1247,12 @@ def changelog_show(context, data_dict):
                      are returned (up until `top`)
                      If omitted then the single most recent changelog
                      record is returned.
-    :type operation: int
+    :type audit_id: string
     :param top: Number of records to return (defaults to 20)
-    :type operation: int
+    :type top: int
     :param object_type: Limit records to this particular type (valid values
                         are `Dataset`, `File` or `Organisation`)
-    :type operation: string
+    :type object_type: string
 
     :returns: a list with the returned audit objects
     :rtype: list

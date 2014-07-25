@@ -116,10 +116,14 @@ class EcChangelogHarvester(EcHarvester):
         log.debug('Calling handler for command "{0}"'.format(command))
         try:
             handler(context, audit, harvest_object)
+            return True
         except p.toolkit.ValidationError, e:
             self._save_object_error(str(e), harvest_object, 'Import')
+        except p.toolkit.ObjectNotFound, e:
+            msg = e.message or str(e) or 'Object not found'
+            self._save_object_error(msg, harvest_object, 'Import')
 
-        return True
+        return False
 
 
 def _get_latest_dataset_version(audit):
@@ -144,6 +148,44 @@ def _get_latest_dataset_version(audit):
         'OrganisationId')
 
     return dataset_dict
+
+
+def _get_file_version(audit):
+
+    is_version = bool(audit['CustomProperties'].get('VersionId'))
+
+    if is_version:
+        method, url = _get_api_endpoint('file_version_show')
+        url = url.format(
+            organization_id=audit['CustomProperties'].get('OrganisationId'),
+            dataset_id=audit['CustomProperties'].get('DataSetId'),
+            file_id=audit['CustomProperties'].get('FileId'),
+            version_id=audit['CustomProperties'].get('VersionId'),
+        )
+    else:
+        method, url = _get_api_endpoint('file_show')
+        url = url.format(
+            organization_id=audit['CustomProperties'].get('OrganisationId'),
+            dataset_id=audit['CustomProperties'].get('DataSetId'),
+            file_id=audit['CustomProperties'].get('FileId'),
+        )
+
+    response = requests.request(method, url)
+
+    if response.status_code != 200:
+        return False
+
+    content = response.json()
+    resource_dict = custom_schema.convert_ec_file_to_ckan_resource(
+        content['MetadataResultSet']['FileMetadata'])
+
+    resource_dict['package_id'] = str(content['MetadataResultSet'].get(
+        'DataSetId'))
+
+    resource_dict['ec_api_org_id'] = content['MetadataResultSet'].get(
+        'OrganisationId')
+
+    return resource_dict
 
 
 def handle_dataset_create(context, audit, harvest_object):
@@ -200,11 +242,59 @@ def handle_dataset_update(context, audit, harvest_object):
     return True
 
 
+def handle_file_create(context, audit, harvest_object):
+
+    resource_dict = _get_file_version(audit)
+
+    if not resource_dict:
+        msg = ['Could not get remote file metadata: {0}'.format(
+            json.dumps(audit['CustomProperties']))]
+        raise p.toolkit.ObjectNotFound(msg)
+
+    is_version = bool(audit['CustomProperties'].get('VersionId'))
+
+    try:
+        if is_version:
+            resource_dict = p.toolkit.get_action('resource_update')(context,
+                                                                    resource_dict)
+            log.debug('Updated existing resource "{0}" on dataset {1}'.format(
+                      resource_dict['id'], resource_dict['package_id']))
+        else:
+            resource_dict = p.toolkit.get_action('resource_create')(context,
+                                                                    resource_dict)
+
+            log.debug('Created new resource "{0}" on dataset {1}'.format(
+                      resource_dict['id'], resource_dict['package_id']))
+    except p.toolkit.ObjectNotFound, e:
+        e.extra_msg = ['Could not create resource, parent dataset {0} not found'.format(
+            audit['CustomProperties'].get('DataSetId'))]
+        raise e
+
+    harvest_object.guid = resource_dict['package_id']
+    harvest_object.package_id = resource_dict['package_id']
+    harvest_object.current = True
+
+    harvest_object.add()
+
+    previous_objects = model.Session.query(HarvestObject) \
+        .filter(HarvestObject.guid==harvest_object.guid) \
+        .filter(HarvestObject.current==True) \
+        .all()
+
+    for obj in previous_objects:
+        obj.delete()
+
+    model.Session.commit()
+
+    return True
+
+
 def get_audit_command_handler(command):
 
     handlers = {
         'CreateDataSet': handle_dataset_create,
         'UpdateDataSet': handle_dataset_update,
+        'CreateFile': handle_file_create,
     }
 
     return handlers.get(command)
