@@ -126,6 +126,26 @@ class EcChangelogHarvester(EcHarvester):
         return False
 
 
+def _get_latest_organization_version(audit):
+
+    method, url = _get_api_endpoint('organization_show')
+
+    url = url.format(
+        organization_id=audit['CustomProperties'].get('OrganisationId'),
+    )
+
+    response = requests.request(method, url)
+
+    if response.status_code != 200:
+        return False
+
+    content = response.json()
+    org_dict = custom_schema.convert_ec_organization_to_ckan_organization(
+        content['MetadataResultSet'][0])
+
+    return org_dict
+
+
 def _get_latest_dataset_version(audit):
 
     method, url = _get_api_endpoint('dataset_show')
@@ -192,6 +212,11 @@ def handle_dataset_create(context, audit, harvest_object):
 
     dataset_dict = _get_latest_dataset_version(audit)
 
+    if not dataset_dict:
+        msg = ['Could not get remote dataset metadata: {0}'.format(
+            json.dumps(audit['CustomProperties']))]
+        raise p.toolkit.ObjectNotFound(msg)
+
     if not dataset_dict.get('name'):
         dataset_dict['name'] = get_dataset_name(dataset_dict)
 
@@ -215,13 +240,18 @@ def handle_dataset_update(context, audit, harvest_object):
 
     dataset_dict = _get_latest_dataset_version(audit)
 
+    if not dataset_dict:
+        msg = ['Could not get remote dataset metadata: {0}'.format(
+            json.dumps(audit['CustomProperties']))]
+        raise p.toolkit.ObjectNotFound(msg)
+
     if not dataset_dict.get('name'):
         dataset_dict['name'] = get_dataset_name(dataset_dict)
 
     updated_dataset = p.toolkit.get_action('package_update')(context,
                                                              dataset_dict)
 
-    log.debug('Created new dataset "{0}"'.format(updated_dataset['id']))
+    log.debug('Updated dataset "{0}"'.format(updated_dataset['id']))
 
     harvest_object.guid = updated_dataset['id']  # Should be the same in the EC API
     harvest_object.package_id = updated_dataset['id']
@@ -289,12 +319,54 @@ def handle_file_create(context, audit, harvest_object):
     return True
 
 
+def handle_organization_create(context, audit, harvest_object):
+
+    org_dict = _get_latest_organization_version(audit)
+
+    if not org_dict:
+        msg = ['Could not get remote organization metadata: {0}'.format(
+            json.dumps(audit['CustomProperties']))]
+        raise p.toolkit.ObjectNotFound(msg)
+
+    if not org_dict.get('name'):
+        org_dict['name'] = get_dataset_name(org_dict, 'title')
+    import pdb; pdb.set_trace()
+    new_org = p.toolkit.get_action('organization_create')(context,
+                                                          org_dict)
+
+    log.debug('Created new organization "{0}"'.format(new_org['id']))
+
+    return True
+
+
+def handle_organization_update(context, audit, harvest_object):
+
+    org_dict = _get_latest_organization_version(audit)
+
+    if not org_dict:
+        msg = ['Could not get remote organization metadata: {0}'.format(
+            json.dumps(audit['CustomProperties']))]
+        raise p.toolkit.ObjectNotFound(msg)
+
+    if not org_dict.get('name'):
+        org_dict['name'] = get_dataset_name(org_dict, 'title')
+
+    new_org = p.toolkit.get_action('organization_update')(context,
+                                                          org_dict)
+
+    log.debug('Updated organization "{0}"'.format(new_org['id']))
+
+    return True
+
+
 def get_audit_command_handler(command):
 
     handlers = {
         'CreateDataSet': handle_dataset_create,
         'UpdateDataSet': handle_dataset_update,
         'CreateFile': handle_file_create,
+        'CreateOrganisation': handle_organization_create,
+        'UpdateOrganisation': handle_organization_update,
     }
 
     return handlers.get(command)
