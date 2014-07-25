@@ -170,3 +170,25 @@ class CustomHarvestPlugin(Harvest):
                                unicode]
 
         return schema
+
+
+class CreateUsersPagePlugin(p.SingletonPlugin):
+
+    '''A plugin that adds a new "Create users" page to CKAN.
+
+    Adds a "Create users on The Platform" page where sysadmins and
+    organization admins can create new users on The Platform.
+
+    '''
+
+    p.implements(p.IConfigurer)
+    p.implements(p.IRoutes, inherit=True)
+
+    def update_config(self, config):
+        p.toolkit.add_template_directory(config, 'create_users')
+
+    def before_map(self, map_):
+        map_.connect('/create_users',
+                     controller='ckanext.glasgow.controllers.create_users:CreateUsersController',
+                     action='create_users')
+        return map_

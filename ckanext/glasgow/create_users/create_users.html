@@ -1,0 +1,91 @@
+{% extends "page.html" %}
+
+{% block subtitle %}{{ _('Create users on The Platform') }}{% endblock %}
+
+{% block breadcrumb_content %}
+  <li class="active">{% link_for _('Create users on The Platform'), controller='ckanext.glasgow.controllers.create_users:CreateUsersController', action='create_users' %}</li>
+{% endblock %}
+
+{% block primary %}
+  <div class="primary">
+  <article class="module">
+    <div class="module-content">
+      <h1 class="page-heading">Create users on The Platform</h1>
+
+      <form class="form-horizontal" method="post">
+        <div class="control-group">
+          <label class="control-label" for="username">Username</label>
+          <div class="controls">
+            <input type="text" id="username" placeholder="joebloggs">
+          </div>
+        </div>
+
+        <div class="control-group">
+          <label class="control-label" for="password">Password</label>
+          <div class="controls">
+            <input type="password" id="password" placeholder="••••••">
+          </div>
+        </div>
+
+        <div class="control-group">
+          <label class="control-label" for="confirm-password">Confirm</label>
+          <div class="controls">
+            <input type="password" id="confirm-password" placeholder="••••••">
+          </div>
+        </div>
+
+        <div class="control-group">
+          <label class="control-label" for="email">Email</label>
+          <div class="controls">
+            <input type="email" id="email" placeholder="joe@bloggs.com">
+          </div>
+        </div>
+
+        <div class="control-group">
+          <label class="control-label" for="firstname">First name</label>
+          <div class="controls">
+            <input type="text" id="firstname" placeholder="Joe">
+          </div>
+        </div>
+
+        <div class="control-group">
+          <label class="control-label" for="lastname">Last name</label>
+          <div class="controls">
+            <input type="text" id="lastname" placeholder="Bloggs">
+          </div>
+        </div>
+
+        <div class="control-group">
+          <label class="control-label" for="displayname">Display name</label>
+          <div class="controls">
+            <input type="text" id="displayname" placeholder="Joe Bloggs">
+          </div>
+        </div>
+
+        <div class="control-group">
+          <label class="control-label" for="about">About</label>
+          <div class="controls">
+            <input type="text" id="about" placeholder="A short description of the user (optional).">
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button class="btn" type="submit">Create user & add another</button>
+          <button class="btn btn-primary" type="submit">Create user</button>
+        </div>
+
+      </form>
+    </div>
+    </div>
+  </article>
+{% endblock %}
+
+{% block secondary %}
+  <aside class="secondary">
+    <section class="module module-narrow module-shallow">
+      <div class="module-content">
+        <p>Here you can submit new user accounts to be created on The Platform.</p>
+      </div>
+    </section>
+  </aside>
+{% endblock %}

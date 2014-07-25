@@ -28,6 +28,7 @@ setup(
     glasgow_harvest=ckanext.glasgow.plugins:CustomHarvestPlugin
     ec_initial_harvester=ckanext.glasgow.harvesters.ec_harvester:EcInitialHarvester
     ec_changelog_harvester=ckanext.glasgow.harvesters.changelog:EcChangelogHarvester
+    create_users=ckanext.glasgow.plugins:CreateUsersPagePlugin
 
     [paste.paster_command]
     changelog_update=ckanext.glasgow.commands.changelog_update:UpdateFromEcApiChangeLog
