@@ -487,20 +487,6 @@ def file_request_create(context, data_dict):
     if errors:
         raise p.toolkit.ValidationError(errors)
 
-    # Get parent org and dataset EC API ids
-
-    ec_api_org_id = validated_data_dict.get('ec_api_org_id') or \
-                    _get_ec_api_org_id(dataset_dict['owner_org'])
-    ec_api_dataset_id = validated_data_dict.get('ec_api_dataset_id') or \
-                    dataset_dict['ec_api_id']
-
-    if not ec_api_org_id:
-        raise p.toolkit.ValidationError(
-            ['Could not get EC API id for parent organization'])
-    if not ec_api_dataset_id:
-        raise p.toolkit.ValidationError(
-            ['Could not get EC API id for parent dataset'])
-
     # Create a task status entry with the validated data
 
     key = '{0}@{1}'.format(validated_data_dict.get('package_id', 'file'),
@@ -525,14 +511,13 @@ def file_request_create(context, data_dict):
 
     method, url = _get_api_endpoint('file_request_create')
     url = url.format(
-        organization_id=ec_api_org_id,
-        dataset_id=ec_api_dataset_id,
+        organization_id=dataset_dict['owner_org'],
+        dataset_id=validated_data_dict['package_id'],
     )
 
     headers = {
         'Authorization': _get_api_auth_token(),
     }
-
 
     if isinstance(uploaded_file, cgi.FieldStorage):
         files = {
