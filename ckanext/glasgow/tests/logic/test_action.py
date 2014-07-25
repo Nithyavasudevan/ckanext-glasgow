@@ -476,12 +476,12 @@ class TestDatasetUpdate(object):
                 'id':  request_dict['task_id'],
                 'task_type': u'dataset_request_update',
                 'entity_type': u'dataset',
-                #'key': u'request_id',
                 'state': u'new',
-                'value': u'req-id',
             },
             task_dict
         )
+        req_dict = json.loads(task_dict['value'])
+        nose.tools.assert_equals('req-id', req_dict['request_id'])
 
 
 class TestFileCreate(object):
@@ -1040,6 +1040,7 @@ class TestGetChangeRequest(object):
         mock_request.return_value = mock_result
 
         result = helpers.call_action('get_change_request', id='dummy')
+        import ipdb; ipdb.set_trace()
 
     def test_no_id_parameter(self):
         nose.tools.assert_raises(
