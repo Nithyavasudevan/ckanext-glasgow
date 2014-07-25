@@ -1,5 +1,8 @@
 import nose
 import mock
+import json
+
+from bs4 import BeautifulSoup
 
 import ckan.new_tests.helpers as helpers
 
@@ -163,3 +166,87 @@ class TestDatasetController(object):
         pending = response.html.find('li', {'id': 'pending-1'})
         assert 'test_file' in pending.a.text
         assert 'test description' in pending.p.text
+
+
+    @mock.patch('ckanext.oauth2waad.plugin.service_to_service_access_token')
+    @mock.patch('requests.request')
+    def test_pending_dataset_update(self, mock_request, mock_token):
+        def request_result(*args, **kwargs):
+            if 'ChangeLog' in args[1]:
+                return mock.Mock(
+                    status_code=200,
+                    content=json.dumps({'RequestId': 'req-id'}),
+                    **{
+                        'raise_for_status.return_value': None,
+                        'json.return_value': [{
+                            'operation_state': 'InProgress',
+                            'audit_id': 998,
+                            'timestamp': '2014-05-21T00:00:00',
+                            'object_type': 'Dataset',
+                            'component': 'DataCollection',
+                            'audit_type': 'DatasetUpdateRequested',
+                            'owner': 'Admin', 
+                            'message': 'Dataset Update request started',
+                            'command': 'CreateFile'
+                            }]
+                    }
+                )
+            else:
+                return mock.Mock(
+                    status_code=200,
+                    content=json.dumps({'RequestId': 'req-id'}),
+                    **{
+                        'raise_for_status.return_value': None,
+                        'json.return_value': {'RequestId': 'req-id'},
+                    }
+                )
+
+
+        mock_token.return_value = 'Bearer: token'
+        # make the mock the result of calling requests.request(...)
+        mock_request.side_effect =  request_result
+
+        context = {'local_action': True, 'user': 'normal_user'}
+        data_dict = {
+            'name': 'test_dataset',
+            'owner_org': 'test_org',
+            'title': 'Test Dataset',
+            'notes': 'Some longer description',
+            'maintainer': 'Test maintainer',
+            'maintainer_email': 'Test maintainer email',
+            'license_id': 'OGL-UK-2.0',
+            'openness_rating': 3,
+            'quality': 5,
+        }
+
+        self.dataset = helpers.call_action('package_create', context=context,
+                                          **data_dict)
+
+        data_dict = self.dataset.copy()
+        data_dict.update({
+            'notes': 'Updated longer description',
+            'tags': [
+                {'name': 'Test tag 1'},
+                {'name': 'Test tag 2'},
+            ],
+            'published_on_behalf_of': 'Test published on behalf of',
+            'usage_guidance': 'Test usage guidance',
+            'category': 'Test category',
+            'theme': 'Test theme',
+            'standard_name': 'Test standard name',
+            'standard_rating': 5,
+            'standard_version': 'Test standard version',
+        })
+
+        context = {'user': self.normal_user['name']}
+        request_dict = helpers.call_action('dataset_request_update',
+                                           context=context,
+                                           **data_dict)
+
+        response = self.app.get('/dataset/change_requests/test_dataset',
+                                extra_environ={'REMOTE_USER': 'sysadmin_user'})
+        soup = BeautifulSoup(response.body)
+        nose.tools.assert_true('State - InProgress' in soup.table.text)
+        nose.tools.assert_true('Timestamp - 2014-05-21T00:00:00' in soup.table.text)
+        nose.tools.assert_true('Type - Dataset' in soup.table.text)
+        nose.tools.assert_true('Message - Dataset Update request started' in soup.table.text)

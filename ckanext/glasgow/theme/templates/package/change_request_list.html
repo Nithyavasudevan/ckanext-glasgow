@@ -11,9 +11,11 @@
         <th>State</th>
       </tr>
       </thead>
+    {% for change in change_request %}
       <tbody>
-      {% snippet 'snippets/change_request_item.html', change_request=change_request %}
+      {% snippet 'snippets/change_request_item.html', change_request=change %}
       </tbody>
+    {% endfor %}
     </table>
   {% else %}
     <p class="empty">{{ _('There is no current change request associated with this dataset') }}</p>
