@@ -28,7 +28,7 @@ def dataset_request_create(context, data_dict):
 
 def dataset_request_update(context, data_dict):
 
-    return auth_core.update.package_create(context, data_dict)
+    return auth_core.update.package_update(context, data_dict)
 
 
 def file_request_create(context, data_dict):
