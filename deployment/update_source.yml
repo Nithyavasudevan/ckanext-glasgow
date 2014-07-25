@@ -12,6 +12,12 @@
       action: command chdir=/usr/lib/ckan/default/src/{{ repo }}/ git pull
       register: update
 
+    - name: Restart Supervisor for harvest-fetch
+      supervisorctl: name=harvest-fetch:* state=restarted
+
+    - name: Restart Supervisor for harvest-gather
+      supervisorctl: name=harvest-gather state=restarted
+
     - name: Reload apache
       action: service name=apache2 state=reloaded
       when: update.changed
