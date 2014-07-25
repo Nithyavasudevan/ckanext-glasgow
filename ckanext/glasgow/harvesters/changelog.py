@@ -335,7 +335,7 @@ def handle_organization_create(context, audit, harvest_object):
 
     if not org_dict.get('name'):
         org_dict['name'] = get_dataset_name(org_dict, 'title')
-    import pdb; pdb.set_trace()
+
     new_org = p.toolkit.get_action('organization_create')(context,
                                                           org_dict)
 
