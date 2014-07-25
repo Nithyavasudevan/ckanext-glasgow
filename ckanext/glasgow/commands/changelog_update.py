@@ -9,6 +9,7 @@ from ckan.plugins import toolkit
 
 from ckanext.glasgow.model import HarvestLastAudit, harvest_last_audit_table
 from ckanext.glasgow.logic.action import ECAPIError
+from ckanext.glasgow.harvesters.changelog import save_last_audit_id
 
 
 class UpdateFromEcApiChangeLog(CkanCommand):
@@ -86,7 +87,6 @@ class ChangelogAudit(CkanCommand):
 
             audit_id = audits[0]['AuditId']
 
-        last_audit = HarvestLastAudit(audit_id=audit_id, harvest_job_id=None)
-        last_audit.save()
+        save_last_audit_id(audit_id, None)
 
         print 'Set last audit id to', audit_id

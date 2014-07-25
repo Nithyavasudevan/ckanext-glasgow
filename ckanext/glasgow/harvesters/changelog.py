@@ -17,6 +17,15 @@ from ckanext.glasgow.harvesters import EcHarvester, get_dataset_name
 log = logging.getLogger(__name__)
 
 
+def save_last_audit_id(audit_id, harvest_job_id=None):
+
+    new_last_audit = HarvestLastAudit(
+        audit_id=audit_id,
+        harvest_job_id=harvest_job_id,
+    )
+    new_last_audit.save()
+
+
 class EcChangelogHarvester(EcHarvester):
 
     force_import = False
@@ -78,11 +87,7 @@ class EcChangelogHarvester(EcHarvester):
                 ids.append(obj.id)
 
         # Save the last AuditId to know where to start in the next run
-        new_last_audit = HarvestLastAudit(
-            audit_id=audit['AuditId'],
-            harvest_job_id=harvest_job.id,
-        )
-        new_last_audit.save()
+        save_last_audit_id(audit['AuditId'], harvest_job.id)
 
         for key, audit in update_audits.iteritems():
             obj = HarvestObject(guid=audit['AuditId'], job=harvest_job,

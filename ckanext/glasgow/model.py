@@ -7,9 +7,12 @@ import ckan
 
 harvest_last_audit_table = sqlalchemy.Table(
     'harvest_last_audit', ckan.model.meta.metadata,
-    sqlalchemy.Column('audit_id',
+    sqlalchemy.Column('id',
                       sqlalchemy.types.UnicodeText,
-                      primary_key=True),
+                      primary_key=True,
+                      default=ckan.model.types.make_uuid),
+    sqlalchemy.Column('audit_id',
+                      sqlalchemy.types.UnicodeText),
     sqlalchemy.Column('harvest_job_id',
                       sqlalchemy.types.UnicodeText),
     sqlalchemy.Column('created',
