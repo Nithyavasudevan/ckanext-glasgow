@@ -1,18 +1,21 @@
+import sys
 import logging
 
 from sqlalchemy import or_
 
+from ckan import model
 from ckan.lib.cli import CkanCommand
 from ckan.plugins import toolkit
 
+from ckanext.glasgow.model import HarvestLastAudit, harvest_last_audit_table
 from ckanext.glasgow.logic.action import ECAPIError
+
 
 class UpdateFromEcApiChangeLog(CkanCommand):
     summary = "--NO SUMMARY--"
     usage = "--NO USAGE--"
 
     def command(self):
-        from ckan import model
         self._load_config()
         pending_tasks = model.Session.query(model.TaskStatus) \
             .filter(or_(model.TaskStatus.state == 'in_progress',
@@ -33,3 +36,57 @@ class UpdateFromEcApiChangeLog(CkanCommand):
                                                               e.extra_msg)
 
 
+class ChangelogAudit(CkanCommand):
+    '''Manages Audits for the Changelog Harvesting
+
+    Usage:
+
+      changelog_audit clear
+        - Clear all audits (ie next harvest will start from audit 0).
+
+      changelog_audit set [audit_id]
+        - Sets the next audit to start from. If audit_id is omitted the most
+          recent one on the platform will be used.
+
+
+    '''
+
+    summary = __doc__.split('\n')[0]
+    usage = __doc__
+
+    def command(self):
+
+        self._load_config()
+        if len(self.args) == 0:
+            self.parser.print_usage()
+            sys.exit(1)
+
+        cmd = self.args[0]
+        if cmd == 'clear':
+            self._clear()
+        elif cmd == 'set':
+            audit_id = self.args[1] if len(self.args) > 1 else None
+            self._set(audit_id)
+
+    def _clear(self):
+        model.Session.execute(harvest_last_audit_table.delete())
+        model.Session.commit()
+        print 'Last audits table emptied'
+
+    def _set(self, audit_id=None):
+
+        context = {
+            'ignore_auth': True,
+        }
+        if not audit_id:
+            audits = toolkit.get_action('changelog_show')(context, {})
+            if not audits:
+                print 'Could not get most recent audits'
+                sys.exit(1)
+
+            audit_id = audits[0]['AuditId']
+
+        last_audit = HarvestLastAudit(audit_id=audit_id, harvest_job_id=None)
+        last_audit.save()
+
+        print 'Set last audit id to', audit_id

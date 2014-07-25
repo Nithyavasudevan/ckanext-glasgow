@@ -31,5 +31,6 @@ setup(
 
     [paste.paster_command]
     changelog_update=ckanext.glasgow.commands.changelog_update:UpdateFromEcApiChangeLog
+    changelog_audit=ckanext.glasgow.commands.changelog_update:ChangelogAudit
     ''',
 )
