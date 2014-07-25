@@ -362,3 +362,31 @@ class TestSchemaConversion(object):
         ckan_dict = custom_schema.convert_ec_dataset_to_ckan_dataset(ec_dict)
 
         assert 'name' not in ec_dict
+
+    def test_convert_ckan_organization_to_ec_organization(self):
+
+        ckan_dict = {
+            'id': 'org-id',
+            'title': 'Test Org',
+            'description': 'Some longer description',
+        }
+
+        ec_dict = custom_schema.convert_ckan_organization_to_ec_organization(ckan_dict)
+
+        eq_(ec_dict['Id'], 'org-id')
+        #eq_(ec_dict['Title'], 'Test Org')
+        eq_(ec_dict['Description'], 'Some longer description')
+
+    def test_convert_ec_organization_to_ckan_organization(self):
+
+        ec_dict = {
+            'Id': 'org-id',
+            'Title': 'Test Org',
+            'Description': 'Some longer description',
+        }
+
+        ckan_dict = custom_schema.convert_ec_organization_to_ckan_organization(ec_dict)
+
+        eq_(ckan_dict['id'], 'org-id')
+        eq_(ckan_dict['title'], 'Test Org')
+        eq_(ckan_dict['description'], 'Some longer description')

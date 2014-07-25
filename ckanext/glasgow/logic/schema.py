@@ -35,6 +35,12 @@ ignore_missing = get_validator('ignore_missing')
 
 # CKAN to EC API mappings
 
+ckan_to_ec_organization_mapping = {
+    'id': 'Id',
+    'title': 'Name',  #TODO: replace with Title when MS sort their stuff
+    'description': 'Description',
+}
+
 ckan_to_ec_dataset_mapping = {
     'id': 'Id',
     'title': 'Title',
@@ -69,6 +75,30 @@ ckan_to_ec_resource_mapping = {
     'creation_date': 'CreationDate',
     'url': 'ExternalUrl',
 }
+
+
+def convert_ckan_organization_to_ec_organization(ckan_dict):
+
+    ec_dict = {}
+
+    for ckan_name, ec_name in ckan_to_ec_organization_mapping.iteritems():
+        ec_dict[ec_name] = ckan_dict.get(ckan_name)
+
+    return ec_dict
+
+
+def convert_ec_organization_to_ckan_organization(ec_dict):
+
+    ckan_dict = {}
+
+    for ckan_name, ec_name in ckan_to_ec_organization_mapping.iteritems():
+        ckan_dict[ckan_name] = ec_dict.get(ec_name)
+
+    # Ask MS
+    if not ckan_dict.get('title') and ec_dict.get('Title'):
+        ckan_dict['title'] = ec_dict.get('Title')
+
+    return ckan_dict
 
 
 def convert_ckan_dataset_to_ec_dataset(ckan_dict):
