@@ -32,43 +32,43 @@
         <div class="control-group">
           <label class="control-label" for="firstname"><span title="This field is required" class="control-required">*</span> First name</label>
           <div class="controls">
-            <input type="text" id="firstname" placeholder="Joe">
+            <input type="text" id="firstname" placeholder="Joe" maxlength="255">
           </div>
         </div>
 
         <div class="control-group">
           <label class="control-label" for="lastname"><span title="This field is required" class="control-required">*</span> Last name</label>
           <div class="controls">
-            <input type="text" id="lastname" placeholder="Bloggs">
+            <input type="text" id="lastname" placeholder="Bloggs" maxlength="255">
           </div>
         </div>
 
         <div class="control-group">
           <label class="control-label" for="username"><span title="This field is required" class="control-required">*</span> Username</label>
           <div class="controls">
-            <input type="text" id="username" placeholder="joebloggs">
-            <span class="help-block">The username must be 1-16 characters long and must contain only digits 0-9, letters a-z and A-Z, dash - and undescore _.</span>
+            <input type="text" id="username" placeholder="joebloggs" minlength="1" maxlength="16" pattern="([0-9,a-z,A-Z]-?_?)*">
+            <span class="help-block">The username must contain only digits 0-9, letters a-z and A-Z, dash - and undescore _.</span>
           </div>
         </div>
 
         <div class="control-group">
           <label class="control-label" for="displayname"><span title="This field is required" class="control-required">*</span> Display name</label>
           <div class="controls">
-            <input type="text" id="displayname" placeholder="Joe Bloggs">
+            <input type="text" id="displayname" placeholder="Joe Bloggs" maxlength="255">
           </div>
         </div>
 
         <div class="control-group">
           <label class="control-label" for="email"><span title="This field is required" class="control-required">*</span> Email</label>
           <div class="controls">
-            <input type="email" id="email" placeholder="joe@bloggs.com">
+            <input type="email" id="email" placeholder="joe@bloggs.com" maxlength="255">
           </div>
         </div>
 
         <div class="control-group">
           <label class="control-label" for="password"><span title="This field is required" class="control-required">*</span> Password</label>
           <div class="controls">
-            <input type="password" id="password" placeholder="••••••">
+            <input type="password" id="password" minlength="6" maxlength="16" placeholder="••••••">
             <span class="help-block">The password must be 6-16 characters long.</span>
           </div>
         </div>
@@ -76,7 +76,7 @@
         <div class="control-group">
           <label class="control-label" for="confirm-password"><span title="This field is required" class="control-required">*</span> Confirm</label>
           <div class="controls">
-            <input type="password" id="confirm-password" placeholder="••••••">
+            <input type="password" id="confirm-password" minlength="6" maxlength="16" placeholder="••••••">
             <span class="help-block">Enter the same password again to confirm.</span>
           </div>
         </div>
@@ -84,7 +84,7 @@
         <div class="control-group">
           <label class="control-label" for="about">About</label>
           <div class="controls">
-            <textarea id="about" rows="5" placeholder="A short description of the user (optional)."></textarea>
+            <textarea id="about" rows="5" placeholder="A short description of the user (optional)." maxlength="4000"></textarea>
             <span class="help-block">You can use <a href="http://daringfireball.net/projects/markdown/syntax" target="_blank">Markdown formatting</a> in the <strong>About</strong> text.</span>
           </div>
         </div>
