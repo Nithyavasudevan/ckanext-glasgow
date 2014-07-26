@@ -130,6 +130,7 @@ class GlasgowSchemaPlugin(p.SingletonPlugin, p.toolkit.DefaultDatasetForm):
             'get_resource_versions',
             'get_pending_files_for_dataset',
             'get_pending_task_for_dataset',
+            'is_user_an_admin_of_any_organization',
         )
         return _get_module_functions(custom_helpers, function_names)
 

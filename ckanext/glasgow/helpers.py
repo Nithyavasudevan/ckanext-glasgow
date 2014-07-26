@@ -2,6 +2,7 @@ import json
 from ckan import model
 import ckan.lib.helpers as helpers
 import ckan.plugins.toolkit as toolkit
+import ckan.new_authz as new_authz
 
 def get_licenses():
 
@@ -54,3 +55,33 @@ def get_pending_task_for_dataset(pkg_name):
         return None
     except toolkit.NotAuthorized:
         return None
+
+
+def is_user_an_admin_of_any_organization(user_name):
+    '''Return True if the given user is an admin of any organization, or False.
+
+    Always returns True for sysadmins.
+
+    '''
+    if new_authz.is_sysadmin(user_name):
+        return True
+
+    try:
+        user_dict = toolkit.get_action('user_show')(
+            context={}, data_dict={'id': user_name})
+    except toolkit.ObjectNotFound:
+        return False
+
+    user_id = user_dict['id']
+
+    q = model.Session.query(model.Member)
+    q = q.filter(model.Member.state == 'active')
+    q = q.filter(model.Member.table_name == 'user')
+    q = q.filter(model.Member.capacity == 'admin')
+    q = q.filter(model.Member.table_id == user_id)
+    members = q.all()
+
+    if [member for member in members if member.group.is_organization]:
+        return True
+    else:
+        return False

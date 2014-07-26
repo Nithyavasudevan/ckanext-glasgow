@@ -1,0 +1,8 @@
+{% ckan_extends %}
+
+{% block header_site_navigation_tabs %}
+  {{ super() }}
+  {% if h.is_user_an_admin_of_any_organization(c.user) %}
+    <li><a href="/create_users">{% trans %}Create users{% endtrans %}</a></li>
+  {% endif %}
+{% endblock %}
