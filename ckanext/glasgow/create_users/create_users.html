@@ -18,9 +18,9 @@
           <label class="control-label" for="organisation">Organisation</label>
           <div class="controls">
             <select id="organisation">
-              {# FIXME: Only show the No organisation option if the user is a
-                 sysadmin. #}
-              <option>No organisation</option>
+              {% if is_sysadmin %}
+                <option value="">No organisation</option>
+              {% endif %}
               {% for organisation in organisation_names %}
                 <option>{{ organisation }}</option>
               {% endfor %}
