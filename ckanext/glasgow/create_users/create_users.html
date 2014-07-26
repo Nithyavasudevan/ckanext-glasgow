@@ -13,66 +13,90 @@
       <h1 class="page-heading">Create users on The Platform</h1>
 
       <form class="form-horizontal" method="post">
+
         <div class="control-group">
-          <label class="control-label" for="username">Username</label>
+          <label class="control-label" for="organisation">Organisation</label>
           <div class="controls">
-            <input type="text" id="username" placeholder="joebloggs">
+            <select id="organisation">
+              {# FIXME: Only show the No organisation option if the user is a
+                 sysadmin. #}
+              <option>No organisation</option>
+              {% for organisation in organisation_names %}
+                <option>{{ organisation }}</option>
+              {% endfor %}
+            </select>
+            <span class="help-block">If you select an organisation here, the new user will be created as an <em>Editor</em> in that organisation.</span>
           </div>
         </div>
 
         <div class="control-group">
-          <label class="control-label" for="password">Password</label>
-          <div class="controls">
-            <input type="password" id="password" placeholder="••••••">
-          </div>
-        </div>
-
-        <div class="control-group">
-          <label class="control-label" for="confirm-password">Confirm</label>
-          <div class="controls">
-            <input type="password" id="confirm-password" placeholder="••••••">
-          </div>
-        </div>
-
-        <div class="control-group">
-          <label class="control-label" for="email">Email</label>
-          <div class="controls">
-            <input type="email" id="email" placeholder="joe@bloggs.com">
-          </div>
-        </div>
-
-        <div class="control-group">
-          <label class="control-label" for="firstname">First name</label>
+          <label class="control-label" for="firstname"><span title="This field is required" class="control-required">*</span> First name</label>
           <div class="controls">
             <input type="text" id="firstname" placeholder="Joe">
           </div>
         </div>
 
         <div class="control-group">
-          <label class="control-label" for="lastname">Last name</label>
+          <label class="control-label" for="lastname"><span title="This field is required" class="control-required">*</span> Last name</label>
           <div class="controls">
             <input type="text" id="lastname" placeholder="Bloggs">
           </div>
         </div>
 
         <div class="control-group">
-          <label class="control-label" for="displayname">Display name</label>
+          <label class="control-label" for="username"><span title="This field is required" class="control-required">*</span> Username</label>
+          <div class="controls">
+            <input type="text" id="username" placeholder="joebloggs">
+            <span class="help-block">The username must be 1-16 characters long and must contain only digits 0-9, letters a-z and A-Z, dash - and undescore _.</span>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <label class="control-label" for="displayname"><span title="This field is required" class="control-required">*</span> Display name</label>
           <div class="controls">
             <input type="text" id="displayname" placeholder="Joe Bloggs">
           </div>
         </div>
 
         <div class="control-group">
+          <label class="control-label" for="email"><span title="This field is required" class="control-required">*</span> Email</label>
+          <div class="controls">
+            <input type="email" id="email" placeholder="joe@bloggs.com">
+          </div>
+        </div>
+
+        <div class="control-group">
+          <label class="control-label" for="password"><span title="This field is required" class="control-required">*</span> Password</label>
+          <div class="controls">
+            <input type="password" id="password" placeholder="••••••">
+            <span class="help-block">The password must be 6-16 characters long.</span>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <label class="control-label" for="confirm-password"><span title="This field is required" class="control-required">*</span> Confirm</label>
+          <div class="controls">
+            <input type="password" id="confirm-password" placeholder="••••••">
+            <span class="help-block">Enter the same password again to confirm.</span>
+          </div>
+        </div>
+
+        <div class="control-group">
           <label class="control-label" for="about">About</label>
           <div class="controls">
-            <input type="text" id="about" placeholder="A short description of the user (optional).">
+            <textarea id="about" rows="5" placeholder="A short description of the user (optional)."></textarea>
+            <span class="help-block">You can use <a href="http://daringfireball.net/projects/markdown/syntax" target="_blank">Markdown formatting</a> in the <strong>About</strong> text.</span>
           </div>
         </div>
 
         <div class="form-actions">
+          <p class="control-required-message">
+            <span class="control-required">*</span> Required field
+          </p>
           <button class="btn" type="submit">Create user & add another</button>
           <button class="btn btn-primary" type="submit">Create user</button>
         </div>
+
 
       </form>
     </div>
