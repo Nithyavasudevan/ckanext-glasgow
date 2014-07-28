@@ -31,8 +31,10 @@ class DatasetController(PackageController):
             }
 
             try:
-                change_request = p.toolkit.get_action('get_change_request')(
-                    context, {'id': pending_task['value'].get('request_id')})[-1]
+                change_requests = p.toolkit.get_action('get_change_request')(
+                    context, {'id': pending_task['value'].get('request_id')})
+                if change_requests:
+                    change_request = change_requests[-1]
             except ECAPIError, e:
                 change_request = None
                 #flash
