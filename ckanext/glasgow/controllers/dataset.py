@@ -35,6 +35,8 @@ class DatasetController(PackageController):
                     context, {'id': pending_task['value'].get('request_id')})
                 if change_requests:
                     change_request = change_requests[-1]
+                else:
+                    change_request = None
             except ECAPIError, e:
                 change_request = None
                 #flash
