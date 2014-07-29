@@ -47,6 +47,13 @@ class GlasgowSchemaPlugin(p.SingletonPlugin, p.toolkit.DefaultDatasetForm):
         status_ctl = 'ckanext.glasgow.controllers.request_status:RequestStatusController'
         map.connect('/request/{request_id}', controller=status_ctl,
                     action='get_status')
+
+
+        org_controller = 'ckanext.glasgow.controllers.organization:OrgController'
+        map.connect('/organization/new',
+                    controller=org_controller, action='new')
+        map.connect('/organization/{organization_id}',
+                    controller=org_controller, action='read')
         return map
 
     # IConfigurer
@@ -89,12 +96,15 @@ class GlasgowSchemaPlugin(p.SingletonPlugin, p.toolkit.DefaultDatasetForm):
             'package_update',
             'resource_create',
             'resource_update',
+            'organization_create',
+            'organization_request_create',
             'dataset_request_create',
             'file_request_create',
             'file_request_update',
             'dataset_request_update',
             'pending_task_for_dataset',
             'pending_files_for_dataset',
+            'pending_task_for_organization',
             'resource_version_show',
             'check_for_task_status_update',
             'get_change_request',
@@ -114,6 +124,7 @@ class GlasgowSchemaPlugin(p.SingletonPlugin, p.toolkit.DefaultDatasetForm):
             'file_request_create',
             'dataset_request_update',
             'pending_task_for_dataset',
+            'organization_request_create',
             'task_status_show',
             'get_change_request',
             'changelog_show',

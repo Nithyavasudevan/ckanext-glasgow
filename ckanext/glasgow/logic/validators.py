@@ -118,6 +118,24 @@ def no_pending_dataset_with_same_title_in_same_org(key, data, errors, context):
     return value
 
 
+def no_pending_organization_with_same_name(value, context):
+    '''
+    Checks if there is a pending request for a organization with the same name
+
+    :raises: :py:exc:`~ckan.plugins.toolkit.Invalid` if there is a pending
+        request with the same dataset name
+
+    '''
+    pending_task = p.toolkit.get_action('pending_task_for_organization')({
+        'ignore_auth': True}, {'name': value})
+
+    if pending_task:
+        raise Invalid(
+            _('There is a pending request for a organization with the same name')
+        )
+    return value
+
+
 def string_max_length(max_length):
     '''
     Checks if a string is longer than a certain length
