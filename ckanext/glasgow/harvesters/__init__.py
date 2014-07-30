@@ -1,8 +1,11 @@
 import slugify
 
 from ckan import plugins as p
+from ckan import model
 
 from ckanext.harvest.harvesters.base import HarvesterBase
+
+from ckanext.glasgow.logic.action import _expire_task_status
 
 
 class EcHarvester(HarvesterBase):
@@ -36,15 +39,55 @@ class EcHarvester(HarvesterBase):
         return self._user_name
 
 
-def get_dataset_name(data_dict, field='title'):
-    org_id = data_dict.get('ec_api_org_id',
-                           data_dict.get('owner_org'))
+def get_initial_dataset_name(data_dict, field='title'):
 
-    if org_id:
-        name = slugify.slugify(
-            '-'.join([data_dict[field][:95], str(org_id)[:4]])
-        )
-    else:
-        name = slugify.slugify(data_dict[field])
+    name = slugify.slugify(data_dict[field])
+
+    existing_dataset = model.Package.Session.query(model.Package).filter_by(
+        name=name).first()
+
+    if existing_dataset:
+        org_id = data_dict.get('owner_org')
+
+        if org_id:
+            name = '-'.join([name, str(org_id)[:4]])
 
     return name
+
+
+def get_org_name(data_dict, field='title'):
+
+    name = slugify.slugify(data_dict[field])
+
+    return name
+
+
+def get_dataset_name_from_task(context, audit_dict):
+
+    request_id = audit_dict.get('RequestId')
+
+    if not request_id:
+        return
+
+    task = get_task_for_request_id(context, request_id)
+
+    if task:
+        name = task.key
+
+        _expire_task_status(context, task.id)
+
+        return name
+
+    return
+
+
+def get_task_for_request_id(context, request_id):
+
+    model = context['model']
+
+    task = model.Session.query(model.TaskStatus) \
+        .filter(model.TaskStatus.entity_type == 'dataset') \
+        .filter(model.TaskStatus.value.like('%{0}%'.format(request_id))) \
+        .first()
+
+    return task
