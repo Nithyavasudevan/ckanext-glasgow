@@ -274,7 +274,10 @@ class TestDatasetCreate(object):
 
         # Create test org
         test_org = helpers.call_action('organization_create',
-                                       context={'user': 'normal_user'},
+                                       context={
+                                           'user': 'normal_user',
+                                           'local_action': True,
+                                       },
                                        name='test_org',
                                        extras=[{'key': 'ec_api_id',
                                                 'value': 1}])
@@ -405,7 +408,10 @@ class TestDatasetUpdate(object):
                                               password='test')
 
         self.test_org = helpers.call_action('organization_create',
-                                       context={'user': 'normal_user'},
+                                       context={
+                                           'user': 'normal_user',
+                                           'local_action': True,
+                                       },
                                        name='test_org',
                                        id='ec-org-id-1')
 
@@ -497,7 +503,10 @@ class TestFileCreate(object):
 
         # Create test org
         test_org = helpers.call_action('organization_create',
-                                       context={'user': 'normal_user'},
+                                       context={
+                                           'user': 'normal_user',
+                                           'local_action': True,
+                                       },
                                        name='test_org',
                                        extras=[{'key': 'ec_api_id',
                                                 'value': 1}])
@@ -696,7 +705,10 @@ class TestFileUpdate(object):
                                               password='test')
 
         self.test_org = helpers.call_action('organization_create',
-                                       context={'user': 'normal_user'},
+                                       context={
+                                           'user': 'normal_user',
+                                           'local_action': True,
+                                       },
                                        name='test_org',
                                        id='ec-org-id-1')
 
@@ -765,7 +777,10 @@ class TestFileVersions(object):
 
         # Create test org
         test_org = helpers.call_action('organization_create',
-                                       context={'user': 'normal_user'},
+                                       context={
+                                           'user': 'normal_user',
+                                           'local_action': True,
+                                       },
                                        name='test_org',
                                        extras=[{'key': 'ec_api_id',
                                                 'value': 1}])
@@ -846,7 +861,10 @@ class TestCheckForTaskStatusUpdate(object):
 
         # Create test org
         test_org = helpers.call_action('organization_create',
-                                       context={'user': 'normal_user'},
+                                       context={
+                                           'user': 'normal_user',
+                                           'local_action': True,
+                                       },
                                        name='test_org',
                                        extras=[{'key': 'ec_api_id',
                                                 'value': 1}])
@@ -1040,7 +1058,6 @@ class TestGetChangeRequest(object):
         mock_request.return_value = mock_result
 
         result = helpers.call_action('get_change_request', id='dummy')
-        import ipdb; ipdb.set_trace()
 
     def test_no_id_parameter(self):
         nose.tools.assert_raises(
@@ -1168,7 +1185,7 @@ class TestChangelog(object):
         eq_(audit_list[0]['ObjectType'], 'File')
 
 
-class TestOrganization(object):
+class TestOrganizationCreate(object):
     def setup(self):
         self.normal_user = helpers.call_action('user_create',
                                                name='normal_user',

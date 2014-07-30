@@ -28,7 +28,10 @@ class TestCreateDataset(object):
                                               password='test')
 
         cls.test_org = helpers.call_action('organization_create',
-                                           context={'user': 'sysadmin_user'},
+                                           context={
+                                               'user': 'sysadmin_user',
+                                               'local_action': True,
+                                           },
                                            name='test_org',
                                            extras=[{'key': 'ec_api_id',
                                                     'value': 1}])
@@ -217,7 +220,10 @@ class TestCreateFile(object):
                                               password='test')
         # Create test org
         test_org = helpers.call_action('organization_create',
-                                       context={'user': 'normal_user'},
+                                       context={
+                                           'user': 'normal_user',
+                                           'local_action': True,
+                                       },
                                        name='test_org',
                                        extras=[{'key': 'ec_api_id',
                                                 'value': 1}])
@@ -261,30 +267,6 @@ class TestCreateFile(object):
     def test_create_file_anon(self):
 
         response = self.app.get('/dataset/new_resource/test_dataset')
-
-        # This won't fail with not authorized because of ckan/ckan#1766
-        eq_(response.status_int, 200)
-
-        data_dict = {
-            'name': 'Test File name',
-            'description': 'Some longer description',
-            'format': 'application/csv',
-            'license_id': 'uk-ogl',
-            'openness_rating': '3',
-            'quality': '5',
-        }
-
-        form = response.forms[1]
-
-        # Make sure we are using the custom form
-        assert 'openness_rating' in form.fields.keys()
-
-        for field, value in data_dict.iteritems():
-            form[field] = value
-
-        response = form.submit('save',
-                               upload_files=
-                               [('upload', 'test.txt', 'some text')])
 
         eq_(response.status_int, 302)
         assert '/user/login' in response.headers['Location']

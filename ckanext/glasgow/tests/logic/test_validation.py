@@ -28,7 +28,10 @@ class TestDatasetValidation(object):
 
         # Create test org
         cls.test_org = helpers.call_action('organization_create',
-                                           context={'user': 'normal_user'},
+                                           context={
+                                               'user': 'normal_user',
+                                               'local_action': True,
+                                           },
                                            name='test_org',
                                            extras=[{'key': 'ec_api_id',
                                                     'value': 1}])
