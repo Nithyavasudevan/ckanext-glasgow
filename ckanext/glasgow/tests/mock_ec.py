@@ -137,7 +137,7 @@ def request_file_update(organization_id, dataset_id):
 def request_datasets(org_id):
     skip = int(flask.request.args.get('$skip', 0))
     metadata_result_set = {
-        4: [
+        '4': [
             {
                 "Id": 3,
                 "Metadata": {
@@ -227,7 +227,7 @@ def request_datasets(org_id):
 def request_files(org_id, dataset_id):
     skip = int(flask.request.args.get('$skip', 0))
     metadata_result_set =  {
-        (1, 3): [
+        ('1', '3'): [
             {
                 "CreatedTime": "2014-06-13T16:36:39.72",
                 "DatasetId": 3,
@@ -419,26 +419,6 @@ def request_change_status(request_id):
                     }
                 ]
             },
-{
-            'AuditId': 1,
-            'RequestId': 'REQUEST-ID',
-            'Timestamp': '3000-05-21T00:00:10',
-            'AuditType': 'FileCreated',
-            'Command': 'CreateFile',
-            'ObjectType': 'File',
-            'OperationState': 'Succeeded',
-            'Component': 'DataPublication',
-            'Owner': 'Admin',
-            'Message': 'File Create Operation completed',
-            'CustomProperties': [
-                {
-                    'OrganisationId': '1',
-                    'DatasetId': '1',
-                    'FileId': '1',
-                    'Versionid': 'VERSION-ID',
-                    }
-                ]
-            }
             ])
     return flask.Response(response_string, mimetype='application/json')
 

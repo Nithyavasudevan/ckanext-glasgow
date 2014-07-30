@@ -13,25 +13,26 @@ eq_ = nose.tools.eq_
 
 
 class TestDatasetController(object):
-
-    @classmethod
-    def setup_class(cls):
-        cls.app = get_test_app()
+    def setup(self):
+        self.app = get_test_app()
 
         # Create test user
-        cls.sysadmin_user = helpers.call_action('user_create',
+        self.sysadmin_user = helpers.call_action('user_create',
                                                 name='sysadmin_user',
                                                 email='test@test.com',
                                                 password='test',
                                                 sysadmin=True)
 
-        cls.normal_user = helpers.call_action('user_create',
+        self.normal_user = helpers.call_action('user_create',
                                               name='normal_user',
                                               email='test@test.com',
                                               password='test')
 
-        cls.test_org = helpers.call_action('organization_create',
-                                           context={'user': 'sysadmin_user'},
+        self.test_org = helpers.call_action('organization_create',
+                                           context={
+                                               'user': 'sysadmin_user',
+                                               'local_action': True,
+                                            },
                                            name='test_org',
                                            extras=[{'key': 'ec_api_id',
                                                     'value': 1}])
@@ -46,8 +47,7 @@ class TestDatasetController(object):
         # Start mock EC API
         run_mock_ec()
 
-    @classmethod
-    def teardown_class(cls):
+    def teardown(cls):
         helpers.reset_db()
 
     @mock.patch('ckanext.oauth2waad.plugin.service_to_service_access_token')

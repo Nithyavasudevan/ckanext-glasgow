@@ -253,7 +253,10 @@ class TestSchemaConversion(object):
                             sysadmin=True)
 
         helpers.call_action('organization_create',
-                            context={'user': 'sysadmin_user'},
+                            context={
+                                'user': 'sysadmin_user',
+                                'local_action': True,
+                            },
                             name='test_org',
                             extras=[{'key': 'ec_api_id',
                                      'value': 1}])

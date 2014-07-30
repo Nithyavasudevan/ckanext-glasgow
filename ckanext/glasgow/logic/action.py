@@ -138,12 +138,18 @@ def _get_api_endpoint(operation):
     elif operation == 'file_version_show':
         method = 'GET'
         path = '/Metadata/Organisation/{organization_id}/Dataset/{dataset_id}/File/{file_id}/Versions/{version_id}'
+    elif operation == 'file_versions_show':
+        method = 'GET'
+        path = '/Metadata/Organisation/{organization_id}/Dataset/{dataset_id}/File/{file_id}/Versions'
     elif operation == 'request_status_show':
         method = 'GET'
         path = '/ChangeLog/RequestStatus/{request_id}'
     elif operation == 'changelog_show':
         method = 'GET'
         path = '/ChangeLog/RequestChanges'
+    elif operation == 'organization_request_create':
+        method = 'POST'
+        path = '/Organisations'
     else:
         return None, None
 
@@ -245,6 +251,27 @@ def pending_files_for_dataset(context, data_dict):
         task_dict = model_dictize.task_status_dictize(task, context)
         results.append(task_dict)
     return results
+
+
+def pending_task_for_organization(context, data_dict):
+    p.toolkit.check_access('pending_task_for_organization', context, data_dict)
+
+    organization_id = data_dict.get('organization_id')
+
+    model = context.get('model')
+    task = model.Session.query(model.TaskStatus) \
+        .filter(model.TaskStatus.entity_type == 'organization') \
+        .filter(or_(model.TaskStatus.state == 'new',
+                model.TaskStatus.state == 'sent')) \
+        .filter(model.TaskStatus.entity_id == organization_id) \
+        .order_by(model.TaskStatus.last_updated.desc()) \
+        .first()
+
+    if task:
+        return model_dictize.task_status_dictize(task, context)
+    else:
+        return None
+
 
 
 def package_create(context, data_dict):
@@ -1022,7 +1049,7 @@ def resource_version_show(context, data_dict):
     package_show = p.toolkit.get_action('package_show')
     dataset = package_show(context, {'name_or_id': package_id})
 
-    method, url = _get_api_endpoint('file_version_show')
+    method, url = _get_api_endpoint('file_versions_show')
 
     try:
         ec_api_file_id = resource['ec_api_id'] 
@@ -1048,12 +1075,31 @@ def resource_version_show(context, data_dict):
         'Content-Type': 'application/json',
     }
 
-    response = requests.request(method, url, headers=headers)
-    if response.status_code == requests.codes.ok:
-        try:
-            content = response.json()
-        except ValueError:
-            raise ECAPIValidationError(['EC API Error: response not JSON'])
+    try:
+        response = requests.request(method, url, headers=headers)
+        response.raise_for_status()
+    except requests.exceptions.HTTPError:
+        error_dict = {
+            'message': ['The CTPEC API returned an error code'],
+            'status': [response.status_code],
+            'content': [response.content],
+        }
+        raise p.toolkit.ValidationError(error_dict)
+    except requests.exceptions.RequestException, e:
+        error_dict = {
+            'message': ['Request exception: {0}'.format(e)],
+        }
+        raise p.toolkit.ValidationError(error_dict)
+
+    try:
+        content = response.json()
+    except ValueError:
+        error_dict = {
+            'message': ['Error decoding JSON from EC Platform response'],
+            'content': [response.content],
+        }
+        raise p.toolkit.ValidationError(error_dict)
+
 
     res_ec_to_ckan = custom_schema.convert_ec_file_to_ckan_resource
     try:
@@ -1300,3 +1346,90 @@ def changelog_show(context, data_dict):
             raise p.toolkit.ValidationError(error_dict)
 
     return content
+
+
+def organization_create(context, data_dict):
+
+    if data_dict.get('__local_action', False):
+        context['local_action'] = True
+
+    if (context.get('local_action', False) or
+            data_dict.get('type') == 'harvest'):
+        return core_actions.create.organization_create(context, data_dict)
+    else:
+        return p.toolkit.get_action('organization_request_create')(context,
+                                                                   data_dict)
+
+
+def organization_request_create(context, data_dict):
+    check_access('organization_request_create', context, data_dict)
+
+    context.update({'model': model, 'session': model.Session})
+    create_schema = custom_schema.create_group_schema()
+
+    validated_data_dict, errors = validate(data_dict, create_schema, context)
+
+    if errors:
+        raise p.toolkit.ValidationError(errors)
+
+    ec_dict = custom_schema.convert_ckan_organization_to_ec_organization(
+        validated_data_dict)
+
+    method, url = _get_api_endpoint('organization_request_create')
+
+    headers = {
+        'Authorization': _get_api_auth_token(),
+    }
+
+    try:
+        response = requests.request(method, url,
+                                    data=json.dumps(ec_dict),
+                                    headers=headers,
+                                    )
+        response.raise_for_status()
+    except requests.exceptions.HTTPError:
+        error_dict = {
+            'message': ['The CTPEC API returned an error code'],
+            'status': [response.status_code],
+            'content': [response.content],
+        }
+        raise p.toolkit.ValidationError(error_dict)
+    except requests.exceptions.RequestException, e:
+        error_dict = {
+            'message': ['Request exception: {0}'.format(e)],
+        }
+        raise p.toolkit.ValidationError(error_dict)
+
+    try:
+        content = response.json()
+        request_id = content['RequestId']
+    except ValueError:
+        error_dict = {
+            'message': ['Error decoding JSON from EC Platform response'],
+            'content': [response.content],
+        }
+        raise p.toolkit.ValidationError(error_dict)
+    except KeyError:
+        error_dict = {
+            'message': ['RequestId not in response from EC Platform'],
+            'content': [response.content],
+        }
+        raise p.toolkit.ValidationError(error_dict)
+
+    task_dict = _create_task_status(context,
+                                    task_type='organization_request_create',
+                                    entity_id=validated_data_dict['name'],
+                                    entity_type='organization',
+                                    key=request_id,
+                                    value=json.dumps({'data_dict': data_dict}))
+
+    return {
+        'task_id': task_dict['id'],
+        'request_id': request_id,
+        'name': validated_data_dict['name'],
+        'type': 'organization',
+    }
+
+
+def organization_update(context, data_dict):
+    pass

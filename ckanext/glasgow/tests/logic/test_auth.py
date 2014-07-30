@@ -26,7 +26,10 @@ class TestCreate(object):
                                               password='test')
 
         test_org = helpers.call_action('organization_create',
-                                       context={'user': 'sysadmin_user'},
+                                       context={
+                                           'user': 'sysadmin_user',
+                                           'local_action': True,
+                                        },
                                        name='test_org')
 
         member = {'username': 'normal_user',

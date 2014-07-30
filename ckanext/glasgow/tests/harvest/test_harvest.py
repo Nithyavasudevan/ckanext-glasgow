@@ -4,6 +4,8 @@ import mock
 
 import nose.tools as nt
 
+from ckan.lib import search
+
 import ckan.new_tests.helpers as helpers
 import ckan.new_tests.factories as factories
 
@@ -38,6 +40,7 @@ class TestDatasetCreate(object):
     def teardown_class(cls):
 
         helpers.reset_db()
+        search.clear()
 
     def test_create_orgs(self):
         harvester = EcInitialHarvester()
@@ -112,7 +115,8 @@ class TestDatasetCreate(object):
     def test_gather(self):
         harvester = EcInitialHarvester()
         job = HarvestJobFactory()
-        harvester.gather_stage(job)
+        harvest_result = harvester.gather_stage(job)
+        nt.assert_true(harvest_result)
 
         nt.assert_equals(len(job.objects), 3)
 
@@ -150,7 +154,8 @@ class TestDatasetCreate(object):
     def test_fetch(self):
         harvester = EcInitialHarvester()
         job = HarvestJobFactory()
-        org = factories.Organization(name='test-org-1')
+        org = factories.Organization(name='test-org-1', needs_approval=False,
+                                     __local_action=True)
 
         harvest_object = harvest_model.HarvestObject(
             guid='3',
@@ -182,7 +187,8 @@ class TestDatasetCreate(object):
                 "Title": "Raj Data Set 001"
                 }))
         harvest_object.save()
-        harvester.fetch_stage(harvest_object)
+        harvest_result = harvester.fetch_stage(harvest_object)
+        nt.assert_true(harvest_result)
 
         file_extras = [e for e in harvest_object.extras if e.key == 'file']
         nt.assert_equals(len(file_extras), 2)
@@ -196,7 +202,9 @@ class TestDatasetCreate(object):
     def test_import(self):
         harvester = EcInitialHarvester()
         job = HarvestJobFactory()
-        org = factories.Organization(id='4', name='test-org-2')
+        org = factories.Organization(id='4', name='test-org-2',
+                                     needs_approval=False,
+                                     __local_action=True)
         harvest_object = harvest_model.HarvestObject(
             guid='3',
             job=job,
@@ -227,8 +235,9 @@ class TestDatasetCreate(object):
                 "Title": "Raj Data Set 001"
                 }))
         harvest_object.save()
-        harvester.import_stage(harvest_object)
-        pkg = helpers.call_action('package_show', name_or_id=u'raj-data-set-001-4')
+        harvest_result = harvester.import_stage(harvest_object)
+        nt.assert_true(harvest_result)
+        pkg = helpers.call_action('package_show', name_or_id=u'raj-data-set-001')
         nt.assert_equals(pkg['title'], u'Raj Data Set 001')
 
         nt.assert_equals(pkg['id'], u'3')
@@ -238,4 +247,4 @@ class TestDatasetCreate(object):
 
         nt.assert_equals(org['id'], '4')
         nt.assert_equals(len(org['packages']), 1)
-        nt.assert_equals(org['packages'][0]['name'], u'raj-data-set-001-4')
+        nt.assert_equals(org['packages'][0]['name'], u'raj-data-set-001')

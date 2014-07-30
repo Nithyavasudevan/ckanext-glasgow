@@ -3,6 +3,7 @@ from ckan.logic.schema import (
     default_update_package_schema,
     default_show_package_schema,
     default_resource_schema,
+    default_group_schema,
     )
 
 import ckan.plugins as p
@@ -15,6 +16,7 @@ from ckanext.glasgow.logic.validators import (
     trim_string,
     iso_date,
     no_pending_dataset_with_same_name,
+    no_pending_organization_with_same_name,
     url_or_upload_not_empty,
     tag_string_convert,
     unique_title_within_organization,
@@ -38,6 +40,7 @@ ignore_missing = get_validator('ignore_missing')
 ckan_to_ec_organization_mapping = {
     'id': 'Id',
     'title': 'Name',  #TODO: replace with Title when MS sort their stuff
+    'needs_approval': 'NeedsApproval',
     'description': 'Description',
 }
 
@@ -365,4 +368,28 @@ def _modify_resource_schema():
 
     schema['ec_api_dataset_id'] = [ignore_missing, unicode]
 
+    return schema
+
+
+def create_group_schema():
+    boolean_validator = get_validator('boolean_validator')
+    not_missing = get_validator('not_missing')
+    convert_to_extras = get_converter('convert_to_extras')
+    name_validator = get_validator('name_validator')
+    group_name_validator = get_validator('group_name_validator')
+    schema = default_group_schema()
+    schema.update({
+        'name': [not_empty, unicode, name_validator, group_name_validator,
+                 no_pending_organization_with_same_name],
+        'needs_approval': [not_missing, boolean_validator, convert_to_extras]
+    })
+    return schema
+
+
+def show_group_schema():
+    boolean_validator = get_validator('boolean_validator')
+    not_missing = get_validator('not_missing')
+    convert_from_extras = get_converter('convert_from_extras')
+    schema = default_group_schema()
+    schema.update({'needs_approval': [not_missing, boolean_validator, convert_from_extras]})
     return schema

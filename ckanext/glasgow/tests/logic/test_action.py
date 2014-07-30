@@ -57,8 +57,10 @@ class TestGetAPIEndpoint(object):
             ('GET', read_base_api + '/Metadata/Organisation/{organization_id}/Dataset/{dataset_id}'))
         eq_(_get_api_endpoint('file_show'),
             ('GET', read_base_api + '/Metadata/Organisation/{organization_id}/Dataset/{dataset_id}/File/{file_id}'))
-        eq_(_get_api_endpoint('file_version_show'),
+        eq_(_get_api_endpoint('file_versions_show'),
             ('GET', read_base_api + '/Metadata/Organisation/{organization_id}/Dataset/{dataset_id}/File/{file_id}/Versions'))
+        eq_(_get_api_endpoint('file_version_show'),
+            ('GET', read_base_api + '/Metadata/Organisation/{organization_id}/Dataset/{dataset_id}/File/{file_id}/Versions/{version_id}'))
         eq_(_get_api_endpoint('request_status_show'),
             ('GET', read_base_api + '/ChangeLog/RequestStatus/{request_id}'))
         eq_(_get_api_endpoint('changelog_show'),
@@ -274,7 +276,10 @@ class TestDatasetCreate(object):
 
         # Create test org
         test_org = helpers.call_action('organization_create',
-                                       context={'user': 'normal_user'},
+                                       context={
+                                           'user': 'normal_user',
+                                           'local_action': True,
+                                       },
                                        name='test_org',
                                        extras=[{'key': 'ec_api_id',
                                                 'value': 1}])
@@ -405,7 +410,10 @@ class TestDatasetUpdate(object):
                                               password='test')
 
         self.test_org = helpers.call_action('organization_create',
-                                       context={'user': 'normal_user'},
+                                       context={
+                                           'user': 'normal_user',
+                                           'local_action': True,
+                                       },
                                        name='test_org',
                                        id='ec-org-id-1')
 
@@ -497,7 +505,10 @@ class TestFileCreate(object):
 
         # Create test org
         test_org = helpers.call_action('organization_create',
-                                       context={'user': 'normal_user'},
+                                       context={
+                                           'user': 'normal_user',
+                                           'local_action': True,
+                                       },
                                        name='test_org',
                                        extras=[{'key': 'ec_api_id',
                                                 'value': 1}])
@@ -696,7 +707,10 @@ class TestFileUpdate(object):
                                               password='test')
 
         self.test_org = helpers.call_action('organization_create',
-                                       context={'user': 'normal_user'},
+                                       context={
+                                           'user': 'normal_user',
+                                           'local_action': True,
+                                       },
                                        name='test_org',
                                        id='ec-org-id-1')
 
@@ -765,7 +779,10 @@ class TestFileVersions(object):
 
         # Create test org
         test_org = helpers.call_action('organization_create',
-                                       context={'user': 'normal_user'},
+                                       context={
+                                           'user': 'normal_user',
+                                           'local_action': True,
+                                       },
                                        name='test_org',
                                        extras=[{'key': 'ec_api_id',
                                                 'value': 1}])
@@ -846,7 +863,10 @@ class TestCheckForTaskStatusUpdate(object):
 
         # Create test org
         test_org = helpers.call_action('organization_create',
-                                       context={'user': 'normal_user'},
+                                       context={
+                                           'user': 'normal_user',
+                                           'local_action': True,
+                                       },
                                        name='test_org',
                                        extras=[{'key': 'ec_api_id',
                                                 'value': 1}])
@@ -1165,3 +1185,49 @@ class TestChangelog(object):
         eq_(len(audit_list), 1)
 
         eq_(audit_list[0]['ObjectType'], 'File')
+
+
+class TestOrganizationCreate(object):
+    def setup(self):
+        self.normal_user = helpers.call_action('user_create',
+                                               name='normal_user',
+                                               email='test@test.com',
+                                               password='test')
+
+    def teardown(cls):
+        helpers.reset_db()
+
+    @mock.patch('requests.request')
+    def test_organization(self, mock_request):
+        mock_request.return_value = mock.Mock(
+            status_code=200,
+            content=json.dumps({'RequestId': 'cc02730a-367d-45a6-9db3-6fc3dc5ca49d'}),
+            **{
+                'raise_for_status.return_value': None,
+                'json.return_value': {
+                    'RequestId': 'cc02730a-367d-45a6-9db3-6fc3dc5ca49d'
+                },
+            }
+        )
+        data_dict = {
+            'name': 'test_org',
+            'needs_approval': False
+        }
+        request_dict = helpers.call_action('organization_request_create',
+                                          context={'user': 'normal_user'},
+                                          **data_dict)
+
+        nose.tools.assert_in('task_id', request_dict)
+        nose.tools.assert_in('request_id', request_dict)
+
+        task_dict = helpers.call_action('task_status_show',
+                                        id=request_dict['task_id'])
+        nose.tools.assert_dict_contains_subset(
+            {
+                'task_type': u'organization_request_create',
+                'entity_type': u'organization',
+                'state': u'new',
+                'error': None
+            },
+            task_dict
+        )
