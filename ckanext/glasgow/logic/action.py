@@ -138,6 +138,9 @@ def _get_api_endpoint(operation):
     elif operation == 'file_version_show':
         method = 'GET'
         path = '/Metadata/Organisation/{organization_id}/Dataset/{dataset_id}/File/{file_id}/Versions/{version_id}'
+    elif operation == 'file_versions_show':
+        method = 'GET'
+        path = '/Metadata/Organisation/{organization_id}/Dataset/{dataset_id}/File/{file_id}/Versions'
     elif operation == 'request_status_show':
         method = 'GET'
         path = '/ChangeLog/RequestStatus/{request_id}'
@@ -1046,7 +1049,7 @@ def resource_version_show(context, data_dict):
     package_show = p.toolkit.get_action('package_show')
     dataset = package_show(context, {'name_or_id': package_id})
 
-    method, url = _get_api_endpoint('file_version_show')
+    method, url = _get_api_endpoint('file_versions_show')
 
     try:
         ec_api_file_id = resource['ec_api_id'] 
@@ -1072,12 +1075,31 @@ def resource_version_show(context, data_dict):
         'Content-Type': 'application/json',
     }
 
-    response = requests.request(method, url, headers=headers)
-    if response.status_code == requests.codes.ok:
-        try:
-            content = response.json()
-        except ValueError:
-            raise ECAPIValidationError(['EC API Error: response not JSON'])
+    try:
+        response = requests.request(method, url, headers=headers)
+        response.raise_for_status()
+    except requests.exceptions.HTTPError:
+        error_dict = {
+            'message': ['The CTPEC API returned an error code'],
+            'status': [response.status_code],
+            'content': [response.content],
+        }
+        raise p.toolkit.ValidationError(error_dict)
+    except requests.exceptions.RequestException, e:
+        error_dict = {
+            'message': ['Request exception: {0}'.format(e)],
+        }
+        raise p.toolkit.ValidationError(error_dict)
+
+    try:
+        content = response.json()
+    except ValueError:
+        error_dict = {
+            'message': ['Error decoding JSON from EC Platform response'],
+            'content': [response.content],
+        }
+        raise p.toolkit.ValidationError(error_dict)
+
 
     res_ec_to_ckan = custom_schema.convert_ec_file_to_ckan_resource
     try:

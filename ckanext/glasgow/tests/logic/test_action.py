@@ -57,8 +57,10 @@ class TestGetAPIEndpoint(object):
             ('GET', read_base_api + '/Metadata/Organisation/{organization_id}/Dataset/{dataset_id}'))
         eq_(_get_api_endpoint('file_show'),
             ('GET', read_base_api + '/Metadata/Organisation/{organization_id}/Dataset/{dataset_id}/File/{file_id}'))
-        eq_(_get_api_endpoint('file_version_show'),
+        eq_(_get_api_endpoint('file_versions_show'),
             ('GET', read_base_api + '/Metadata/Organisation/{organization_id}/Dataset/{dataset_id}/File/{file_id}/Versions'))
+        eq_(_get_api_endpoint('file_version_show'),
+            ('GET', read_base_api + '/Metadata/Organisation/{organization_id}/Dataset/{dataset_id}/File/{file_id}/Versions/{version_id}'))
         eq_(_get_api_endpoint('request_status_show'),
             ('GET', read_base_api + '/ChangeLog/RequestStatus/{request_id}'))
         eq_(_get_api_endpoint('changelog_show'),
