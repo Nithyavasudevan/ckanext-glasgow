@@ -4,6 +4,8 @@ import mock
 
 import nose.tools as nt
 
+from ckan.lib import search
+
 import ckan.new_tests.helpers as helpers
 import ckan.new_tests.factories as factories
 
@@ -38,6 +40,7 @@ class TestDatasetCreate(object):
     def teardown_class(cls):
 
         helpers.reset_db()
+        search.clear()
 
     def test_create_orgs(self):
         harvester = EcInitialHarvester()
@@ -234,7 +237,7 @@ class TestDatasetCreate(object):
         harvest_object.save()
         harvest_result = harvester.import_stage(harvest_object)
         nt.assert_true(harvest_result)
-        pkg = helpers.call_action('package_show', name_or_id=u'raj-data-set-001-4')
+        pkg = helpers.call_action('package_show', name_or_id=u'raj-data-set-001')
         nt.assert_equals(pkg['title'], u'Raj Data Set 001')
 
         nt.assert_equals(pkg['id'], u'3')
@@ -244,4 +247,4 @@ class TestDatasetCreate(object):
 
         nt.assert_equals(org['id'], '4')
         nt.assert_equals(len(org['packages']), 1)
-        nt.assert_equals(org['packages'][0]['name'], u'raj-data-set-001-4')
+        nt.assert_equals(org['packages'][0]['name'], u'raj-data-set-001')
