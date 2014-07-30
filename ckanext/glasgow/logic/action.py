@@ -150,6 +150,9 @@ def _get_api_endpoint(operation):
     elif operation == 'organization_request_create':
         method = 'POST'
         path = '/Organisations'
+    elif operation == 'organization_request_update':
+        method = 'PUT'
+        path = '/Organisations/Organisation/{organization_id}'
     else:
         return None, None
 
@@ -257,13 +260,15 @@ def pending_task_for_organization(context, data_dict):
     p.toolkit.check_access('pending_task_for_organization', context, data_dict)
 
     organization_id = data_dict.get('organization_id')
+    name = data_dict.get('name')
 
     model = context.get('model')
     task = model.Session.query(model.TaskStatus) \
         .filter(model.TaskStatus.entity_type == 'organization') \
         .filter(or_(model.TaskStatus.state == 'new',
                 model.TaskStatus.state == 'sent')) \
-        .filter(model.TaskStatus.entity_id == organization_id) \
+        .filter(or_(model.TaskStatus.entity_id == organization_id,
+                model.TaskStatus.entity_id == name)) \
         .order_by(model.TaskStatus.last_updated.desc()) \
         .first()
 
@@ -1015,7 +1020,7 @@ def dataset_request_update(context, data_dict):
                                     entity_type='dataset',
                                     key=key,
                                     value=json.dumps(
-                                        {'data_dict': data_dict,
+                                        {'data_dict': validated_data_dict,
                                          'request_id': request_id})
                                     )
 
@@ -1379,6 +1384,7 @@ def organization_request_create(context, data_dict):
 
     headers = {
         'Authorization': _get_api_auth_token(),
+        'Content-Type': 'application/json',
     }
 
     try:
@@ -1421,7 +1427,10 @@ def organization_request_create(context, data_dict):
                                     entity_id=validated_data_dict['name'],
                                     entity_type='organization',
                                     key=request_id,
-                                    value=json.dumps({'data_dict': data_dict}))
+                                    value=json.dumps({
+                                        'data_dict': data_dict,
+                                        'request_id': request_id,
+                                    }))
 
     return {
         'task_id': task_dict['id'],
@@ -1432,4 +1441,100 @@ def organization_request_create(context, data_dict):
 
 
 def organization_update(context, data_dict):
-    pass
+    if data_dict.get('__local_action', False):
+        context['local_action'] = True
+        data_dict.pop('__local_action', None)
+
+    if (context.get('local_action', False) or
+            data_dict.get('type') == 'harvest' or
+            data_dict.get('source_type')):
+
+        return core_actions.update.organization_update(context, data_dict)
+
+    else:
+
+        return p.toolkit.get_action('organization_request_update')(context,
+                                                                   data_dict)
+
+
+def organization_request_update(context, data_dict):
+    check_access('dataset_request_update', context, data_dict)
+    context.update({'model': model, 'session': model.Session})
+    update_schema = custom_schema.update_organization_schema()
+
+    try:
+        # group_name_validator is horrible and looks for groups in the context
+        # this puts the current group object into the context. Eww.
+        p.toolkit.get_action('organization_show')(context,
+                                                  {'id': data_dict['id']})
+    except p.toolkit.ObjectNotFound, e:
+        raise p.toolkit.ValidationError(['could not find organization'])
+
+    validated_data_dict, errors = validate(data_dict, update_schema, context)
+    if errors:
+        raise p.toolkit.ValidationError(errors)
+
+    ec_dict = custom_schema.convert_ckan_organization_to_ec_organization(
+        validated_data_dict)
+
+    method, url = _get_api_endpoint('organization_request_update')
+
+    url = url.format(
+        organization_id=validated_data_dict['id'],
+    )
+
+    headers = {
+        'Authorization': _get_api_auth_token(),
+        'Content-Type': 'application/json',
+    }
+
+    try:
+        response = requests.request(method, url,
+                                    data=json.dumps(ec_dict),
+                                    headers=headers,
+                                    )
+        response.raise_for_status()
+    except requests.exceptions.HTTPError:
+        error_dict = {
+            'message': ['The CTPEC API returned an error code'],
+            'status': [response.status_code],
+            'content': [response.content],
+        }
+        raise p.toolkit.ValidationError(error_dict)
+    except requests.exceptions.RequestException, e:
+        error_dict = {
+            'message': ['Request exception: {0}'.format(e)],
+        }
+        raise p.toolkit.ValidationError(error_dict)
+
+    try:
+        content = response.json()
+        request_id = content['RequestId']
+    except ValueError:
+        error_dict = {
+            'message': ['Error decoding JSON from EC Platform response'],
+            'content': [response.content],
+        }
+        raise p.toolkit.ValidationError(error_dict)
+    except KeyError:
+        error_dict = {
+            'message': ['RequestId not in response from EC Platform'],
+            'content': [response.content],
+        }
+        raise p.toolkit.ValidationError(error_dict)
+
+    task_dict = _create_task_status(context,
+                                    task_type='organization_request_update',
+                                    entity_id=validated_data_dict['id'],
+                                    entity_type='organization',
+                                    key=request_id,
+                                    value=json.dumps(
+                                        {'data_dict': data_dict,
+                                         'request_id': request_id}))
+
+    return {
+        'task_id': task_dict['id'],
+        'request_id': request_id,
+        'name': validated_data_dict['name'],
+        'type': 'organization',
+    }

@@ -1,0 +1,26 @@
+{% extends "organization/snippets/organization_form.html" %}
+
+{% block basic_fields %}
+  {{ super() }}
+  {{ form.select('needs_approval', label=_('Datasets require approval'), options=[{'name': 'yes', 'value': true},{'name': 'no', 'value': false}], selected='no', error=errors.needs_approval) }}
+{% endblock %}
+
+{% block dataset_fields %}
+  {% if action == "edit" %}{{ super() }}{% endif %}
+{% endblock %}
+
+{% block custom_fields %}
+  {% if action == "edit" %}{{ super() }}{% endif %}
+{% endblock %}
+
+{% block save_text %}
+  {%- if action == "edit" -%}
+    {{ _('Update Organization') }}
+  {%- else -%}
+    {{ _('Create Organization') }}
+  {%- endif -%}
+{% endblock %}
+
+{% block delete_button %}
+  {% if action == "edit" %}{{ super() }}{% endif %}
+{% endblock %}

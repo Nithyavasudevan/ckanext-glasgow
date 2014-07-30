@@ -4,6 +4,7 @@ from ckan.logic.schema import (
     default_show_package_schema,
     default_resource_schema,
     default_group_schema,
+    default_update_group_schema,
     )
 
 import ckan.plugins as p
@@ -392,4 +393,19 @@ def show_group_schema():
     convert_from_extras = get_converter('convert_from_extras')
     schema = default_group_schema()
     schema.update({'needs_approval': [not_missing, boolean_validator, convert_from_extras]})
+    return schema
+
+
+def update_organization_schema():
+    boolean_validator = get_validator('boolean_validator')
+    not_missing = get_validator('not_missing')
+    convert_to_extras = get_converter('convert_to_extras')
+    name_validator = get_validator('name_validator')
+    group_name_validator = get_validator('group_name_validator')
+    schema = default_update_group_schema()
+    schema.update({
+        'name': [not_empty, unicode, group_name_validator,
+                 no_pending_organization_with_same_name],
+        'needs_approval': [not_missing, boolean_validator, convert_to_extras]
+    })
     return schema

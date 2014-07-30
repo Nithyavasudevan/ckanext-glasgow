@@ -5,6 +5,8 @@ from itertools import count
 
 from dateutil.parser import parse as date_parser
 
+import ckan.lib.navl.dictization_functions as df
+missing = df.missing
 
 import ckan.plugins as p
 from ckan.model import MAX_TAG_LENGTH

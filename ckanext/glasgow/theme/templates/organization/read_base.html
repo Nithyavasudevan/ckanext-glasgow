@@ -1,0 +1,6 @@
+{% ckan_extends  %}
+
+{% block content_primary_nav %}
+  {{ super() }}
+  {{ h.build_nav_icon('organization_change_requests', _('Pending Changes'), organization_name=c.group_dict.name) }}
+{% endblock %}

@@ -1,0 +1,35 @@
+{% extends "organization/read_base.html" %}
+{% if task %}
+
+{% set organization = task.value.data_dict %}
+
+{% block subtitle %}[Pending] {{ organization.title or organization.name }}{% endblock %}
+
+{% block content_primary_nav %}
+{% endblock %}
+
+{% block secondary_content %}
+{% endblock %}
+
+{% block links %}
+{% endblock %}
+
+{% block content_action %}
+{% endblock %}
+
+
+
+  {% block primary_content_inner %}
+    <p>Creation of the dataset <span class="title"><strong>{{ organization.title }}</span></strong> has been requested to the CTPEC.</p>
+
+    {% snippet 'snippets/task_status_show.html', task=task %}
+
+    {% if change_request %}
+      {% snippet 'snippets/change_request_item.html', change_request=change_request %}
+    {% endif %}
+
+    <p>This page will get automatically updated once the request is approved. {% link_for _('Refresh now'), controller='organization', action='read', id=organization.name %}
+
+  {% endblock %}
+
+{% endif %}

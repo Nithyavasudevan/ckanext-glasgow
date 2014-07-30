@@ -109,6 +109,20 @@ file_fields_under_255_characters = [
     'StandardVersion',
 ]
 
+@app.route('/Organisations', methods=['POST'])
+def request_organization_create():
+
+    return flask.jsonify(**{
+        "RequestId": unicode(uuid.uuid4()),
+        }
+    )
+
+@app.route('/Organisations/Organisation/<organization_id>', methods=['PUT'])
+def request_organization_update(organization_id):
+    return flask.jsonify(**{
+        "RequestId": unicode(uuid.uuid4()),
+        }
+    )
 
 @app.route('/Datasets/Organisation/<organization_id>', methods=['POST'])
 def request_dataset_create(organization_id):
