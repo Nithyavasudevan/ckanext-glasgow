@@ -382,6 +382,7 @@ def dataset_request_create(context, data_dict):
         response = requests.request(method, url,
                                     data=json.dumps(ec_dict),
                                     headers=headers,
+                                    verify=False,
                                     )
     except requests.exceptions.RequestException, e:
         error_dict = {
@@ -564,6 +565,7 @@ def file_request_create(context, data_dict):
                                     data=data,
                                     files=files,
                                     headers=headers,
+                                    verify=False,
                                     )
     except requests.exceptions.RequestException, e:
         error_dict = {
@@ -779,6 +781,7 @@ def file_request_update(context, data_dict):
                                     data=data,
                                     files=files,
                                     headers=headers,
+                                    verify=False,
                                     )
 
         response.raise_for_status()
@@ -970,6 +973,7 @@ def dataset_request_update(context, data_dict):
         response = requests.request(method, url,
                                     data=json.dumps(ec_dict),
                                     headers=headers,
+                                    verify=False,
                                     )
 
         response.raise_for_status()
@@ -1076,7 +1080,7 @@ def resource_version_show(context, data_dict):
     }
 
     try:
-        response = requests.request(method, url, headers=headers)
+        response = requests.request(method, url, headers=headers, verify=False)
         response.raise_for_status()
     except requests.exceptions.HTTPError:
         error_dict = {
@@ -1142,7 +1146,7 @@ def check_for_task_status_update(context, data_dict):
         'Content-Type': 'application/json',
     }
 
-    response = requests.request(method, url, headers=headers)
+    response = requests.request(method, url, headers=headers, verify=False)
     if response.status_code == requests.codes.ok:
         try:
             result = response.json()
@@ -1253,7 +1257,7 @@ def get_change_request(context, data_dict):
     except oauth2waad_plugin.ServiceToServiceAccessTokenError, e:
         raise ECAPIError(['EC API Error: Failed to get service auth {0}'.format(e.message)])
     
-    response = requests.request(method, url, headers=headers)
+    response = requests.request(method, url, headers=headers, verify=False)
     if response.status_code == requests.codes.ok:
         try:
             results = response.json()
@@ -1326,7 +1330,7 @@ def changelog_show(context, data_dict):
         'Content-Type': 'application/json',
     }
 
-    response = requests.request(method, url, headers=headers, params=params)
+    response = requests.request(method, url, headers=headers, params=params, verify=False)
 
     content = response.json()
 
@@ -1385,6 +1389,7 @@ def organization_request_create(context, data_dict):
         response = requests.request(method, url,
                                     data=json.dumps(ec_dict),
                                     headers=headers,
+                                    verify=False,
                                     )
         response.raise_for_status()
     except requests.exceptions.HTTPError:
