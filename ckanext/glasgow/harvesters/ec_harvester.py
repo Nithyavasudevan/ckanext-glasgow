@@ -11,7 +11,11 @@ import ckan.plugins.toolkit as toolkit
 from ckanext.harvest.model import HarvestJob, HarvestObject, HarvestObjectExtra
 
 import ckanext.glasgow.logic.schema as glasgow_schema
-from ckanext.glasgow.harvesters import EcHarvester, get_dataset_name
+from ckanext.glasgow.harvesters import (
+    EcHarvester,
+    get_initial_dataset_name,
+    get_org_name,
+)
 
 
 log = logging.getLogger(__name__)
@@ -70,7 +74,7 @@ class EcInitialHarvester(EcHarvester):
                 'session': model.Session,
                 'user': self._get_site_user()['name']
             }
-            org_name = get_dataset_name(org, 'Title')
+            org_name = get_org_name(org, 'Title')
             data_dict = {
                 'id': org['Id'],
                 'title': org['Title'],
@@ -237,7 +241,7 @@ class EcInitialHarvester(EcHarvester):
 
         # double check name
         if 'name' not in ckan_data_dict:
-            ckan_data_dict['name'] = get_dataset_name(ckan_data_dict)
+            ckan_data_dict['name'] = get_initial_dataset_name(ckan_data_dict)
 
         try:
             owner_org = self._get_object_extra(harvest_object, 'owner_org')

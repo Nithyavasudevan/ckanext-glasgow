@@ -1,6 +1,7 @@
 import logging
 import json
 import hashlib
+import datetime
 
 import requests
 
@@ -9,10 +10,18 @@ from ckan import model
 
 from ckanext.harvest.model import HarvestObject
 
-from ckanext.glasgow.logic.action import _get_api_endpoint
+from ckanext.glasgow.logic.action import _get_api_endpoint, _expire_task_status
+
 import ckanext.glasgow.logic.schema as custom_schema
 from ckanext.glasgow.model import HarvestLastAudit
-from ckanext.glasgow.harvesters import EcHarvester, get_dataset_name
+from ckanext.glasgow.harvesters import (
+    EcHarvester,
+    get_dataset_name_from_task,
+    get_initial_dataset_name,
+    get_task_for_request_id,
+    get_org_name,
+)
+
 
 log = logging.getLogger(__name__)
 
@@ -113,6 +122,7 @@ class EcChangelogHarvester(EcHarvester):
             return False
 
         context = {
+            'model': model,
             'ignore_auth': True,
             'user': self._get_user_name(),
             'local_action': True,
@@ -120,13 +130,44 @@ class EcChangelogHarvester(EcHarvester):
 
         log.debug('Calling handler for command "{0}"'.format(command))
         try:
+
+            request_id = audit.get('RequestId')
+
+            # Mark relevant task as in progress
+            self._mark_task_as_processing(context, request_id)
+
             handler(context, audit, harvest_object)
+
+            self._mark_task_as_finished(context, request_id)
+
             return True
         except p.toolkit.ValidationError, e:
             self._save_object_error(str(e), harvest_object, 'Import')
         except p.toolkit.ObjectNotFound, e:
             msg = e.message or str(e) or 'Object not found'
             self._save_object_error(msg, harvest_object, 'Import')
+
+        return False
+
+    def _mark_task_as_processing(self, context, request_id):
+        return self._update_task_state(context, request_id, 'processing')
+
+    def _mark_task_as_finished(self, context, request_id):
+        return self._update_task_state(context, request_id, 'finished')
+
+    def _update_task_state(self, context, request_id, state):
+
+        task = get_task_for_request_id(context, request_id)
+
+        if task:
+            task.state = state
+            task.last_updated = datetime.datetime.now()
+
+            task.save()
+
+            _expire_task_status(context, task.id)
+
+            return True
 
         return False
 
@@ -223,7 +264,10 @@ def handle_dataset_create(context, audit, harvest_object):
         raise p.toolkit.ObjectNotFound(msg)
 
     if not dataset_dict.get('name'):
-        dataset_dict['name'] = get_dataset_name(dataset_dict)
+        name = get_dataset_name_from_task(context, audit)
+        if not name:
+            name = get_initial_dataset_name(dataset_dict)
+        dataset_dict['name'] = name
 
     new_dataset = p.toolkit.get_action('package_create')(context,
                                                          dataset_dict)
@@ -251,7 +295,10 @@ def handle_dataset_update(context, audit, harvest_object):
         raise p.toolkit.ObjectNotFound(msg)
 
     if not dataset_dict.get('name'):
-        dataset_dict['name'] = get_dataset_name(dataset_dict)
+        name = get_dataset_name_from_task(context, audit)
+        if not name:
+            name = get_initial_dataset_name(dataset_dict)
+        dataset_dict['name'] = name
 
     updated_dataset = p.toolkit.get_action('package_update')(context,
                                                              dataset_dict)
@@ -334,7 +381,7 @@ def handle_organization_create(context, audit, harvest_object):
         raise p.toolkit.ObjectNotFound(msg)
 
     if not org_dict.get('name'):
-        org_dict['name'] = get_dataset_name(org_dict, 'title')
+        org_dict['name'] = get_org_name(org_dict, 'title')
 
     new_org = p.toolkit.get_action('organization_create')(context,
                                                           org_dict)
@@ -354,7 +401,7 @@ def handle_organization_update(context, audit, harvest_object):
         raise p.toolkit.ObjectNotFound(msg)
 
     if not org_dict.get('name'):
-        org_dict['name'] = get_dataset_name(org_dict, 'title')
+        org_dict['name'] = get_org_name(org_dict, 'title')
 
     new_org = p.toolkit.get_action('organization_update')(context,
                                                           org_dict)
