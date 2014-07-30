@@ -1040,7 +1040,6 @@ class TestGetChangeRequest(object):
         mock_request.return_value = mock_result
 
         result = helpers.call_action('get_change_request', id='dummy')
-        import ipdb; ipdb.set_trace()
 
     def test_no_id_parameter(self):
         nose.tools.assert_raises(
