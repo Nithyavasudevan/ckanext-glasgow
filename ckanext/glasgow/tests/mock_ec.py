@@ -419,26 +419,6 @@ def request_change_status(request_id):
                     }
                 ]
             },
-        {
-            'AuditId': 1,
-            'RequestId': 'REQUEST-ID',
-            'Timestamp': '3000-05-21T00:00:10',
-            'AuditType': 'FileCreated',
-            'Command': 'CreateFile',
-            'ObjectType': 'File',
-            'OperationState': 'Succeeded',
-            'Component': 'DataPublication',
-            'Owner': 'Admin',
-            'Message': 'File Create Operation completed',
-            'CustomProperties': [
-                {
-                    'OrganisationId': '1',
-                    'DatasetId': '1',
-                    'FileId': '1',
-                    'Versionid': 'VERSION-ID',
-                    }
-                ]
-            }
             ])
     return flask.Response(response_string, mimetype='application/json')
 
