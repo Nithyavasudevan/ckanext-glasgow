@@ -46,7 +46,7 @@ def ec_api(endpoint):
     skip = 0
 
     while True:
-        request = requests.get(endpoint, params={'$skip': skip})
+        request = requests.get(endpoint, params={'$skip': skip}, verify=False)
         result = _fetch_from_ec(request)
 
         if not result.get('MetadataResultSet'):
@@ -176,7 +176,7 @@ class EcInitialHarvester(EcHarvester):
             content = json.loads(harvest_object.content)
             org = content['OrganisationId']
             dataset = content['Id']
-            request = requests.get(api_endpoint.format(org, dataset))
+            request = requests.get(api_endpoint.format(org, dataset), verify=False)
             result = _fetch_from_ec(request)
         except requests.exceptions.RequestException, e:
             self._save_object_error(
