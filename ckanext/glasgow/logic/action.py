@@ -781,41 +781,15 @@ def file_request_update(context, data_dict):
         files = None
         data = json.dumps(ec_dict)
 
-    try:
-        response = requests.request(method, url,
-                                    data=data,
-                                    files=files,
-                                    headers=headers,
-                                    verify=False,
-                                    )
-
-        response.raise_for_status()
-    except requests.exceptions.HTTPError:
-        error_dict = {
-            'message': ['The CTPEC API returned an error code'],
-            'status': [response.status_code],
-            'content': [response.content],
-        }
-        raise p.toolkit.ValidationError(error_dict)
-    except requests.exceptions.RequestException, e:
-        error_dict = {
-            'message': ['Request exception: {0}'.format(e)],
-        }
-        raise p.toolkit.ValidationError(error_dict)
+    content = send_request_to_ec_platform(method, url, data, headers,
+                                          files=files)
 
     try:
-        content = response.json()
         request_id = content['RequestId']
-    except ValueError:
-        error_dict = {
-            'message': ['Error decoding JSON from EC Platform response'],
-            'content': [response.content],
-        }
-        raise p.toolkit.ValidationError(error_dict)
     except KeyError:
         error_dict = {
             'message': ['RequestId not in response from EC Platform'],
-            'content': [response.content],
+            'content': [json.dumps(content)],
         }
         raise p.toolkit.ValidationError(error_dict)
 
@@ -969,45 +943,14 @@ def dataset_request_update(context, data_dict):
         dataset_id=validated_data_dict['id'],
     )
 
-    headers = {
-        'Authorization': _get_api_auth_token(),
-        'Content-Type': 'application/json',
-    }
-
+    content = send_request_to_ec_platform(method, url,
+                                          data=json.dumps(ec_dict))
     try:
-        response = requests.request(method, url,
-                                    data=json.dumps(ec_dict),
-                                    headers=headers,
-                                    verify=False,
-                                    )
-
-        response.raise_for_status()
-    except requests.exceptions.HTTPError:
-        error_dict = {
-            'message': ['The CTPEC API returned an error code'],
-            'status': [response.status_code],
-            'content': [response.content],
-        }
-        raise p.toolkit.ValidationError(error_dict)
-    except requests.exceptions.RequestException, e:
-        error_dict = {
-            'message': ['Request exception: {0}'.format(e)],
-        }
-        raise p.toolkit.ValidationError(error_dict)
-
-    try:
-        content = response.json()
         request_id = content['RequestId']
-    except ValueError:
-        error_dict = {
-            'message': ['Error decoding JSON from EC Platform response'],
-            'content': [response.content],
-        }
-        raise p.toolkit.ValidationError(error_dict)
     except KeyError:
         error_dict = {
             'message': ['RequestId not in response from EC Platform'],
-            'content': [response.content],
+            'content': [json.dumps(content)],
         }
         raise p.toolkit.ValidationError(error_dict)
 
@@ -1079,36 +1022,7 @@ def resource_version_show(context, data_dict):
         file_id=ec_api_file_id,
     )
 
-    headers = {
-        'Authorization': _get_api_auth_token(),
-        'Content-Type': 'application/json',
-    }
-
-    try:
-        response = requests.request(method, url, headers=headers, verify=False)
-        response.raise_for_status()
-    except requests.exceptions.HTTPError:
-        error_dict = {
-            'message': ['The CTPEC API returned an error code'],
-            'status': [response.status_code],
-            'content': [response.content],
-        }
-        raise p.toolkit.ValidationError(error_dict)
-    except requests.exceptions.RequestException, e:
-        error_dict = {
-            'message': ['Request exception: {0}'.format(e)],
-        }
-        raise p.toolkit.ValidationError(error_dict)
-
-    try:
-        content = response.json()
-    except ValueError:
-        error_dict = {
-            'message': ['Error decoding JSON from EC Platform response'],
-            'content': [response.content],
-        }
-        raise p.toolkit.ValidationError(error_dict)
-
+    content = send_request_to_ec_platform(method, url)
 
     res_ec_to_ckan = custom_schema.convert_ec_file_to_ckan_resource
     try:
@@ -1386,44 +1300,14 @@ def organization_request_create(context, data_dict):
 
     method, url = _get_api_endpoint('organization_request_create')
 
-    headers = {
-        'Authorization': _get_api_auth_token(),
-        'Content-Type': 'application/json',
-    }
-
+    content = send_request_to_ec_platform(method, url,
+                                          data=json.dumps(ec_dict))
     try:
-        response = requests.request(method, url,
-                                    data=json.dumps(ec_dict),
-                                    headers=headers,
-                                    verify=False,
-                                    )
-        response.raise_for_status()
-    except requests.exceptions.HTTPError:
-        error_dict = {
-            'message': ['The CTPEC API returned an error code'],
-            'status': [response.status_code],
-            'content': [response.content],
-        }
-        raise p.toolkit.ValidationError(error_dict)
-    except requests.exceptions.RequestException, e:
-        error_dict = {
-            'message': ['Request exception: {0}'.format(e)],
-        }
-        raise p.toolkit.ValidationError(error_dict)
-
-    try:
-        content = response.json()
         request_id = content['RequestId']
-    except ValueError:
-        error_dict = {
-            'message': ['Error decoding JSON from EC Platform response'],
-            'content': [response.content],
-        }
-        raise p.toolkit.ValidationError(error_dict)
     except KeyError:
         error_dict = {
             'message': ['RequestId not in response from EC Platform'],
-            'content': [response.content],
+            'content': [json.dumps(content)],
         }
         raise p.toolkit.ValidationError(error_dict)
 
@@ -1488,43 +1372,14 @@ def organization_request_update(context, data_dict):
         organization_id=validated_data_dict['id'],
     )
 
-    headers = {
-        'Authorization': _get_api_auth_token(),
-        'Content-Type': 'application/json',
-    }
-
+    content = send_request_to_ec_platform(method, url,
+                                          data=json.dumps(ec_dict))
     try:
-        response = requests.request(method, url,
-                                    data=json.dumps(ec_dict),
-                                    headers=headers,
-                                    )
-        response.raise_for_status()
-    except requests.exceptions.HTTPError:
-        error_dict = {
-            'message': ['The CTPEC API returned an error code'],
-            'status': [response.status_code],
-            'content': [response.content],
-        }
-        raise p.toolkit.ValidationError(error_dict)
-    except requests.exceptions.RequestException, e:
-        error_dict = {
-            'message': ['Request exception: {0}'.format(e)],
-        }
-        raise p.toolkit.ValidationError(error_dict)
-
-    try:
-        content = response.json()
         request_id = content['RequestId']
-    except ValueError:
-        error_dict = {
-            'message': ['Error decoding JSON from EC Platform response'],
-            'content': [response.content],
-        }
-        raise p.toolkit.ValidationError(error_dict)
     except KeyError:
         error_dict = {
             'message': ['RequestId not in response from EC Platform'],
-            'content': [response.content],
+            'content': [json.dumps(content)],
         }
         raise p.toolkit.ValidationError(error_dict)
 
@@ -1543,3 +1398,49 @@ def organization_request_update(context, data_dict):
         'name': validated_data_dict['name'],
         'type': 'organization',
     }
+
+
+def send_request_to_ec_platform(method, url, data=None, headers=None, **kwargs):
+    if not headers:
+        headers = {
+            'Authorization': _get_api_auth_token(),
+            'Content-Type': 'application/json',
+        }
+
+    try:
+        response = requests.request(method, url,
+                                    data=data,
+                                    headers=headers,
+                                    verify=False,
+                                    timeout=50,
+                                    **kwargs
+                                    )
+        response.raise_for_status()
+    except requests.exceptions.HTTPError:
+        error_dict = {
+            'message': ['The CTPEC API returned an error code'],
+            'status': [response.status_code],
+            'content': [response.content],
+        }
+        raise p.toolkit.ValidationError(error_dict)
+    except requests.exceptions.Timeout, e:
+        error_dict = {
+            'message': ['Request to CTPEC timed out: {0}'.format(e)],
+        }
+        raise p.toolkit.ValidationError(error_dict)
+    except requests.exceptions.RequestException, e:
+        error_dict = {
+            'message': ['Request exception: {0}'.format(e)],
+        }
+        raise p.toolkit.ValidationError(error_dict)
+
+    try:
+        content = response.json()
+    except ValueError:
+        error_dict = {
+            'message': ['Error decoding JSON from EC Platform response'],
+            'content': [response.content],
+        }
+        raise p.toolkit.ValidationError(error_dict)
+
+    return content
