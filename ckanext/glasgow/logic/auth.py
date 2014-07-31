@@ -37,6 +37,12 @@ def file_request_create(context, data_dict):
     return dataset_request_create(context, data_dict)
 
 
+def file_request_update(context, data_dict):
+
+    # Forward auth check to the dataset level
+    return dataset_request_update(context, data_dict)
+
+
 def organization_request_create(context, data_dict):
     return auth_core.create.organization_create(context, data_dict)
 
