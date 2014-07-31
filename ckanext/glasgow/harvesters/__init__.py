@@ -86,7 +86,6 @@ def get_task_for_request_id(context, request_id):
     model = context['model']
 
     task = model.Session.query(model.TaskStatus) \
-        .filter(model.TaskStatus.entity_type == 'dataset') \
         .filter(model.TaskStatus.value.like('%{0}%'.format(request_id))) \
         .first()
 
