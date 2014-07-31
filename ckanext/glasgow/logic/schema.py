@@ -77,7 +77,8 @@ ckan_to_ec_resource_mapping = {
     'standard_rating': 'StandardRating',
     'standard_version': 'StandardVersion',
     'creation_date': 'CreationDate',
-    'url': 'ExternalUrl',
+    'url': 'FileExternalUrl',
+    'external_url': 'ExternalUrl',
 }
 
 
