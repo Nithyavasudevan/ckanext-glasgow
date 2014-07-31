@@ -42,7 +42,7 @@ ckan_to_ec_organization_mapping = {
     'id': 'Id',
     'title': 'Name',  #TODO: replace with Title when MS sort their stuff
     'needs_approval': 'NeedsApproval',
-    'description': 'Description',
+    'description': 'About',
 }
 
 ckan_to_ec_dataset_mapping = {
