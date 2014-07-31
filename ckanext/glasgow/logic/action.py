@@ -378,48 +378,11 @@ def dataset_request_create(context, data_dict):
         'Content-Type': 'application/json',
     }
 
-    try:
-        response = requests.request(method, url,
-                                    data=json.dumps(ec_dict),
-                                    headers=headers,
-                                    verify=False,
-                                    )
-    except requests.exceptions.RequestException, e:
-        error_dict = {
-            'message': ['Request exception: {0}'.format(e)],
-            'task_id': [task_dict['id']]
-        }
-        task_dict = _update_task_status_error(context, task_dict, {
-            'data_dict': validated_data_dict,
-            'error': error_dict
-        })
-        raise p.toolkit.ValidationError(error_dict)
-
-    status_code = response.status_code
-
-    if not response.content:
-        raise p.toolkit.ValidationError(['Empty content'])
-
-    content = response.json()
-
-    # Check status codes
-
-    if status_code != 200:
-        error_dict = {
-            'message': ['The CTPEC API returned an error code'],
-            'status': [status_code],
-            'content': [content],
-            'task_id': [task_dict['id']]
-        }
-        task_dict = _update_task_status_error(context, task_dict, {
-            'data_dict': data_dict,
-            'error': error_dict
-        })
-
-        if status_code == 401:
-            raise ECAPINotAuthorized(error_dict)
-        else:
-            raise p.toolkit.ValidationError(error_dict)
+    content = send_request_to_ec_platform(method, url,
+                                          data=json.dumps(ec_dict),
+                                          headers=headers,
+                                          context=context,
+                                          task_dict=task_dict)
 
     # Store data in task status table
 
@@ -562,54 +525,12 @@ def file_request_create(context, data_dict):
         files = None
         data = json.dumps(ec_dict)
 
-    try:
-        response = requests.request(method, url,
-                                    data=data,
-                                    files=files,
-                                    headers=headers,
-                                    verify=False,
-                                    )
-    except requests.exceptions.RequestException, e:
-        error_dict = {
-            'message': ['Request exception: {0}'.format(e)],
-            'task_id': [task_dict['id']]
-        }
-        task_dict = _update_task_status_error(context, task_dict, {
-            'data_dict': validated_data_dict,
-            'error': error_dict
-        })
-        raise p.toolkit.ValidationError(error_dict)
-
-    status_code = response.status_code
-
-    if not response.content:
-        raise p.toolkit.ValidationError(['Empty content'])
-
-    content = response.json()
-
-    # Check status codes
-
-    if status_code != 200:
-        error_dict = {
-            'message': ['The CTPEC API returned an error code'],
-            'status': [status_code],
-            'content': [content],
-        }
-        # Log the details of the request to the error_dict when
-        # stored to the task_status.
-        task_error_dict = error_dict.copy()
-        task_error_dict.update({
-            'data': data,
-            'url': [url],
-            'headers': headers,
-        })
-        task_dict = _update_task_status_error(context, task_dict,
-                                              task_error_dict)
-
-        if status_code == 401:
-            raise ECAPINotAuthorized(error_dict)
-        else:
-            raise p.toolkit.ValidationError(error_dict)
+    content = send_request_to_ec_platform(method, url,
+                                          data=data,
+                                          headers=headers,
+                                          files=files,
+                                          context=context,
+                                          task_dict=task_dict)
 
     # Store data in task status table
 
@@ -750,6 +671,20 @@ def file_request_update(context, data_dict):
     ec_dict = custom_schema.convert_ckan_resource_to_ec_file(
         validated_data_dict)
 
+    # Store data in task status table
+    # Create a task status entry with the validated data
+    key = '{0}@{1}'.format(validated_data_dict.get('package_id', 'file'),
+                           datetime.datetime.now().isoformat())
+
+    task_dict = _create_task_status(context,
+                                    task_type='file_request_update',
+                                    entity_id=validated_data_dict['package_id'],
+                                    entity_type='file',
+                                    key=key,
+                                    value=json.dumps(
+                                        {'data_dict': data_dict})
+                                    )
+
     # Send request to EC Data Collection API
 
     method, url = _get_api_endpoint('file_request_update')
@@ -763,7 +698,6 @@ def file_request_update(context, data_dict):
     }
 
     uploaded_file = data_dict.pop('upload', None)
-
 
     if isinstance(uploaded_file, cgi.FieldStorage):
         files = {
@@ -779,7 +713,9 @@ def file_request_update(context, data_dict):
         data = json.dumps(ec_dict)
 
     content = send_request_to_ec_platform(method, url, data, headers,
-                                          files=files)
+                                          files=files,
+                                          context=context,
+                                          task_dict=task_dict)
 
     try:
         request_id = content['RequestId']
@@ -790,24 +726,8 @@ def file_request_update(context, data_dict):
         }
         raise p.toolkit.ValidationError(error_dict)
 
-    # Store data in task status table
-    # Create a task status entry with the validated data
-    key = '{0}@{1}'.format(validated_data_dict.get('package_id', 'file'),
-                           datetime.datetime.now().isoformat())
 
     request_id = content.get('RequestId')
-
-    task_dict = _create_task_status(context,
-                                    task_type='file_request_update',
-                                    entity_id=validated_data_dict['package_id'],
-                                    entity_type='file',
-                                    key=key,
-                                    value=json.dumps(
-                                        {'data_dict': data_dict})
-                                    )
-                                    #value=request_id)
-
-
     task_dict = _update_task_status_success(context, task_dict, {
         'data_dict': data_dict,
         'request_id': request_id,
@@ -926,6 +846,7 @@ def dataset_request_update(context, data_dict):
     if errors:
         raise p.toolkit.ValidationError(errors)
 
+
     # Convert payload from CKAN to EC API spec
 
     ec_dict = custom_schema.convert_ckan_dataset_to_ec_dataset(
@@ -957,7 +878,9 @@ def dataset_request_update(context, data_dict):
     )
 
     content = send_request_to_ec_platform(method, url,
-                                          data=json.dumps(ec_dict))
+                                          data=json.dumps(ec_dict),
+                                          context=context,
+                                          task_dict=task_dict)
     try:
         request_id = content['RequestId']
     except KeyError:
@@ -1311,7 +1234,9 @@ def organization_request_create(context, data_dict):
     method, url = _get_api_endpoint('organization_request_create')
 
     content = send_request_to_ec_platform(method, url,
-                                          data=json.dumps(ec_dict))
+                                          data=json.dumps(ec_dict),
+                                          context=context,
+                                          task_dict=task_dict)
     try:
         request_id = content['RequestId']
     except KeyError:
@@ -1387,7 +1312,9 @@ def organization_request_update(context, data_dict):
     )
 
     content = send_request_to_ec_platform(method, url,
-                                          data=json.dumps(ec_dict))
+                                          data=json.dumps(ec_dict),
+                                          context=context,
+                                          task_dict=task_dict)
     try:
         request_id = content['RequestId']
     except KeyError:
@@ -1412,6 +1339,10 @@ def organization_request_update(context, data_dict):
 
 
 def send_request_to_ec_platform(method, url, data=None, headers=None, **kwargs):
+
+    task_dict = kwargs.pop('task_dict', None)
+    context = kwargs.pop('context', None)
+
     if not headers:
         headers = {
             'Authorization': _get_api_auth_token(),
@@ -1433,16 +1364,33 @@ def send_request_to_ec_platform(method, url, data=None, headers=None, **kwargs):
             'status': [response.status_code],
             'content': [response.content],
         }
+        if task_dict:
+            task_dict = _update_task_status_error(context, task_dict, {
+                'data_dict': data,
+                'error': error_dict
+            })
         raise p.toolkit.ValidationError(error_dict)
     except requests.exceptions.Timeout, e:
         error_dict = {
             'message': ['Request to CTPEC timed out: {0}'.format(e)],
         }
+
+        if task_dict:
+            task_dict = _update_task_status_error(context, task_dict, {
+                'data_dict': data,
+                'error': error_dict
+            })
         raise p.toolkit.ValidationError(error_dict)
     except requests.exceptions.RequestException, e:
         error_dict = {
             'message': ['Request exception: {0}'.format(e)],
         }
+
+        if task_dict:
+            task_dict = _update_task_status_error(context, task_dict, {
+                'data_dict': data,
+                'error': error_dict
+            })
         raise p.toolkit.ValidationError(error_dict)
 
     try:
