@@ -21,4 +21,9 @@
     <p class="empty">{{ _('There is no current change request associated with this dataset') }}</p>
   {% endif %}
 
+  {% if task %}
+  <h2 class="hide-heading">{{ _('CKAN task status') }}</h2>
+    {% snippet 'snippets/task_status_show.html', task=task %}
+  {% endif %}
+
 {% endblock %}

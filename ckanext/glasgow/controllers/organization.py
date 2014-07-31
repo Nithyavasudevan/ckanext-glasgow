@@ -81,4 +81,6 @@ class OrgController(OrganizationController):
 
         return p.toolkit.render('organization/change_request_list.html',
                                 extra_vars={'organization': org,
-                                            'change_request': request_status})
+                                            'change_request': request_status,
+                                            'task': task,
+                                            })

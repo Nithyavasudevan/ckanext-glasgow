@@ -181,4 +181,6 @@ class DatasetController(PackageController):
 
         return p.toolkit.render('package/change_request_list.html',
                                 extra_vars={'pkg_dict': pkg,
-                                            'change_request': request_status})
+                                            'change_request': request_status,
+                                            'task': task,
+                                            })
