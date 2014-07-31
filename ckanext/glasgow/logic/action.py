@@ -836,6 +836,15 @@ def dataset_request_update(context, data_dict):
 
     check_access('dataset_request_update', context, data_dict)
 
+    try:
+        dataset_dict = p.toolkit.get_action('package_show')(context,
+                                                            {'id': data_dict.get('id')})
+    except p.toolkit.objectnotfound:
+        raise p.toolkit.objectnotfound('dataset not found')
+
+    # We want the actual id, not the name
+    data_dict['id'] = dataset_dict['id']
+
     # Validate data_dict
 
     context.update({'model': model, 'session': model.Session})
@@ -1285,10 +1294,13 @@ def organization_request_update(context, data_dict):
     try:
         # group_name_validator is horrible and looks for groups in the context
         # this puts the current group object into the context. Eww.
-        p.toolkit.get_action('organization_show')(context,
+        org_dict = p.toolkit.get_action('organization_show')(context,
                                                   {'id': data_dict['id']})
     except p.toolkit.ObjectNotFound, e:
         raise p.toolkit.ValidationError(['could not find organization'])
+
+    # We want the actual id, not the name
+    data_dict['id'] = org_dict['id']
 
     validated_data_dict, errors = validate(data_dict, update_schema, context)
     if errors:
