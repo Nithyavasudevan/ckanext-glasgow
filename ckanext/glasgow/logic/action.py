@@ -515,6 +515,9 @@ def file_request_create(context, data_dict):
     context.update({'model': model, 'session': model.Session})
     create_schema = custom_schema.resource_schema()
 
+    # We need the actual dataset id, not the name
+    data_dict['package_id'] = dataset_dict['id']
+
     validated_data_dict, errors = validate(data_dict, create_schema, context)
 
     if errors:
@@ -524,7 +527,6 @@ def file_request_create(context, data_dict):
 
     key = '{0}@{1}'.format(validated_data_dict.get('package_id', 'file'),
                            datetime.datetime.now().isoformat())
-
     uploaded_file = data_dict.pop('upload', None)
     task_dict = _create_task_status(context,
                                     task_type='file_request_create',
