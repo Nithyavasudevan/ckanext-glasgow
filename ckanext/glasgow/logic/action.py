@@ -931,6 +931,22 @@ def dataset_request_update(context, data_dict):
     ec_dict = custom_schema.convert_ckan_dataset_to_ec_dataset(
         validated_data_dict)
 
+    # Create a task status entry with the validated data
+    # and store data in task status table
+
+    key = '{0}@{1}'.format(validated_data_dict.get('package_id', 'dataset'),
+                           datetime.datetime.now().isoformat())
+
+    task_dict = _create_task_status(context,
+                                    task_type='dataset_request_update',
+                                    # This will be used as dataset id
+                                    entity_id=validated_data_dict['id'],
+                                    entity_type='dataset',
+                                    key=key,
+                                    value=json.dumps(
+                                        {'data_dict': validated_data_dict})
+                                    )
+
     # Send request to EC Data Collection API
 
     method, url = _get_api_endpoint('dataset_request_update')
@@ -951,22 +967,10 @@ def dataset_request_update(context, data_dict):
         }
         raise p.toolkit.ValidationError(error_dict)
 
-    # Create a task status entry with the validated data
-    # and store data in task status table
-
-    key = '{0}@{1}'.format(validated_data_dict.get('package_id', 'dataset'),
-                           datetime.datetime.now().isoformat())
-
-    task_dict = _create_task_status(context,
-                                    task_type='dataset_request_update',
-                                    # This will be used as dataset id
-                                    entity_id=validated_data_dict['id'],
-                                    entity_type='dataset',
-                                    key=key,
-                                    value=json.dumps(
-                                        {'data_dict': validated_data_dict,
-                                         'request_id': request_id})
-                                    )
+    task_dict = _update_task_status_success(context, task_dict, {
+        'data_dict': validated_data_dict,
+        'request_id': request_id,
+    })
 
     # Return task id to access it later and the request id returned by the
     # EC Metadata API
@@ -1295,6 +1299,15 @@ def organization_request_create(context, data_dict):
     ec_dict = custom_schema.convert_ckan_organization_to_ec_organization(
         validated_data_dict)
 
+    task_dict = _create_task_status(context,
+                                    task_type='organization_request_create',
+                                    entity_id=validated_data_dict['name'],
+                                    entity_type='organization',
+                                    key=validated_data_dict['name'],
+                                    value=json.dumps({
+                                        'data_dict': data_dict,
+                                    }))
+
     method, url = _get_api_endpoint('organization_request_create')
 
     content = send_request_to_ec_platform(method, url,
@@ -1308,15 +1321,11 @@ def organization_request_create(context, data_dict):
         }
         raise p.toolkit.ValidationError(error_dict)
 
-    task_dict = _create_task_status(context,
-                                    task_type='organization_request_create',
-                                    entity_id=validated_data_dict['name'],
-                                    entity_type='organization',
-                                    key=request_id,
-                                    value=json.dumps({
-                                        'data_dict': data_dict,
-                                        'request_id': request_id,
-                                    }))
+    task_dict['key'] = request_id
+    task_dict = _update_task_status_success(context, task_dict, {
+        'data_dict': validated_data_dict,
+        'request_id': request_id,
+    })
 
     return {
         'task_id': task_dict['id'],
@@ -1360,6 +1369,14 @@ def organization_request_update(context, data_dict):
     if errors:
         raise p.toolkit.ValidationError(errors)
 
+    task_dict = _create_task_status(context,
+                                    task_type='organization_request_update',
+                                    entity_id=validated_data_dict['id'],
+                                    entity_type='organization',
+                                    key=validated_data_dict['id'],
+                                    value=json.dumps(
+                                        {'data_dict': data_dict}))
+
     ec_dict = custom_schema.convert_ckan_organization_to_ec_organization(
         validated_data_dict)
 
@@ -1380,14 +1397,11 @@ def organization_request_update(context, data_dict):
         }
         raise p.toolkit.ValidationError(error_dict)
 
-    task_dict = _create_task_status(context,
-                                    task_type='organization_request_update',
-                                    entity_id=validated_data_dict['id'],
-                                    entity_type='organization',
-                                    key=request_id,
-                                    value=json.dumps(
-                                        {'data_dict': data_dict,
-                                         'request_id': request_id}))
+    task_dict['key'] = request_id
+    task_dict = _update_task_status_success(context, task_dict, {
+        'data_dict': validated_data_dict,
+        'request_id': request_id,
+    })
 
     return {
         'task_id': task_dict['id'],
