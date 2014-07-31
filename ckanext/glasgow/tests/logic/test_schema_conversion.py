@@ -378,13 +378,13 @@ class TestSchemaConversion(object):
 
         eq_(ec_dict['Id'], 'org-id')
         #eq_(ec_dict['Title'], 'Test Org')
-        eq_(ec_dict['Description'], 'Some longer description')
+        eq_(ec_dict['About'], 'Some longer description')
 
     def test_convert_ec_organization_to_ckan_organization(self):
 
         ec_dict = {
             'Id': 'org-id',
-            'Title': 'Test Org',
+            'About': 'Test Org',
             'Description': 'Some longer description',
         }
 
