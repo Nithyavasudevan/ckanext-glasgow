@@ -80,7 +80,6 @@ class EcInitialHarvester(EcHarvester):
                 'title': org['Title'],
                 'name': org_name,
                 'extras': [
-                    {'key': 'ec_api_id', 'value': org['Id']},
                 ]
             }
             try:
@@ -234,10 +233,6 @@ class EcInitialHarvester(EcHarvester):
         ckan_data_dict['id'] = unicode(ec_data_dict['Id'])
 
         ckan_data_dict['__local_action'] = True
-
-        # Add EC API ids
-        ckan_data_dict['ec_api_org_id'] = ec_data_dict['OrganisationId']
-        ckan_data_dict['ec_api_id'] = ec_data_dict['Id']
 
         # double check name
         if 'name' not in ckan_data_dict:

@@ -163,18 +163,14 @@ def _get_api_endpoint(operation):
 
 def _get_ec_api_org_id(ckan_org_id):
     # Get EC API id from parent organization
-    org_dict = p.toolkit.get_action('organization_show')({}, {
-        'id': ckan_org_id})
 
-    ec_api_org_id = org_dict.get('ec_api_id')
+    try:
+        org_dict = p.toolkit.get_action('organization_show')({}, {
+            'id': ckan_org_id})
 
-    # TODO: remove once the orgs use a proper schema
-    if not ec_api_org_id:
-        values = [e['value'] for e in org_dict.get('extras', [])
-                  if e['key'] == 'ec_api_id']
-        ec_api_org_id = values[0] if len(values) else None
-
-    return ec_api_org_id
+        return org_dict['id']
+    except p.toolkit.ObjectNotFound:
+        return False
 
 
 @p.toolkit.side_effect_free
@@ -345,8 +341,7 @@ def dataset_request_create(context, data_dict):
         raise p.toolkit.ValidationError(errors)
 
     # Get parent org EC API id
-    ec_api_org_id = validated_data_dict.get('ec_api_org_id') or \
-                    _get_ec_api_org_id(validated_data_dict['owner_org'])
+    ec_api_org_id = _get_ec_api_org_id(validated_data_dict['owner_org'])
 
     if not ec_api_org_id:
         raise p.toolkit.ValidationError(
