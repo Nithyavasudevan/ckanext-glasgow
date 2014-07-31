@@ -62,6 +62,7 @@ ckan_to_ec_dataset_mapping = {
     'standard_rating': 'StandardRating',
     'standard_name': 'StandardName',
     'standard_version': 'StandardVersion',
+    'needs_approval': 'NeedsApproval',
 }
 
 ckan_to_ec_resource_mapping = {
@@ -215,6 +216,7 @@ def _modify_schema(schema):
     not_missing = get_validator('not_missing')
     ignore_empty = get_validator('ignore_empty')
     not_empty = get_validator('not_empty')
+    boolean_validator = get_validator('boolean_validator')
 
     convert_to_extras = get_converter('convert_to_extras')
 
@@ -242,6 +244,7 @@ def _modify_schema(schema):
     schema['quality'] = [not_empty, int_validator, int_range(0, 5),
                          convert_to_extras]
 
+    schema['needs_approval'] = [not_missing, boolean_validator, convert_to_extras]
     # Optional fields
 
     schema['published_on_behalf_of'] = [ignore_missing,
@@ -306,6 +309,8 @@ def show_package_schema():
     schema['standard_version'] = [convert_from_extras]
 
     schema['resources'] = resource_schema()
+
+    schema['needs_approval'] = [convert_from_extras]
 
     # Internal fields
 

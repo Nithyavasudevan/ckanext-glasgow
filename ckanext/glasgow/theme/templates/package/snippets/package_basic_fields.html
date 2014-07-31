@@ -50,6 +50,7 @@
   {# TODO: slider or similar #}
   {{ form.input('quality', label=_('Quality'), placeholder=_('0 to 5'), id='field-quality', value=data.quality, error=errors.quality, classes=['control-medium'], is_required=true) }}
 
+  {{ form.select('needs_approval', label=_('Needs approval'), options=[{'name': 'yes', 'value': true},{'name': 'no', 'value': false}], selected='no', error=errors.needs_approval) }}
 </fieldset>
 
 <fieldset>
