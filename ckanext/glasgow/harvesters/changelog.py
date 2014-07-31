@@ -186,6 +186,10 @@ def _get_latest_organization_version(audit):
         return False
 
     content = response.json()
+
+    if not content.get('MetadataResultSet'):
+        return False
+
     org_dict = custom_schema.convert_ec_organization_to_ckan_organization(
         content['MetadataResultSet'][0])
 
@@ -207,6 +211,10 @@ def _get_latest_dataset_version(audit):
         return False
 
     content = response.json()
+
+    if not content.get('MetadataResultSet'):
+        return False
+
     dataset_dict = custom_schema.convert_ec_dataset_to_ckan_dataset(
         content['MetadataResultSet']['Metadata'])
 
@@ -242,6 +250,10 @@ def _get_file_version(audit):
         return False
 
     content = response.json()
+
+    if not content.get('MetadataResultSet'):
+        return False
+
     resource_dict = custom_schema.convert_ec_file_to_ckan_resource(
         content['MetadataResultSet']['FileMetadata'])
 
