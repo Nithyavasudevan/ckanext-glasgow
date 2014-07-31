@@ -226,23 +226,15 @@ def _get_latest_dataset_version(audit):
 
 def _get_file_version(audit):
 
-    is_version = bool(audit['CustomProperties'].get('VersionId'))
+    # Starting from iteration 4 all Files have a VersionId
 
-    if is_version:
-        method, url = _get_api_endpoint('file_version_show')
-        url = url.format(
-            organization_id=audit['CustomProperties'].get('OrganisationId'),
-            dataset_id=audit['CustomProperties'].get('DataSetId'),
-            file_id=audit['CustomProperties'].get('FileId'),
-            version_id=audit['CustomProperties'].get('VersionId'),
-        )
-    else:
-        method, url = _get_api_endpoint('file_show')
-        url = url.format(
-            organization_id=audit['CustomProperties'].get('OrganisationId'),
-            dataset_id=audit['CustomProperties'].get('DataSetId'),
-            file_id=audit['CustomProperties'].get('FileId'),
-        )
+    method, url = _get_api_endpoint('file_version_show')
+    url = url.format(
+        organization_id=audit['CustomProperties'].get('OrganisationId'),
+        dataset_id=audit['CustomProperties'].get('DataSetId'),
+        file_id=audit['CustomProperties'].get('FileId'),
+        version_id=audit['CustomProperties'].get('VersionId'),
+    )
 
     response = requests.request(method, url, verify=False)
 
@@ -345,7 +337,12 @@ def handle_file_create(context, audit, harvest_object):
             json.dumps(audit['CustomProperties']))]
         raise p.toolkit.ObjectNotFound(msg)
 
-    is_version = bool(audit['CustomProperties'].get('VersionId'))
+    try:
+        p.toolkit.get_action('resource_show')(context,
+                                              {'id': resource_dict['id']})
+        is_version = True
+    except p.toolkit.ObjectNotFound, e:
+        is_version = False
 
     try:
         if is_version:
