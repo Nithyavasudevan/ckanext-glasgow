@@ -172,6 +172,13 @@ def create_package_schema():
 
     _modify_schema(schema)
 
+    schema['name'].append(no_pending_dataset_with_same_name)
+
+    schema['title'].extend([
+        unique_title_within_organization,
+        no_pending_dataset_with_same_title_in_same_org,
+    ])
+
     return schema
 
 
@@ -205,7 +212,6 @@ def update_package_schema():
 def _modify_schema(schema):
 
     name_validator = get_validator('name_validator')
-    package_name_validator = get_validator('package_name_validator')
     not_missing = get_validator('not_missing')
     ignore_empty = get_validator('ignore_empty')
     not_empty = get_validator('not_empty')
@@ -218,14 +224,9 @@ def _modify_schema(schema):
 
     schema['id'] = [ignore_empty, unicode]
 
-    schema['name'] = [not_empty, unicode, trim_string(100), name_validator,
-                      package_name_validator,
-                      no_pending_dataset_with_same_name]
+    schema['name'] = [not_empty, unicode, trim_string(100), name_validator]
 
-    schema['title'] = [not_empty, string_max_length(255), unicode,
-                       unique_title_within_organization,
-                       no_pending_dataset_with_same_title_in_same_org,
-                       ]
+    schema['title'] = [not_empty, string_max_length(255), unicode]
 
     schema['notes'] = [not_empty, string_max_length(4000), unicode]
 
