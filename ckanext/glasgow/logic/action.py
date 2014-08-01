@@ -1255,7 +1255,6 @@ def organization_request_create(context, data_dict):
         }
         raise p.toolkit.ValidationError(error_dict)
 
-    task_dict['key'] = request_id
     task_dict = _update_task_status_success(context, task_dict, {
         'data_dict': validated_data_dict,
         'request_id': request_id,
@@ -1336,7 +1335,6 @@ def organization_request_update(context, data_dict):
         }
         raise p.toolkit.ValidationError(error_dict)
 
-    task_dict['key'] = request_id
     task_dict = _update_task_status_success(context, task_dict, {
         'data_dict': validated_data_dict,
         'request_id': request_id,
