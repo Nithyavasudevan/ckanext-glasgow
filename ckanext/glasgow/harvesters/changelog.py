@@ -398,7 +398,10 @@ def handle_organization_create(context, audit, harvest_object):
         raise p.toolkit.ObjectNotFound(msg)
 
     if not org_dict.get('name'):
-        org_dict['name'] = get_org_name(org_dict, 'title')
+        name = get_dataset_name_from_task(context, audit)
+        if not name:
+            name = get_org_name(org_dict, 'title')
+        org_dict['name'] = name
 
     new_org = p.toolkit.get_action('organization_create')(context,
                                                           org_dict)
@@ -418,7 +421,10 @@ def handle_organization_update(context, audit, harvest_object):
         raise p.toolkit.ObjectNotFound(msg)
 
     if not org_dict.get('name'):
-        org_dict['name'] = get_org_name(org_dict, 'title')
+        name = get_dataset_name_from_task(context, audit)
+        if not name:
+            name = get_org_name(org_dict, 'title')
+        org_dict['name'] = name
 
     new_org = p.toolkit.get_action('organization_update')(context,
                                                           org_dict)

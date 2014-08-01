@@ -1310,7 +1310,7 @@ def organization_request_update(context, data_dict):
                                     task_type='organization_request_update',
                                     entity_id=validated_data_dict['id'],
                                     entity_type='organization',
-                                    key=validated_data_dict['id'],
+                                    key=validated_data_dict['name'],
                                     value=json.dumps(
                                         {'data_dict': data_dict}))
 
