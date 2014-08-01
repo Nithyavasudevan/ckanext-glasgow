@@ -1,1 +1,1 @@
-*/3 * * * * root /usr/lib/ckan/default/bin/paster --plugin=ckanext-harvest harvester run -c /etc/ckan/default/production.ini >> /var/log/harvester_run.log 2>&1
+*/2 * * * * root /usr/lib/ckan/default/bin/paster --plugin=ckanext-harvest harvester run -c /etc/ckan/default/production.ini >> /var/log/harvester_run.log 2>&1
