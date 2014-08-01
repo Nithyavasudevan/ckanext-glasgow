@@ -232,6 +232,8 @@ class EcInitialHarvester(EcHarvester):
 
         ckan_data_dict['id'] = unicode(ec_data_dict['Id'])
 
+        ckan_data_dict['needs_approval'] = ec_data_dict.get('NeedsApproval', False)
+
         ckan_data_dict['__local_action'] = True
 
         # double check name

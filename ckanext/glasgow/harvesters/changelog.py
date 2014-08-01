@@ -225,6 +225,8 @@ def _get_latest_dataset_version(audit):
     dataset_dict['owner_org'] = content['MetadataResultSet'].get(
         'OrganisationId')
 
+    dataset_dict['needs_approval'] = content['MetadataResultSet'].get('NeedsApproval')
+
     return dataset_dict
 
 

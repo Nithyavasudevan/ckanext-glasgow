@@ -55,6 +55,11 @@
         <td class="dataset-details">{{ pkg_dict.standard_version or '-' }}</td>
      </tr>
 
+     <tr>
+        <th scope="row" class="dataset-label">{{ _('Needs Approval') }}</th>
+        <td class="dataset-details">{{ pkg_dict.needs_approval or '-' }}</td>
+     </tr>
+
       {% endblock %}
     </tbody>
   </table>
