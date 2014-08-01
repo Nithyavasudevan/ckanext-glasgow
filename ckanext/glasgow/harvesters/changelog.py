@@ -193,6 +193,8 @@ def _get_latest_organization_version(audit):
     org_dict = custom_schema.convert_ec_organization_to_ckan_organization(
         content['MetadataResultSet'][0])
 
+    org_dict['id'] = str(content['MetadataResultSet'][0]['Id'])
+
     return org_dict
 
 
@@ -217,6 +219,8 @@ def _get_latest_dataset_version(audit):
 
     dataset_dict = custom_schema.convert_ec_dataset_to_ckan_dataset(
         content['MetadataResultSet']['Metadata'])
+
+    dataset_dict['id'] = str(content['MetadataResultSet']['Id'])
 
     dataset_dict['owner_org'] = content['MetadataResultSet'].get(
         'OrganisationId')
@@ -248,6 +252,8 @@ def _get_file_version(audit):
 
     resource_dict = custom_schema.convert_ec_file_to_ckan_resource(
         content['MetadataResultSet']['FileMetadata'])
+
+    resource_dict['id'] = str(content['MetadataResultSet']['FileId'])
 
     resource_dict['package_id'] = str(content['MetadataResultSet'].get(
         'DataSetId'))
