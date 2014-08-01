@@ -134,15 +134,7 @@ class EcInitialHarvester(EcHarvester):
                 organization_show = toolkit.get_action('organization_show')
                 org = organization_show(context, {'id': org_name})
 
-                values = [e['value'] for e
-                          in org.get('extras', [])
-                          if e['key'] == 'ec_api_id']
-                if not values:
-                    log.warning(('Could not get EC API id for '
-                                'organization {0}, skipping...').format(
-                                org['name']))
-                    continue
-                ec_api_org_id = values[0]
+                ec_api_org_id = org['id']
 
                 endpoint = api_endpoint.format(ec_api_org_id)
 
