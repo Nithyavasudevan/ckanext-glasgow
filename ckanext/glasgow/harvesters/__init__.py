@@ -73,6 +73,8 @@ def get_dataset_name_from_task(context, audit_dict):
 
     if task:
         name = task.key
+        if '@' in name:
+            name = name.split('@')[0]
 
         _expire_task_status(context, task.id)
 

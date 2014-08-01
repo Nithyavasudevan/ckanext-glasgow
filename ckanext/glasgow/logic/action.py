@@ -864,7 +864,7 @@ def dataset_request_update(context, data_dict):
     # Create a task status entry with the validated data
     # and store data in task status table
 
-    key = '{0}@{1}'.format(validated_data_dict.get('package_id', 'dataset'),
+    key = '{0}@{1}'.format(validated_data_dict.get('name', data_dict['id']),
                            datetime.datetime.now().isoformat())
 
     task_dict = _create_task_status(context,
