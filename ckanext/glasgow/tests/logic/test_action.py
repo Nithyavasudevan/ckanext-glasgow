@@ -1283,3 +1283,63 @@ class TestOrganizationUpdate(object):
             },
             task_dict
         )
+
+class TestUserRoleUpdate(object):
+    def setup(self):
+        self.org_owner = helpers.call_action('user_create',
+                                               name='org_owner',
+                                               email='test@test.com',
+                                               password='test')
+
+        self.normal_user = helpers.call_action('user_create',
+                                               name='normal_user',
+                                               email='test@test.com',
+                                               password='test')
+
+        self.test_org = helpers.call_action('organization_create',
+                                       context={
+                                           'user': 'org_owner',
+                                           'local_action': True,
+                                       },
+                                       name='test_org')
+
+    def teardown(cls):
+        helpers.reset_db()
+
+    @mock.patch('requests.request')
+    def test_make_user_member(self, mock_request):
+        mock_request.return_value = mock.Mock(
+            status_code=200,
+            content=json.dumps({'RequestId': 'cc02730a-367d-45a6-9db3-6fc3dc5ca49d'}),
+            **{
+                'raise_for_status.return_value': None,
+                'json.return_value': {
+                    'RequestId': 'cc02730a-367d-45a6-9db3-6fc3dc5ca49d'
+                },
+            }
+        )
+
+        data_dict = {
+            'id': self.test_org['id'],
+            'username': 'normal_user',
+            'role': 'member',
+        }
+
+        request_dict = helpers.call_action('organization_member_create',
+                                          context={'user': 'org_owner'},
+                                          **data_dict)
+
+        nose.tools.assert_in('task_id', request_dict)
+        nose.tools.assert_in('request_id', request_dict)
+
+        task_dict = helpers.call_action('task_status_show',
+                                        id=request_dict['task_id'])
+        nose.tools.assert_dict_contains_subset(
+            {
+                'task_type': u'member_create',
+                'entity_type': u'organization',
+                'state': u'sent',
+                'error': None
+            },
+            task_dict
+        )
