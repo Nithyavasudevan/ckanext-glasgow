@@ -59,6 +59,7 @@ class TestDatasetController(object):
             'owner_org': 'test_org',
             'title': 'Test Dataset Pending',
             'notes': 'Some longer description',
+            'needs_approval': False,
             'maintainer': 'Test maintainer',
             'maintainer_email': 'Test maintainer email',
             'license_id': 'OGL-UK-2.0',
@@ -97,6 +98,7 @@ class TestDatasetController(object):
             'owner_org': 'test_org',
             'title': 'Test Dataset',
             'notes': 'Some longer description',
+            'needs_approval': False,
             'maintainer': 'Test maintainer',
             'maintainer_email': 'Test maintainer email',
             'license_id': 'OGL-UK-2.0',
@@ -130,6 +132,7 @@ class TestDatasetController(object):
             'owner_org': 'test_org',
             'title': 'Test Dataset Pending File',
             'notes': 'Some longer description',
+            'needs_approval': False,
             'maintainer': 'Test maintainer',
             'maintainer_email': 'Test maintainer email',
             'license_id': 'OGL-UK-2.0',
@@ -147,17 +150,30 @@ class TestDatasetController(object):
         assert 'id' in dataset_dict
 
         data_dict = {
-            'dataset_id': dataset_dict['id'],
+            #'dataset_id': dataset_dict['id'],
             'name': 'test_file',
             'description': 'test description',
             'format': 'no format',
-            'url': 'http://test.com',
+            'license_id': 'uk-ogl',
+            #'url': 'http://test.com',
         }
 
-        context = {'user': self.normal_user['name']}
-        request_dict = helpers.call_action('file_request_create',
-                                           context=context,
-                                           **data_dict)
+        extra_environ = {'REMOTE_USER': str(self.normal_user['name'])}
+        response = self.app.get('/dataset/new_resource/test_dataset_file_pending',
+                                extra_environ=extra_environ)
+
+        eq_(response.status_int, 200)
+
+        form = response.forms[1]
+
+        for field, value in data_dict.iteritems():
+            form[field] = value
+
+        response = form.submit('save',
+                               upload_files=
+                               [('upload', 'test.txt', 'some text')],
+                               extra_environ=extra_environ)
+        eq_(response.status_int, 302)
 
         response = self.app.get('/dataset/test_dataset_file_pending',
                                 extra_environ={'REMOTE_USER': 'sysadmin_user'})
@@ -212,6 +228,7 @@ class TestDatasetController(object):
             'owner_org': 'test_org',
             'title': 'Test Dataset',
             'notes': 'Some longer description',
+            'needs_approval': False,
             'maintainer': 'Test maintainer',
             'maintainer_email': 'Test maintainer email',
             'license_id': 'OGL-UK-2.0',

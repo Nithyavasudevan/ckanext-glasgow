@@ -241,7 +241,6 @@ class TestDatasetCreate(object):
         nt.assert_equals(pkg['title'], u'Raj Data Set 001')
 
         nt.assert_equals(pkg['id'], u'3')
-        nt.assert_equals(pkg['ec_api_org_id'], u'4')
 
         org = helpers.call_action('organization_show', id=u'test-org-2')
 

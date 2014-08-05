@@ -1379,6 +1379,10 @@ def send_request_to_ec_platform(method, url, data=None, headers=None, **kwargs):
                 'data_dict': data,
                 'error': error_dict
             })
+
+        if response.status_code == requests.codes.unauthorized:
+            raise ECAPINotAuthorized(error_dict)
+
         raise p.toolkit.ValidationError(error_dict)
     except requests.exceptions.Timeout, e:
         error_dict = {

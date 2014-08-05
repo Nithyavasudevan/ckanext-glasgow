@@ -15,6 +15,7 @@ class TestSchemaConversion(object):
             'name': 'test-dataset',
             'title': 'Test Dataset',
             'notes': 'Some longer description',
+            'needs_approval': False,
             'maintainer': 'Test maintainer',
             'maintainer_email': 'Test maintainer email',
             'license_id': 'OGL-UK-2.0',
@@ -62,6 +63,7 @@ class TestSchemaConversion(object):
             'name': 'test-dataset',
             'title': 'Test Dataset',
             'notes': 'Some longer description',
+            'needs_approval': False,
             'maintainer': 'Test maintainer',
             'maintainer_email': 'Test maintainer email',
             'license_id': 'OGL-UK-2.0',
@@ -267,6 +269,7 @@ class TestSchemaConversion(object):
             'owner_org': 'test_org',
             'title': 'Test Dataset',
             'notes': 'Some longer description',
+            'needs_approval': False,
             'maintainer': 'Test maintainer',
             'maintainer_email': 'Test maintainer email',
             'license_id': 'OGL-UK-2.0',
@@ -335,7 +338,6 @@ class TestSchemaConversion(object):
         ckan_dict = custom_schema.convert_ec_file_to_ckan_resource(ec_dict)
 
         eq_(ckan_dict['id'], 2)
-        eq_(ckan_dict['ec_api_dataset_id'], 1)
         eq_(ckan_dict['name'], 'Test File name')
         eq_(ckan_dict['description'], 'Some longer description')
         eq_(ckan_dict['url'], 'http://some.file.com')

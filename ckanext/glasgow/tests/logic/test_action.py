@@ -298,6 +298,7 @@ class TestDatasetCreate(object):
             'owner_org': 'test_org',
             'title': 'Test Dataset',
             'notes': 'Some longer description',
+            'needs_approval': False,
             'maintainer': 'Test maintainer',
             'maintainer_email': 'Test maintainer email',
             'license_id': 'OGL-UK-2.0',
@@ -346,6 +347,7 @@ class TestDatasetCreate(object):
             'owner_org': 'test_org',
             'title': 'Test Dataset 401',
             'notes': 'Some longer description',
+            'needs_approval': False,
             'maintainer': 'Test maintainer',
             'maintainer_email': 'Test maintainer email',
             'license_id': 'OGL-UK-2.0',
@@ -423,6 +425,7 @@ class TestDatasetUpdate(object):
             'owner_org': 'test_org',
             'title': 'Test Dataset',
             'notes': 'Some longer description',
+            'needs_approval': False,
             'maintainer': 'Test maintainer',
             'maintainer_email': 'Test maintainer email',
             'license_id': 'OGL-UK-2.0',
@@ -484,7 +487,7 @@ class TestDatasetUpdate(object):
                 'id':  request_dict['task_id'],
                 'task_type': u'dataset_request_update',
                 'entity_type': u'dataset',
-                'state': u'new',
+                'state': u'sent',
             },
             task_dict
         )
@@ -519,6 +522,7 @@ class TestFileCreate(object):
             'owner_org': 'test_org',
             'title': 'Test Dataset',
             'notes': 'Some longer description',
+            'needs_approval': False,
             'maintainer': 'Test maintainer',
             'maintainer_email': 'Test maintainer email',
             'license_id': 'OGL-UK-2.0',
@@ -720,6 +724,7 @@ class TestFileUpdate(object):
             'owner_org': 'test_org',
             'title': 'Test Dataset',
             'notes': 'Some longer description',
+            'needs_approval': False,
             'maintainer': 'Test maintainer',
             'maintainer_email': 'Test maintainer email',
             'license_id': 'OGL-UK-2.0',
@@ -793,6 +798,7 @@ class TestFileVersions(object):
             'owner_org': 'test_org',
             'title': 'Test Dataset Version',
             'notes': 'Some longer description',
+            'needs_approval': False,
             'maintainer': 'Test maintainer',
             'maintainer_email': 'Test maintainer email',
             'license_id': 'OGL-UK-2.0',
@@ -950,6 +956,7 @@ class TestCheckForTaskStatusUpdate(object):
             'owner_org': 'test_org',
             'title': 'Test Dataset',
             'notes': 'Some longer description',
+            'needs_approval': False,
             'maintainer': 'Test maintainer',
             'maintainer_email': 'Test maintainer email',
             'license_id': 'OGL-UK-2.0',
@@ -1226,7 +1233,7 @@ class TestOrganizationCreate(object):
             {
                 'task_type': u'organization_request_create',
                 'entity_type': u'organization',
-                'state': u'new',
+                'state': u'sent',
                 'error': None
             },
             task_dict
@@ -1278,7 +1285,7 @@ class TestOrganizationUpdate(object):
             {
                 'task_type': u'organization_request_update',
                 'entity_type': u'organization',
-                'state': u'new',
+                'state': u'sent',
                 'error': None
             },
             task_dict
