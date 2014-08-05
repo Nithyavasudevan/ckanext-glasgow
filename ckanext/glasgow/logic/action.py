@@ -16,6 +16,7 @@ import ckan.model as model
 import ckan.plugins as p
 from ckan.lib.navl.dictization_functions import validate
 import ckan.lib.dictization.model_dictize as model_dictize
+from ckan.lib import helpers
 import ckan.logic.action as core_actions
 from ckan.logic import ActionError
 import ckan.logic.schema as core_schema
@@ -277,6 +278,30 @@ def pending_task_for_organization(context, data_dict):
     else:
         return None
 
+
+def pending_tasks_for_membership(context, data_dict):
+    p.toolkit.check_access('pending_task_for_organization', context, data_dict)
+
+    organization_id = data_dict.get('organization_id')
+    name = data_dict.get('name')
+
+    model = context.get('model')
+    tasks = model.Session.query(model.TaskStatus) \
+        .filter(model.TaskStatus.entity_type == 'organization') \
+        .filter(or_(model.TaskStatus.state == 'new',
+                model.TaskStatus.state == 'sent')) \
+        .filter(or_(model.TaskStatus.entity_id == organization_id,
+                model.TaskStatus.entity_id == name)) \
+        .filter(model.TaskStatus.task_type == 'member_update') \
+        .order_by(model.TaskStatus.last_updated.desc()) \
+
+    task_dicts = []
+    for task in tasks:
+        context = {'model': model, 'session': model.Session}
+        task_dict = model_dictize.task_status_dictize(task, context)
+        task_dict['value'] = json.loads(task_dict['value'])
+        task_dicts.append(task_dict)
+    return task_dicts
 
 
 def package_create(context, data_dict):
@@ -1451,8 +1476,8 @@ def user_role_update(context, data_dict):
                            datetime.datetime.now().isoformat())
 
     task_dict = _create_task_status(context,
-                                    task_type='member_create',
-                                    entity_id=_make_uuid(),
+                                    task_type='member_update',
+                                    entity_id=data_dict['id'],
                                     entity_type='organization',
                                     key=key,
                                     value=json.dumps(
@@ -1488,6 +1513,8 @@ def user_role_update(context, data_dict):
         'data_dict': validated_data_dict,
         'request_id': request_id,
     })
+
+    helpers.flash_success('user update has been requested with request id {0}'.format(request_id))
 
     return {
         'task_id': task_dict['id'],

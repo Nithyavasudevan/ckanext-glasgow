@@ -72,7 +72,7 @@ class OrgController(OrganizationController):
                 request_status = None
         except p.toolkit.ValidationError, e:
             helpers.flash_error('{0}'.format(e.error_dict['message']))
-        except ECAPIError:
+        except ECAPIError, e:
             helpers.flash_error('{0}'.format(e.error_dict['message']))
         except p.toolkit.NotAuthorized:
             return p.toolkit.abort(401, p.toolkit._('Not authorized to view change requests'))
@@ -83,4 +83,27 @@ class OrgController(OrganizationController):
                                 extra_vars={'organization': org,
                                             'change_request': request_status,
                                             'task': task,
+                                            })
+
+    def pending_member_requests_list(self, organization_id):
+        context = {'model': model, 'session': model.Session}
+
+        try:
+            org = p.toolkit.get_action('organization_show')(context, {'id': organization_id})
+        except p.toolkit.ObjectNotFound:
+            return p.toolkit.abort(404, p.toolkit._('Organization not found'))
+
+        try:
+            tasks = p.toolkit.get_action('pending_tasks_for_membership')(context,
+                {'name': organization_id, 'organization_id': org['id']})
+        except ECAPIError, e:
+            helpers.flash_error('{0}'.format(e.error_dict['message']))
+        except p.toolkit.NotAuthorized:
+            return p.toolkit.abort(401, p.toolkit._('Not authorized to view change requests'))
+
+        c.group_dict = org
+
+        return p.toolkit.render('organization/membership_requests.html',
+                                extra_vars={'organization': org,
+                                            'tasks': tasks,
                                             })
