@@ -407,6 +407,7 @@ class TestUniqueTitleValidators(object):
             'owner_org': 'test_org',
             'title': 'Test Dataset',
             'notes': 'Some longer description',
+            'needs_approval': False,
             'maintainer': 'Test maintainer',
             'maintainer_email': 'Test maintainer email',
             'license_id': 'OGL-UK-2.0',
