@@ -1520,3 +1520,16 @@ def user_role_update(context, data_dict):
         'task_id': task_dict['id'],
         'request_id': request_id,
     }
+
+
+def organization_member_delete(context, data_dict):
+    if data_dict.get('__local_action', False):
+        context['local_action'] = True
+        data_dict.pop('__local_action', None)
+
+    if (context.get('local_action', False) or
+            data_dict.get('type') == 'harvest' or
+            data_dict.get('source_type')):
+        return core_actions.update.organization_member_create(context, data_dict)
+    else:
+        p.toolkit.abort(404, 'users cannot be deleted from groups. Use organization_member_change to change the group a user belongs to')
