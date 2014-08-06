@@ -335,3 +335,64 @@ class TestOrganizationUpdateController(object):
         nose.tools.assert_true('Timestamp - 2014-05-21T00:00:00' in soup.table.text)
         nose.tools.assert_true('Type - Organization' in soup.table.text)
         nose.tools.assert_true('Message - Organization Update request started' in soup.table.text)
+
+
+class TestOrganizationMembership(object):
+    def setup(self):
+        self.app = get_test_app()
+
+        # Create test user
+        self.sysadmin_user = helpers.call_action('user_create',
+                                                name='sysadmin_user',
+                                                email='test@test.com',
+                                                password='test',
+                                                sysadmin=True)
+
+        self.normal_user = helpers.call_action('user_create',
+                                              name='normal_user',
+                                              email='test@test.com',
+                                              password='test')
+
+        self.test_org = helpers.call_action('organization_create',
+                                       context={
+                                           'user': 'sysadmin_user',
+                                           'local_action': True,
+                                       },
+                                       name='test_org')
+
+    def teardown(self):
+        helpers.reset_db()
+
+    @mock.patch('ckan.lib.helpers.flash_success')
+    @mock.patch('ckanext.oauth2waad.plugin.service_to_service_access_token')
+    @mock.patch('requests.request')
+    def test_membership_add(self, mock_request, mock_token, mock_flash):
+        mock_token.return_value = 'Bearer: token'
+        mock_request.return_value = mock.Mock(
+            status_code=200,
+            content=json.dumps({'RequestId': 'req-id'}),
+            **{
+                'raise_for_status.return_value': None,
+                'json.return_value': {'RequestId': 'req-id'},
+            }
+        )
+
+
+        # mock out the flash_success helper to avoid problems with the beaker
+        # session in tests
+        mock_flash.return_value = None
+
+        context = {'user': self.sysadmin_user['name']}
+        request_dict = helpers.call_action('organization_member_create',
+                                           context=context,
+                                           id=self.test_org['id'],
+                                           username=self.normal_user['name'],
+                                           role='member',
+                                           )
+
+        response = self.app.get('/organization/pending_members/test_org',
+                                extra_environ={'REMOTE_USER': 'sysadmin_user'})
+
+        nose.tools.assert_in('normal_user', response.html.table.tbody.text)
+        nose.tools.assert_in('member', response.html.table.tbody.text)
+        nose.tools.assert_in('req-id', response.html.table.tbody.text)

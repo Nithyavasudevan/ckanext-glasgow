@@ -16,8 +16,10 @@ import ckan.model as model
 import ckan.plugins as p
 from ckan.lib.navl.dictization_functions import validate
 import ckan.lib.dictization.model_dictize as model_dictize
+from ckan.lib import helpers
 import ckan.logic.action as core_actions
 from ckan.logic import ActionError
+import ckan.logic.schema as core_schema
 
 import ckanext.oauth2waad.plugin as oauth2
 
@@ -153,6 +155,9 @@ def _get_api_endpoint(operation):
     elif operation == 'organization_request_update':
         method = 'PUT'
         path = '/Organisations/Organisation/{organization_id}'
+    elif operation == 'user_role_update':
+        method = 'PUT'
+        path = '/UserRoles/Organisation/{organization_id}/User/{user_id}'
     else:
         return None, None
 
@@ -273,6 +278,30 @@ def pending_task_for_organization(context, data_dict):
     else:
         return None
 
+
+def pending_tasks_for_membership(context, data_dict):
+    p.toolkit.check_access('pending_task_for_organization', context, data_dict)
+
+    organization_id = data_dict.get('organization_id')
+    name = data_dict.get('name')
+
+    model = context.get('model')
+    tasks = model.Session.query(model.TaskStatus) \
+        .filter(model.TaskStatus.entity_type == 'organization') \
+        .filter(or_(model.TaskStatus.state == 'new',
+                model.TaskStatus.state == 'sent')) \
+        .filter(or_(model.TaskStatus.entity_id == organization_id,
+                model.TaskStatus.entity_id == name)) \
+        .filter(model.TaskStatus.task_type == 'member_update') \
+        .order_by(model.TaskStatus.last_updated.desc()) \
+
+    task_dicts = []
+    for task in tasks:
+        context = {'model': model, 'session': model.Session}
+        task_dict = model_dictize.task_status_dictize(task, context)
+        task_dict['value'] = json.loads(task_dict['value'])
+        task_dicts.append(task_dict)
+    return task_dicts
 
 
 def package_create(context, data_dict):
@@ -1417,3 +1446,94 @@ def send_request_to_ec_platform(method, url, data=None, headers=None, **kwargs):
         raise p.toolkit.ValidationError(error_dict)
 
     return content
+
+
+def organization_member_create(context, data_dict):
+    if data_dict.get('__local_action', False):
+        context['local_action'] = True
+        data_dict.pop('__local_action', None)
+
+    if (context.get('local_action', False) or
+            data_dict.get('type') == 'harvest' or
+            data_dict.get('source_type')):
+        return core_actions.update.organization_member_create(context, data_dict)
+    else:
+        return p.toolkit.get_action('user_role_update')(context,
+                                                        data_dict)
+
+
+def user_role_update(context, data_dict):
+    check_access('organization_member_create', context, data_dict)
+    context.update({'model': model, 'session': model.Session})
+
+    create_schema = core_schema.member_schema()
+
+    validated_data_dict, errors = validate(data_dict, create_schema, context)
+
+    if errors:
+        raise p.toolkit.ValidationError(errors)
+
+    ec_dict = custom_schema.convert_ckan_dataset_to_ec_dataset(
+        validated_data_dict)
+
+    key = '{0}@{1}'.format(validated_data_dict.get('name', data_dict['id']),
+                           datetime.datetime.now().isoformat())
+
+    task_dict = _create_task_status(context,
+                                    task_type='member_update',
+                                    entity_id=data_dict['id'],
+                                    entity_type='organization',
+                                    key=key,
+                                    value=json.dumps(
+                                        {'data_dict': data_dict})
+                                    )
+
+    user = p.toolkit.get_action('user_show')(
+        context,
+        {'id': validated_data_dict['username']}
+    )
+
+    method, url = _get_api_endpoint('user_role_update')
+    url = url.format(
+        organization_id=validated_data_dict['id'],
+        user_id=user['id']
+    )
+
+    content = send_request_to_ec_platform(method, url,
+                                          data=json.dumps(ec_dict),
+                                          context=context,
+                                          task_dict=task_dict)
+
+    try:
+        request_id = content['RequestId']
+    except KeyError:
+        error_dict = {
+            'message': ['RequestId not in response from EC Platform'],
+            'content': [json.dumps(content)],
+        }
+        raise p.toolkit.ValidationError(error_dict)
+
+    task_dict = _update_task_status_success(context, task_dict, {
+        'data_dict': validated_data_dict,
+        'request_id': request_id,
+    })
+
+    helpers.flash_success('user update has been requested with request id {0}'.format(request_id))
+
+    return {
+        'task_id': task_dict['id'],
+        'request_id': request_id,
+    }
+
+
+def organization_member_delete(context, data_dict):
+    if data_dict.get('__local_action', False):
+        context['local_action'] = True
+        data_dict.pop('__local_action', None)
+
+    if (context.get('local_action', False) or
+            data_dict.get('type') == 'harvest' or
+            data_dict.get('source_type')):
+        return core_actions.update.organization_member_create(context, data_dict)
+    else:
+        p.toolkit.abort(404, 'users cannot be deleted from groups. Use organization_member_change to change the group a user belongs to')

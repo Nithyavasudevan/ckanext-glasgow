@@ -124,6 +124,14 @@ def request_organization_update(organization_id):
         }
     )
 
+
+@app.route('/UserRoles/Organisation/<organization_id>/User/<user_id>', methods=['PUT'])
+def request_user_role_update(organization_id, user_id):
+    return flask.jsonify(**{
+        "RequestId": unicode(uuid.uuid4()),
+        }
+    )
+
 @app.route('/Datasets/Organisation/<organization_id>', methods=['POST'])
 def request_dataset_create(organization_id):
 

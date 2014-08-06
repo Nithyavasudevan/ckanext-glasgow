@@ -1,3 +1,4 @@
+import json
 import mock
 import nose
 
@@ -203,3 +204,38 @@ class TestChangelog(object):
         data_dict = {}
 
         p.toolkit.check_access('changelog_show', context, data_dict)
+
+
+class TestOrganizations(object):
+    def setup(self):
+        self.sysadmin_user = helpers.call_action('user_create',
+                                                name='sysadmin_user',
+                                                email='test@test.com',
+                                                password='test',
+                                                sysadmin=True)
+
+        self.normal_user = helpers.call_action('user_create',
+                                              name='normal_user',
+                                              email='test@test.com',
+                                              password='test')
+
+        self.test_org = helpers.call_action('organization_create',
+                                       context={
+                                           'user': 'sysadmin_user',
+                                           'local_action': True,
+                                       },
+                                       name='test_org')
+
+    def teardown(self):
+        helpers.reset_db()
+
+    def test_non_owner_cannot_add_members(self):
+        context = {'user': self.normal_user['name'], 'ignore_auth': False}
+        nose.tools.assert_raises(p.toolkit.NotAuthorized,
+            helpers.call_action,
+            'organization_member_create',
+            context=context,
+            id=self.test_org['id'],
+            username=self.normal_user['name'],
+            role='member',
+        )

@@ -1,0 +1,6 @@
+{% ckan_extends %}
+
+{% block content_primary_nav %}
+  {{ super() }}
+  {{ h.build_nav_icon('organization_pending_members', _('Pending Members'), organization_id=c.group_dict.name) }}
+{% endblock %}

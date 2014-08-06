@@ -1,0 +1,29 @@
+{% extends "organization/edit_base.html" %}
+
+{% block subtitle %}{{ _('Pending Membership Updates') }} - {{ super() }}{% endblock %}
+
+{% block page_primary_action %}
+{% endblock %}
+
+{% block primary_content_inner %}
+  <table id="pending-members" class="table table-bordered">
+    <thead>
+      <th>User</th>
+      <th>Role</th>
+      <th>Request ID</th>
+    </thead>
+    <tbody>
+    {% for task in tasks %}
+      <tr>
+        <td>{{ task.value.data_dict.username }}</td>
+        <td>{{ task.value.data_dict.role }}</td>
+        <td>
+          <a href="{%  url_for controller='ckanext.glasgow.controllers.request_status:RequestStatusController', action='get_status', request_id=task.value.request_id %}">
+          {{ task.value.request_id }}
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+
+{% endblock %}
