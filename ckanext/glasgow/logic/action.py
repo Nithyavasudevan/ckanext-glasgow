@@ -1415,17 +1415,7 @@ def send_request_to_ec_platform(method, url, data=None, headers=None, **kwargs):
         if response.status_code == requests.codes.unauthorized:
             raise ECAPINotAuthorized(error_dict)
 
-        raise p.toolkit.ValidationError(error_dict)
-    except requests.exceptions.Timeout, e:
-        error_dict = {
-            'message': ['Request to CTPEC timed out: {0}'.format(e)],
-        }
-
-        if task_dict:
-            task_dict = _update_task_status_error(context, task_dict, {
-                'data_dict': data,
-                'error': error_dict
-            })
+        log.debug('request url: {0} - {1}'.format(method, url))
         raise p.toolkit.ValidationError(error_dict)
     except requests.exceptions.RequestException, e:
         error_dict = {
