@@ -1,0 +1,2 @@
+class EcApiException(Exception):
+    pass

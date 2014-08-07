@@ -32,5 +32,6 @@ setup(
     [paste.paster_command]
     changelog_update=ckanext.glasgow.commands.changelog_update:UpdateFromEcApiChangeLog
     changelog_audit=ckanext.glasgow.commands.changelog_update:ChangelogAudit
+    get_initial_users=ckanext.glasgow.commands.get_users:GetInitialUsers
     ''',
 )

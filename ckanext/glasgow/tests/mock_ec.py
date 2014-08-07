@@ -541,6 +541,29 @@ def request_changelog(audit_id=None):
                           })
 
 
+@app.route('/Identity/User')
+def user_list():
+    response = [
+        {
+            'UserId': 'dcfb1b12-fe52-4d71-9aad-c60fc4c6952c',
+            'UserName': 'johndoe',
+            'OrganisationId': 'de0f2f6e-58ca-4a7b-95b1-7fd6e8df1f69',
+            'Email': 'john.doe@org.com',
+            'FirstName': 'John',
+            'LastName': 'Doe',
+            'DisplayName': 'John Doe',
+            'About': 'Description',
+            'Roles': ['OrganisationEditor'],
+            'IsRegistered': False,
+            },
+        ]
+    skip = int(flask.request.args.get('$skip', 0))
+    return flask.Response(json.dumps(response[skip:]),
+                          headers={
+                          'Content-type': 'application/json'
+                          })
+
+
 def handle_dataset_request(organization_id, dataset_id=None):
     data = flask.request.json
 
