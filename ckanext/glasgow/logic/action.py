@@ -1476,7 +1476,7 @@ def user_role_update(context, data_dict):
     if errors:
         raise p.toolkit.ValidationError(errors)
 
-    ec_dict = custom_schema.convert_ckan_dataset_to_ec_dataset(
+    ec_dict = custom_schema.convert_ckan_member_to_ec_member(
         validated_data_dict)
 
     key = '{0}@{1}'.format(validated_data_dict.get('name', data_dict['id']),

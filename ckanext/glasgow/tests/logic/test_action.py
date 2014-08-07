@@ -1313,8 +1313,9 @@ class TestUserRoleUpdate(object):
     def teardown(cls):
         helpers.reset_db()
 
+    @mock.patch('ckan.lib.helpers.flash_success')
     @mock.patch('requests.request')
-    def test_make_user_member(self, mock_request):
+    def test_make_user_member(self, mock_request, mock_flash):
         mock_request.return_value = mock.Mock(
             status_code=200,
             content=json.dumps({'RequestId': 'cc02730a-367d-45a6-9db3-6fc3dc5ca49d'}),
@@ -1325,6 +1326,10 @@ class TestUserRoleUpdate(object):
                 },
             }
         )
+
+        # mock out the flash_success helper to avoid problems with the beaker
+        # session in tests
+        mock_flash.return_value = None
 
         data_dict = {
             'id': self.test_org['id'],
@@ -1343,10 +1348,21 @@ class TestUserRoleUpdate(object):
                                         id=request_dict['task_id'])
         nose.tools.assert_dict_contains_subset(
             {
-                'task_type': u'member_create',
+                'task_type': u'member_update',
                 'entity_type': u'organization',
                 'state': u'sent',
                 'error': None
             },
             task_dict
+        )
+        mock_request.assert_called_with(
+            'PUT',
+            '/UserRoles/Organisation/{0}/User/{1}'.format(self.test_org['id'],
+                                                          self.normal_user['id']),
+            verify=False,
+            data='{"UserRoles": {"UserGroup": ["OrganisationEditor"]}}',
+            timeout=50,
+            headers={
+                'Content-Type': 'application/json', 'Authorization': 'Bearer tmp_auth_token'
+            }
         )
