@@ -1489,7 +1489,7 @@ def user_role_update(context, data_dict):
     method, url = _get_api_endpoint('user_role_update')
     url = url.format(
         organization_id=validated_data_dict['id'],
-        user_id=user['id']
+        user_id=user['name']
     )
 
     content = send_request_to_ec_platform(method, url,

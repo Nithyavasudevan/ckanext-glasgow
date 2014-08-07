@@ -1358,7 +1358,7 @@ class TestUserRoleUpdate(object):
         mock_request.assert_called_with(
             'PUT',
             '/UserRoles/Organisation/{0}/User/{1}'.format(self.test_org['id'],
-                                                          self.normal_user['id']),
+                                                          self.normal_user['name']),
             verify=False,
             data='{"UserRoles": {"UserGroup": ["OrganisationEditor"]}}',
             timeout=50,
