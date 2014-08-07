@@ -28,6 +28,7 @@ import ckanext.glasgow.logic.schema as custom_schema
 
 
 log = logging.getLogger(__name__)
+requests.packages.urllib3.add_stderr_logger()
 
 get_action = p.toolkit.get_action
 check_access = p.toolkit.check_access
@@ -1396,6 +1397,8 @@ def send_request_to_ec_platform(method, url, data=None, headers=None, **kwargs):
                                     timeout=50,
                                     **kwargs
                                     )
+
+        log.debug('request data: {0}'.format(str(data)))
         response.raise_for_status()
     except requests.exceptions.HTTPError:
         error_dict = {
