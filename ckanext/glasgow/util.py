@@ -14,11 +14,11 @@ def _fetch_from_ec(request):
     return result
 
 
-def call_ec_api(endpoint):
+def call_ec_api(endpoint, **kwargs):
     skip = 0
 
     while True:
-        request = requests.get(endpoint, params={'$skip': skip}, verify=False)
+        request = requests.get(endpoint, params={'$skip': skip}, verify=False, **kwargs)
         result = _fetch_from_ec(request)
 
         if not result:

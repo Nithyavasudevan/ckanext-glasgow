@@ -9,6 +9,8 @@ from ckan.plugins import toolkit
 
 from ckanext.glasgow.util import call_ec_api
 
+import ckanext.oauth2waad.plugin as oauth2waad_plugin
+
 log = logging.getLogger(__name__)
 
 ckan_to_ec_user_mapping = {
@@ -71,6 +73,14 @@ class GetInitialUsers(CkanCommand):
         api_url = config.get('ckanext.glasgow.identity_api', '').rstrip('/')
         api_endpoint = '{0}/Identity/User'.format(api_url)
 
-        for ec_user in call_ec_api(api_endpoint):
+        access_token = oauth2waad_plugin.service_to_service_access_token()
+        if not access_token.startswith('Bearer '):
+            access_token = 'Bearer ' + access_token
+        headers = {
+            'Authorization': access_token,
+            'Content-Type': 'application/json',
+        }
+
+        for ec_user in call_ec_api(api_endpoint, headers=headers):
             user = create_user(ec_user)
             log.debug('created user {0}'.format(user['id']))
