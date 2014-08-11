@@ -1313,9 +1313,33 @@ class TestUserRoleUpdate(object):
     def teardown(cls):
         helpers.reset_db()
 
+    def test_make_user_member(self):
+        '''test adding a member goes through ckan only'''
+        data_dict = {
+            'id': self.test_org['id'],
+            'username': 'normal_user',
+            'role': 'member',
+        }
+
+        helpers.call_action('organization_member_create',
+                            context={'user': 'org_owner'},
+                            **data_dict)
+
+        # check normal member was created
+        members = helpers.call_action('member_list',
+                                      id=self.test_org['id'])
+
+        member_ids = set([i[0] for i in members])
+        nose.tools.assert_in(self.normal_user['id'], member_ids)
+
+
     @mock.patch('ckan.lib.helpers.flash_success')
     @mock.patch('requests.request')
-    def test_make_user_member(self, mock_request, mock_flash):
+    def test_make_org_editor(self, mock_request, mock_flash):
+        '''test that making user an org editor
+
+        a standard user being made into an editor should send a request
+        to the EC platform'''
         mock_request.return_value = mock.Mock(
             status_code=200,
             content=json.dumps({'RequestId': 'cc02730a-367d-45a6-9db3-6fc3dc5ca49d'}),
@@ -1334,12 +1358,14 @@ class TestUserRoleUpdate(object):
         data_dict = {
             'id': self.test_org['id'],
             'username': 'normal_user',
-            'role': 'member',
+            'role': 'editor',
         }
 
         request_dict = helpers.call_action('organization_member_create',
-                                          context={'user': 'org_owner'},
-                                          **data_dict)
+                                           context={'user': 'org_owner'},
+                                           **data_dict)
+
+
 
         nose.tools.assert_in('task_id', request_dict)
         nose.tools.assert_in('request_id', request_dict)
@@ -1361,6 +1387,142 @@ class TestUserRoleUpdate(object):
                                                           self.normal_user['name']),
             verify=False,
             data='{"UserRoles": {"UserGroup": ["OrganisationEditor"]}}',
+            timeout=50,
+            headers={
+                'Content-Type': 'application/json', 'Authorization': 'Bearer tmp_auth_token'
+            }
+        )
+
+
+    @mock.patch('ckan.lib.helpers.flash_success')
+    @mock.patch('requests.request')
+    def test_make_org_admin(self, mock_request, mock_flash):
+        '''test that making user an org admin
+
+        a standard user being made into an admin should send a request
+        to the EC platform'''
+        mock_request.return_value = mock.Mock(
+            status_code=200,
+            content=json.dumps({'RequestId': 'cc02730a-367d-45a6-9db3-6fc3dc5ca49d'}),
+            **{
+                'raise_for_status.return_value': None,
+                'json.return_value': {
+                    'RequestId': 'cc02730a-367d-45a6-9db3-6fc3dc5ca49d'
+                },
+            }
+        )
+
+        # mock out the flash_success helper to avoid problems with the beaker
+        # session in tests
+        mock_flash.return_value = None
+
+        data_dict = {
+            'id': self.test_org['id'],
+            'username': 'normal_user',
+            'role': 'admin',
+        }
+
+        request_dict = helpers.call_action('organization_member_create',
+                                           context={'user': 'org_owner'},
+                                           **data_dict)
+
+
+
+        nose.tools.assert_in('task_id', request_dict)
+        nose.tools.assert_in('request_id', request_dict)
+
+        task_dict = helpers.call_action('task_status_show',
+                                        id=request_dict['task_id'])
+        nose.tools.assert_dict_contains_subset(
+            {
+                'task_type': u'member_update',
+                'entity_type': u'organization',
+                'state': u'sent',
+                'error': None
+            },
+            task_dict
+        )
+        mock_request.assert_called_with(
+            'PUT',
+            '/UserRoles/Organisation/{0}/User/{1}'.format(self.test_org['id'],
+                                                          self.normal_user['name']),
+            verify=False,
+            data='{"UserRoles": {"UserGroup": ["OrganisationAdmin"]}}',
+            timeout=50,
+            headers={
+                'Content-Type': 'application/json', 'Authorization': 'Bearer tmp_auth_token'
+            }
+        )
+
+
+    @mock.patch('ckan.lib.helpers.flash_success')
+    @mock.patch('requests.request')
+    def test_make_editor_a_member(self, mock_request, mock_flash):
+        '''test that making an org editor a member
+
+        a organization editor being made into an user should send a
+        request to the EC platform'''
+        mock_request.return_value = mock.Mock(
+            status_code=200,
+            content=json.dumps({'RequestId': 'cc02730a-367d-45a6-9db3-6fc3dc5ca49d'}),
+            **{
+                'raise_for_status.return_value': None,
+                'json.return_value': {
+                    'RequestId': 'cc02730a-367d-45a6-9db3-6fc3dc5ca49d'
+                },
+            }
+        )
+
+        # mock out the flash_success helper to avoid problems with the beaker
+        # session in tests
+        mock_flash.return_value = None
+
+        # make our normal_user and editor
+        data_dict = {
+            'id': self.test_org['id'],
+            'username': 'normal_user',
+            'role': 'editor',
+        }
+
+        request_dict = helpers.call_action('organization_member_create',
+                                           context={
+                                               'user': 'org_owner',
+                                               'local_action': True,
+                                            },
+                                           **data_dict)
+
+        # make a call to ec platform to make editor a member
+        data_dict = {
+            'id': self.test_org['id'],
+            'username': 'normal_user',
+            'role': 'member',
+        }
+
+        request_dict = helpers.call_action('organization_member_create',
+                                           context={'user': 'org_owner'},
+                                           **data_dict)
+
+
+        nose.tools.assert_in('task_id', request_dict)
+        nose.tools.assert_in('request_id', request_dict)
+
+        task_dict = helpers.call_action('task_status_show',
+                                        id=request_dict['task_id'])
+        nose.tools.assert_dict_contains_subset(
+            {
+                'task_type': u'member_update',
+                'entity_type': u'organization',
+                'state': u'sent',
+                'error': None
+            },
+            task_dict
+        )
+        mock_request.assert_called_with(
+            'PUT',
+            '/UserRoles/Organisation/{0}/User/{1}'.format(self.test_org['id'],
+                                                          self.normal_user['name']),
+            verify=False,
+            data='{"UserRoles": {"UserGroup": ["Member"]}}',
             timeout=50,
             headers={
                 'Content-Type': 'application/json', 'Authorization': 'Bearer tmp_auth_token'

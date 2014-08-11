@@ -170,9 +170,9 @@ def convert_ec_file_to_ckan_resource(ec_dict):
 
 def convert_ckan_member_to_ec_member(ckan_dict):
     role_dict = {
-        'admin': 'SuperAdmin',
-        'editor': 'OrganisationAdmin',
-        'member': 'OrganisationEditor',
+        'admin': 'OrganisationAdmin',
+        'editor': 'OrganisationEditor',
+        'member': 'Member',
     }
 
     return {

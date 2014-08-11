@@ -159,6 +159,9 @@ def _get_api_endpoint(operation):
     elif operation == 'user_role_update':
         method = 'PUT'
         path = '/UserRoles/Organisation/{organization_id}/User/{user_id}'
+    elif operation == 'user_role_delete':
+        method = 'PUT'
+        path = '/UserRoles/User/{user_id}'
     else:
         return None, None
 
@@ -1449,27 +1452,48 @@ def organization_member_create(context, data_dict):
     if (context.get('local_action', False) or
             data_dict.get('type') == 'harvest' or
             data_dict.get('source_type')):
-        return core_actions.update.organization_member_create(context, data_dict)
+        return core_actions.create.organization_member_create(context, data_dict)
     else:
-        return p.toolkit.get_action('user_role_update')(context,
-                                                        data_dict)
+        check_access('organization_member_create', context, data_dict)
+        create_schema = core_schema.member_schema()
+        validated_data_dict, errors = validate(data_dict, create_schema, context)
+
+        if errors:
+            raise p.toolkit.ValidationError(errors)
+
+        if validated_data_dict.get('role') == 'member':
+            admins = p.toolkit.get_action('member_list')(context,
+                {'id': validated_data_dict['id'], 'capacity': 'admin'})
+            editors = p.toolkit.get_action('member_list')(context,
+                {'id': validated_data_dict['id'], 'capacity': 'editor'})
+            admin_editors = set([admin[0] for admin in admins] +
+                [editor[0] for editor in editors])
+
+            user = p.toolkit.get_action('user_show')(
+                context,
+                {'id': data_dict['username']}
+            )
+            if user['id'] in admin_editors:
+                # if we're changing an admin/editor to member, we have
+                # to go via ec api
+                return p.toolkit.get_action('user_role_update')(
+                    context,
+                    validated_data_dict)
+            else:
+                return core_actions.create.organization_member_create(context,
+                                                                      data_dict)
+        else:
+            return p.toolkit.get_action('user_role_update')(
+                context,
+                validated_data_dict)
 
 
 def user_role_update(context, data_dict):
-    check_access('organization_member_create', context, data_dict)
     context.update({'model': model, 'session': model.Session})
 
-    create_schema = core_schema.member_schema()
+    ec_dict = custom_schema.convert_ckan_member_to_ec_member(data_dict)
 
-    validated_data_dict, errors = validate(data_dict, create_schema, context)
-
-    if errors:
-        raise p.toolkit.ValidationError(errors)
-
-    ec_dict = custom_schema.convert_ckan_member_to_ec_member(
-        validated_data_dict)
-
-    key = '{0}@{1}'.format(validated_data_dict.get('name', data_dict['id']),
+    key = '{0}@{1}'.format(data_dict.get('name', data_dict['id']),
                            datetime.datetime.now().isoformat())
 
     task_dict = _create_task_status(context,
@@ -1483,12 +1507,12 @@ def user_role_update(context, data_dict):
 
     user = p.toolkit.get_action('user_show')(
         context,
-        {'id': validated_data_dict['username']}
+        {'id': data_dict['username']}
     )
 
     method, url = _get_api_endpoint('user_role_update')
     url = url.format(
-        organization_id=validated_data_dict['id'],
+        organization_id=data_dict['id'],
         user_id=user['name']
     )
 
@@ -1507,7 +1531,7 @@ def user_role_update(context, data_dict):
         raise p.toolkit.ValidationError(error_dict)
 
     task_dict = _update_task_status_success(context, task_dict, {
-        'data_dict': validated_data_dict,
+        'data_dict': data_dict,
         'request_id': request_id,
     })
 
