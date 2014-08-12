@@ -5,6 +5,7 @@ import json
 import datetime
 import uuid
 import re
+import urlparse
 
 import dateutil.parser
 import requests
@@ -116,58 +117,72 @@ def _get_api_endpoint(operation):
 
     write_base = config.get('ckanext.glasgow.data_collection_api', '').rstrip('/')
     read_base = config.get('ckanext.glasgow.metadata_api', '').rstrip('/')
+    identity_base = config.get('ckanext.glasgow.identity_api', '').rstrip('/')
 
-    if operation == 'dataset_request_create':
-        method = 'POST'
-        path = '/Datasets/Organisation/{organization_id}'
-    elif operation == 'dataset_request_update':
-        method = 'PUT'
-        path = '/Datasets/Organisation/{organization_id}/Dataset/{dataset_id}'
-    elif operation == 'file_request_create':
-        method = 'POST'
-        path = '/Files/Organisation/{organization_id}/Dataset/{dataset_id}'
-    elif operation == 'file_request_update':
-        method = 'PUT'
-        path = '/Files/Organisation/{organization_id}/Dataset/{dataset_id}'
-    elif operation == 'organization_show':
-        method = 'GET'
-        path = '/Metadata/Organisation/{organization_id}'
-    elif operation == 'dataset_show':
-        method = 'GET'
-        path = '/Metadata/Organisation/{organization_id}/Dataset/{dataset_id}'
-    elif operation == 'file_show':
-        method = 'GET'
-        path = '/Metadata/Organisation/{organization_id}/Dataset/{dataset_id}/File/{file_id}'
-    elif operation == 'file_version_show':
-        method = 'GET'
-        path = '/Metadata/Organisation/{organization_id}/Dataset/{dataset_id}/File/{file_id}/Versions/{version_id}'
-    elif operation == 'file_versions_show':
-        method = 'GET'
-        path = '/Metadata/Organisation/{organization_id}/Dataset/{dataset_id}/File/{file_id}/Versions'
-    elif operation == 'request_status_show':
-        method = 'GET'
-        path = '/ChangeLog/RequestStatus/{request_id}'
-    elif operation == 'changelog_show':
-        method = 'GET'
-        path = '/ChangeLog/RequestChanges'
-    elif operation == 'organization_request_create':
-        method = 'POST'
-        path = '/Organisations'
-    elif operation == 'organization_request_update':
-        method = 'PUT'
-        path = '/Organisations/Organisation/{organization_id}'
-    elif operation == 'user_role_update':
-        method = 'PUT'
-        path = '/UserRoles/Organisation/{organization_id}/User/{user_id}'
-    elif operation == 'user_role_delete':
-        method = 'PUT'
-        path = '/UserRoles/User/{user_id}'
-    else:
+    operations = {
+        'dataset_show': (
+            'GET',
+            '/Metadata/Organisation/{organization_id}/Dataset/{dataset_id}',
+            read_base),
+        'dataset_request_create': (
+            'POST',
+            '/Datasets/Organisation/{organization_id}',
+            write_base),
+        'dataset_request_update': (
+            'PUT',
+            '/Datasets/Organisation/{organization_id}/Dataset/{dataset_id}',
+            write_base),
+        'file_show': (
+            'GET',
+            '/Metadata/Organisation/{organization_id}/Dataset/{dataset_id}/File/{file_id}',
+            read_base),
+        'file_request_create': (
+            'POST',
+            '/Files/Organisation/{organization_id}/Dataset/{dataset_id}',
+            write_base),
+        'file_request_update': (
+            'PUT',
+            '/Files/Organisation/{organization_id}/Dataset/{dataset_id}',
+            write_base),
+        'file_version_show': (
+            'GET',
+            '/Metadata/Organisation/{organization_id}/Dataset/{dataset_id}/File/{file_id}/Versions/{version_id}',
+            read_base),
+        'file_versions_show': (
+            'GET',
+            '/Metadata/Organisation/{organization_id}/Dataset/{dataset_id}/File/{file_id}/Versions',
+            read_base),
+        'organization_show': (
+            'GET',
+            '/Metadata/Organisation/{organization_id}',
+            read_base),
+        'organization_request_create': (
+            'POST',
+            '/Organisations',
+            write_base),
+        'organization_request_update': (
+            'PUT',
+            '/Organisations/Organisation/{organization_id}',
+            write_base),
+        'request_status_show': (
+            'GET',
+            '/ChangeLog/RequestStatus/{request_id}',
+            read_base),
+        'changelog_show': (
+            'GET',
+            '/ChangeLog/RequestChanges',
+            read_base),
+        'user_role_update': (
+            'PUT',
+            '/UserRoles/Organisation/{organization_id}/User/{user_id}',
+            identity_base),
+    }
+
+    try:
+        method, path, url = operations[operation]
+        return method, urlparse.urljoin(url, path)
+    except KeyError:
         return None, None
-
-    base = write_base if method in ('POST', 'PUT') else read_base
-
-    return method, '{0}{1}'.format(base, path)
 
 
 def _get_ec_api_org_id(ckan_org_id):
