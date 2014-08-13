@@ -184,6 +184,10 @@ def _get_api_endpoint(operation):
             'GET',
             '/Identity/User',
             identity_base),
+        'user_list_for_organization': (
+            'GET',
+            '/Identity/Organisation/{organization_id}/User',
+            identity_base),
     }
 
     try:
@@ -1596,6 +1600,29 @@ def ec_user_list(context, data_dict):
     '''proxy a request to ec platform for user list'''
     check_access('user_list',context, data_dict)
     method, url = _get_api_endpoint('user_list')
+    try:
+        return send_request_to_ec_platform(method, url)
+    except ECAPINotAuthorized, e:
+        return p.toolkit.abort(
+            401,
+            'EC Platform denied this request {0}'.format(str(e))
+        )
+    except p.toolkit.ValidationError, e:
+        return p.toolkit.abort(
+            502,
+            'EC Platform errored {0}'.format(str(e))
+        )
+
+
+@p.toolkit.side_effect_free
+def ec_user_list_for_organization(context, data_dict):
+    '''proxy a request to ec platform for user list'''
+    check_access('user_list',context, data_dict)
+    method, url = _get_api_endpoint('user_list_for_organization')
+
+    organization_id = p.toolkit.get_or_bust(data_dict,
+                                            'organization_id')
+    url = url.format(organization_id=organization_id)
     try:
         return send_request_to_ec_platform(method, url)
     except ECAPINotAuthorized, e:
