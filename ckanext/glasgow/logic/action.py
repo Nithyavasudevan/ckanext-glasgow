@@ -1577,7 +1577,18 @@ def ec_user_show(context, data_dict):
     method, url = _get_api_endpoint('user_show')
     url = url.format(username=username)
 
-    return send_request_to_ec_platform(method, url)
+    try:
+        return send_request_to_ec_platform(method, url)
+    except ECAPINotAuthorized, e:
+        return p.toolkit.abort(
+            401,
+            'EC Platform denied this request {0}'.format(str(e))
+        )
+    except p.toolkit.ValidationError, e:
+        return p.toolkit.abort(
+            502,
+            'EC Platform errored {0}'.format(str(e))
+        )
 
 
 @p.toolkit.side_effect_free
@@ -1585,4 +1596,15 @@ def ec_user_list(context, data_dict):
     '''proxy a request to ec platform for user list'''
     check_access('user_list',context, data_dict)
     method, url = _get_api_endpoint('user_list')
-    return send_request_to_ec_platform(method, url)
+    try:
+        return send_request_to_ec_platform(method, url)
+    except ECAPINotAuthorized, e:
+        return p.toolkit.abort(
+            401,
+            'EC Platform denied this request {0}'.format(str(e))
+        )
+    except p.toolkit.ValidationError, e:
+        return p.toolkit.abort(
+            502,
+            'EC Platform errored {0}'.format(str(e))
+        )
