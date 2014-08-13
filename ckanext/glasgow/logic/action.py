@@ -176,6 +176,14 @@ def _get_api_endpoint(operation):
             'PUT',
             '/UserRoles/Organisation/{organization_id}/User/{user_id}',
             identity_base),
+        'user_show': (
+            'GET',
+            '/Identity/User/{username}',
+            identity_base),
+        'user_list': (
+            'GET',
+            '/Identity/User',
+            identity_base),
     }
 
     try:
@@ -1558,3 +1566,23 @@ def organization_member_delete(context, data_dict):
         return core_actions.update.organization_member_create(context, data_dict)
     else:
         p.toolkit.abort(404, 'users cannot be deleted from groups. Use organization_member_change to change the group a user belongs to')
+
+
+@p.toolkit.side_effect_free
+def ec_user_show(context, data_dict):
+    '''proxy a request to ec platform for user details'''
+    check_access('user_show',context, data_dict)
+    username = p.toolkit.get_or_bust(data_dict, 'ec_username')
+
+    method, url = _get_api_endpoint('user_show')
+    url = url.format(username=username)
+
+    return send_request_to_ec_platform(method, url)
+
+
+@p.toolkit.side_effect_free
+def ec_user_list_show(context, data_dict):
+    '''proxy a request to ec platform for user list'''
+    check_access('user_list',context, data_dict)
+    method, url = _get_api_endpoint('user_list')
+    return send_request_to_ec_platform(method, url)
