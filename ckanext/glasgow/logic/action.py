@@ -1581,7 +1581,7 @@ def ec_user_show(context, data_dict):
 
 
 @p.toolkit.side_effect_free
-def ec_user_list_show(context, data_dict):
+def ec_user_list(context, data_dict):
     '''proxy a request to ec platform for user list'''
     check_access('user_list',context, data_dict)
     method, url = _get_api_endpoint('user_list')
