@@ -144,10 +144,36 @@ class DatasetController(PackageController):
         except p.toolkit.ObjectNotFound:
             return p.toolkit.abort(404, p.toolkit._('Package not found'))
 
+        try:
+            context = {
+                'model': model,
+                'session': model.Session,
+                'user': p.toolkit.c.user,
+            }
+            # we are provided revisions in ascending only by the EC API platform
+            # but the requirement is for a descending list, so we are reversing it
+            # here
+            resource_versions_show = p.toolkit.get_action('resource_version_show')
+            versions = resource_versions_show(context, {
+                'package_id': pkg['id'],
+                'resource_id': resource,
+            })
+            if versions:
+                versions.reverse()
+            else:
+               return p.toolkit.abort(404, 'no versions were found for this file') 
+        except p.toolkit.ValidationError, e:
+            return p.toolkit.abort(404, 'error fetching versions: {0}'.format(str(e)))
+        except p.toolkit.NotAuthorized. e:
+            return p.toolkit.abort(401, 'error fetching versions: {0}'.format(str(e)))
+        except p.toolkit.ObjectNotFound, e:
+            return p.toolkit.abort(404, 'ObjectNotFound: error fetching versions: {0}'.format(str(e)))
+
         vars = {
             'pkg': pkg,
             'resource_id': resource,
             'version_id': int(version),
+            'versions': versions
         }
         return p.toolkit.render('package/resource_versions.html',
                                 extra_vars=vars)

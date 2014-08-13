@@ -978,29 +978,18 @@ def resource_version_show(context, data_dict):
 
     resource = p.toolkit.get_action('resource_show')(context,
                                                      {'id': resource_id})
-    #TODO: store ec_api_dataset_id in resource extra
     package_show = p.toolkit.get_action('package_show')
     dataset = package_show(context, {'name_or_id': package_id})
 
+    organisation = p.toolkit.get_action('organization_show')(
+        context, {'id': dataset['owner_org']})
+
     method, url = _get_api_endpoint('file_versions_show')
 
-    try:
-        ec_api_file_id = resource['ec_api_id'] 
-    except KeyError, e:
-        raise ECAPIValidationError(
-            ['Error: {0} not in resource metadata'.format(e.message)])
-
-    try:
-        ec_api_org_id = dataset['ec_api_org_id']
-        ec_api_dataset_id = dataset['ec_api_id']
-    except KeyError, e:
-        raise ECAPIValidationError(
-            ['Error: {0} not in dataset metadata'.format(e.message)])
-
     url = url.format(
-        organization_id=ec_api_org_id,
-        dataset_id=ec_api_dataset_id,
-        file_id=ec_api_file_id,
+        organization_id=organisation['id'],
+        dataset_id=package_id,
+        file_id=resource_id,
     )
 
     content = send_request_to_ec_platform(method, url)
@@ -1009,7 +998,7 @@ def resource_version_show(context, data_dict):
     try:
         metadata = content['MetadataResultSet']
     except IndexError:
-        return {}
+        return []
 
     versions = []
     if metadata:
