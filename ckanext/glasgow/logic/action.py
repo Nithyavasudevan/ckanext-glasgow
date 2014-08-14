@@ -180,6 +180,18 @@ def _get_api_endpoint(operation):
             'PUT',
             '/UserRoles/Organisation/{organization_id}/User/{user_id}',
             identity_base),
+        'user_show': (
+            'GET',
+            '/Identity/User/{username}',
+            identity_base),
+        'user_list': (
+            'GET',
+            '/Identity/User',
+            identity_base),
+        'user_list_for_organization': (
+            'GET',
+            '/Identity/Organisation/{organization_id}/User',
+            identity_base),
     }
 
     try:
@@ -1001,29 +1013,18 @@ def resource_version_show(context, data_dict):
 
     resource = p.toolkit.get_action('resource_show')(context,
                                                      {'id': resource_id})
-    #TODO: store ec_api_dataset_id in resource extra
     package_show = p.toolkit.get_action('package_show')
     dataset = package_show(context, {'name_or_id': package_id})
 
+    organisation = p.toolkit.get_action('organization_show')(
+        context, {'id': dataset['owner_org']})
+
     method, url = _get_api_endpoint('file_versions_show')
 
-    try:
-        ec_api_file_id = resource['ec_api_id']
-    except KeyError, e:
-        raise ECAPIValidationError(
-            ['Error: {0} not in resource metadata'.format(e.message)])
-
-    try:
-        ec_api_org_id = dataset['ec_api_org_id']
-        ec_api_dataset_id = dataset['ec_api_id']
-    except KeyError, e:
-        raise ECAPIValidationError(
-            ['Error: {0} not in dataset metadata'.format(e.message)])
-
     url = url.format(
-        organization_id=ec_api_org_id,
-        dataset_id=ec_api_dataset_id,
-        file_id=ec_api_file_id,
+        organization_id=organisation['id'],
+        dataset_id=package_id,
+        file_id=resource_id,
     )
 
     content = send_request_to_ec_platform(method, url)
@@ -1032,7 +1033,7 @@ def resource_version_show(context, data_dict):
     try:
         metadata = content['MetadataResultSet']
     except IndexError:
-        return {}
+        return []
 
     versions = []
     if metadata:
@@ -1592,3 +1593,68 @@ def organization_member_delete(context, data_dict):
         return core_actions.update.organization_member_create(context, data_dict)
     else:
         p.toolkit.abort(404, 'users cannot be deleted from groups. Use organization_member_change to change the group a user belongs to')
+
+
+@p.toolkit.side_effect_free
+def ec_user_show(context, data_dict):
+    '''proxy a request to ec platform for user details'''
+    check_access('user_show',context, data_dict)
+    username = p.toolkit.get_or_bust(data_dict, 'ec_username')
+
+    method, url = _get_api_endpoint('user_show')
+    url = url.format(username=username)
+
+    try:
+        return send_request_to_ec_platform(method, url)
+    except ECAPINotAuthorized, e:
+        return p.toolkit.abort(
+            401,
+            'EC Platform denied this request {0}'.format(str(e))
+        )
+    except p.toolkit.ValidationError, e:
+        return p.toolkit.abort(
+            502,
+            'EC Platform errored {0}'.format(str(e))
+        )
+
+
+@p.toolkit.side_effect_free
+def ec_user_list(context, data_dict):
+    '''proxy a request to ec platform for user list'''
+    check_access('user_list',context, data_dict)
+    method, url = _get_api_endpoint('user_list')
+    try:
+        return send_request_to_ec_platform(method, url)
+    except ECAPINotAuthorized, e:
+        return p.toolkit.abort(
+            401,
+            'EC Platform denied this request {0}'.format(str(e))
+        )
+    except p.toolkit.ValidationError, e:
+        return p.toolkit.abort(
+            502,
+            'EC Platform errored {0}'.format(str(e))
+        )
+
+
+@p.toolkit.side_effect_free
+def ec_user_list_for_organization(context, data_dict):
+    '''proxy a request to ec platform for user list'''
+    check_access('user_list',context, data_dict)
+    method, url = _get_api_endpoint('user_list_for_organization')
+
+    organization_id = p.toolkit.get_or_bust(data_dict,
+                                            'organization_id')
+    url = url.format(organization_id=organization_id)
+    try:
+        return send_request_to_ec_platform(method, url)
+    except ECAPINotAuthorized, e:
+        return p.toolkit.abort(
+            401,
+            'EC Platform denied this request {0}'.format(str(e))
+        )
+    except p.toolkit.ValidationError, e:
+        return p.toolkit.abort(
+            502,
+            'EC Platform errored {0}'.format(str(e))
+        )
