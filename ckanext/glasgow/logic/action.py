@@ -1148,7 +1148,7 @@ def get_change_request(context, data_dict):
 
     import ckanext.oauth2waad.plugin as oauth2waad_plugin
     try:
-        access_token = oauth2waad_plugin.service_to_service_access_token()
+        access_token = oauth2waad_plugin.service_to_service_access_token('metadata')
         if not access_token.startswith('Bearer '):
             access_token = 'Bearer ' + access_token
         headers = {
@@ -1221,7 +1221,7 @@ def changelog_show(context, data_dict):
     # Get Service to Service auth token
 
     try:
-        access_token = oauth2.service_to_service_access_token()
+        access_token = oauth2.service_to_service_access_token('metadata')
     except oauth2.ServiceToServiceAccessTokenError:
         log.warning('Could not get the Service to Service auth token')
         access_token = None
@@ -1582,7 +1582,18 @@ def ec_user_show(context, data_dict):
     url = url.format(username=username)
 
     try:
-        return send_request_to_ec_platform(method, url)
+        access_token = oauth2.service_to_service_access_token('identity')
+    except oauth2.ServiceToServiceAccessTokenError:
+        log.warning('Could not get the Service to Service auth token')
+        access_token = None
+
+    headers = {
+        'Authorization': 'Bearer {0}'.format(access_token),
+        'Content-Type': 'application/json',
+    }
+
+    try:
+        return send_request_to_ec_platform(method, url, headers=headers)
     except ECAPINotAuthorized, e:
         return p.toolkit.abort(
             401,
@@ -1600,8 +1611,20 @@ def ec_user_list(context, data_dict):
     '''proxy a request to ec platform for user list'''
     check_access('user_list',context, data_dict)
     method, url = _get_api_endpoint('user_list')
+
     try:
-        return send_request_to_ec_platform(method, url)
+        access_token = oauth2.service_to_service_access_token('identity')
+    except oauth2.ServiceToServiceAccessTokenError:
+        log.warning('Could not get the Service to Service auth token')
+        access_token = None
+
+    headers = {
+        'Authorization': 'Bearer {0}'.format(access_token),
+        'Content-Type': 'application/json',
+    }
+
+    try:
+        return send_request_to_ec_platform(method, url, headers=headers)
     except ECAPINotAuthorized, e:
         return p.toolkit.abort(
             401,
@@ -1623,8 +1646,20 @@ def ec_user_list_for_organization(context, data_dict):
     organization_id = p.toolkit.get_or_bust(data_dict,
                                             'organization_id')
     url = url.format(organization_id=organization_id)
+
     try:
-        return send_request_to_ec_platform(method, url)
+        access_token = oauth2.service_to_service_access_token('identity')
+    except oauth2.ServiceToServiceAccessTokenError:
+        log.warning('Could not get the Service to Service auth token')
+        access_token = None
+
+    headers = {
+        'Authorization': 'Bearer {0}'.format(access_token),
+        'Content-Type': 'application/json',
+    }
+
+    try:
+        return send_request_to_ec_platform(method, url, headers=headers)
     except ECAPINotAuthorized, e:
         return p.toolkit.abort(
             401,
