@@ -146,7 +146,7 @@ def _get_api_endpoint(operation):
             write_base),
         'file_version_show': (
             'GET',
-            '/Metadata/Organisation/{organization_id}/Dataset/{dataset_id}/File/{file_id}/Versions/{version_id}',
+            '/Metadata/Organisation/{organization_id}/Dataset/{dataset_id}/File/{file_id}/Version/{version_id}',
             read_base),
         'file_versions_show': (
             'GET',
@@ -628,7 +628,7 @@ def resource_update(context, data_dict):
         data_dict.pop('__local_action', None)
     if context.get('local_action', False):
 
-        return core_actions.create.resource_update(context, data_dict)
+        return core_actions.update.resource_update(context, data_dict)
 
     else:
 
