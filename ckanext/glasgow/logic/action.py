@@ -141,8 +141,12 @@ def _get_api_endpoint(operation):
             '/Files/Organisation/{organization_id}/Dataset/{dataset_id}',
             write_base),
         'file_request_update': (
+            'POST',
+            '/Files/Organisation/{organization_id}/Dataset/{dataset_id}/File/{file_id}',
+            write_base),
+        'file_version_request_update': (
             'PUT',
-            '/Files/Organisation/{organization_id}/Dataset/{dataset_id}',
+            '/Files/Organisation/{organization_id}/Dataset/{dataset_id}/File/{file_id}/Version/{version_id}',
             write_base),
         'file_version_show': (
             'GET',
@@ -697,12 +701,22 @@ def file_request_update(context, data_dict):
     try:
         dataset_dict = p.toolkit.get_action('package_show')(context,
                                                             {'id': package_id})
+        # We need to get the version id from the existing resource
+        version_id = None
+        for resource in dataset_dict.get('resources', []):
+            if resource['id'] == data_dict['id']:
+                version_id = resource.get('ec_api_version_id')
+        if not version_id:
+            raise p.toolkit.ObjectNotFound('No version id found for resource')
     except p.toolkit.ObjectNotFound:
         raise p.toolkit.ObjectNotFound('Dataset not found')
 
     # Check access
 
     check_access('file_request_update', context, data_dict)
+
+    # We need the actual dataset id, not the name
+    data_dict['package_id'] = dataset_dict['id']
 
     # Validate data_dict
 
@@ -724,6 +738,7 @@ def file_request_update(context, data_dict):
     key = '{0}@{1}'.format(validated_data_dict.get('package_id', 'file'),
                            datetime.datetime.now().isoformat())
 
+    uploaded_file = data_dict.pop('upload', None)
     task_dict = _create_task_status(context,
                                     task_type='file_request_update',
                                     entity_id=validated_data_dict['package_id'],
@@ -735,17 +750,17 @@ def file_request_update(context, data_dict):
 
     # Send request to EC Data Collection API
 
-    method, url = _get_api_endpoint('file_request_update')
+    method, url = _get_api_endpoint('file_version_request_update')
     url = url.format(
         organization_id=dataset_dict['owner_org'],
         dataset_id=validated_data_dict['package_id'],
+        file_id=validated_data_dict['id'],
+        version_id=version_id,
     )
 
     headers = {
         'Authorization': _get_api_auth_token(),
     }
-
-    uploaded_file = data_dict.pop('upload', None)
 
     if isinstance(uploaded_file, cgi.FieldStorage):
         files = {
@@ -758,8 +773,16 @@ def file_request_update(context, data_dict):
     else:
         headers['Content-Type'] = 'application/json'
         files = None
-        data = json.dumps(ec_dict)
 
+        # Check if the URL provided is actually the same file (using
+        # the platform download URL)
+
+        if (ec_dict['FileExternalUrl'].startswith('{0}/Download'.format(
+                config.get('ckanext.glasgow.metadata_api', '').rstrip('/')))
+             and validated_data_dict['id'] in ec_dict['FileExternalUrl']):
+            ec_dict.pop('FileExternalUrl', None)
+
+        data = json.dumps(ec_dict)
     content = send_request_to_ec_platform(method, url, data, headers,
                                           files=files,
                                           context=context,
@@ -985,7 +1008,7 @@ def resource_version_show(context, data_dict):
     method, url = _get_api_endpoint('file_versions_show')
 
     try:
-        ec_api_file_id = resource['ec_api_id'] 
+        ec_api_file_id = resource['ec_api_id']
     except KeyError, e:
         raise ECAPIValidationError(
             ['Error: {0} not in resource metadata'.format(e.message)])
@@ -1084,7 +1107,7 @@ def check_for_task_status_update(context, data_dict):
                     task_status['state'] = 'error'
                     # todo: fix abuse of task_status.value
                     request_dict['ec_api_message'] = e.message
-                    
+
             task_status.update({
                 'value': json.dumps(request_dict),
                 'last_updated': latest['Timestamp'],
@@ -1122,7 +1145,7 @@ def on_task_status_success(context, task_status_dict):
         #todo error handling
         p.toolkit.get_action('package_create')(pkg_create_context,
                                            ckan_data_dict)
-        
+
     functions = {
         'dataset_request_create': on_dataset_request_create,
     }
@@ -1156,7 +1179,7 @@ def get_change_request(context, data_dict):
         }
     except oauth2waad_plugin.ServiceToServiceAccessTokenError, e:
         raise ECAPIError(['EC API Error: Failed to get service auth {0}'.format(e.message)])
-    
+
     response = requests.request(method, url, headers=headers, verify=False)
     if response.status_code == requests.codes.ok:
         try:

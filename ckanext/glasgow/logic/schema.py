@@ -387,6 +387,8 @@ def _modify_resource_schema():
 
     # Internal fields
 
+    schema['ec_api_version_id'] = [ignore_missing, unicode]
+
     schema['ec_api_id'] = [ignore_missing, unicode]
 
     schema['ec_api_dataset_id'] = [ignore_missing, unicode]
