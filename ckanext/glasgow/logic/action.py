@@ -35,11 +35,17 @@ get_action = p.toolkit.get_action
 check_access = p.toolkit.check_access
 
 
-class ECAPIError(ActionError):
+class ECAPIError(p.toolkit.ValidationError):
+    # ActionErrors aren't actually handled by the api controller,
+    # so you will receive a standard 500 if this inherited from ActionError
     pass
 
 
-class ECAPINotAuthorized(ActionError):
+class ECAPINotAuthorized(p.toolkit.NotAuthorized):
+    pass
+
+
+class ECAPINotFound(p.toolkit.ObjectNotFound):
     pass
 
 
@@ -1269,7 +1275,7 @@ def changelog_show(context, data_dict):
             'content': [content],
         }
         if status_code == 401:
-            raise ECAPINotAuthorized(error_dict)
+            raise ECAPINotAuthorized('CTPEC API returned an authentication failure: {0}'.format(response.content))
         else:
             raise p.toolkit.ValidationError(error_dict)
 
@@ -1455,10 +1461,13 @@ def send_request_to_ec_platform(method, url, data=None, headers=None, **kwargs):
             })
 
         if response.status_code == requests.codes.unauthorized:
-            raise ECAPINotAuthorized(error_dict)
+            raise ECAPINotAuthorized('CTPEC API returned an authentication failure: {0}'.format(response.content))
+        elif response.status_code == requests.codes.not_found:
+            raise ECAPINotFound('CTPEC API returned a 404: {0}'.format(response.content))
 
         log.debug('request url: {0} - {1}'.format(method, url))
-        raise p.toolkit.ValidationError(error_dict)
+        raise ECAPIError('The CTPEC API returned an error code: {0} : {1}'.format(response.status_code,
+                                                                                  response.content))
     except requests.exceptions.RequestException, e:
         error_dict = {
             'message': ['Request exception: {0}'.format(e)],
@@ -1615,18 +1624,7 @@ def ec_user_show(context, data_dict):
         'Content-Type': 'application/json',
     }
 
-    try:
-        return send_request_to_ec_platform(method, url, headers=headers)
-    except ECAPINotAuthorized, e:
-        return p.toolkit.abort(
-            401,
-            'EC Platform denied this request {0}'.format(str(e))
-        )
-    except p.toolkit.ValidationError, e:
-        return p.toolkit.abort(
-            502,
-            'EC Platform errored {0}'.format(str(e))
-        )
+    return send_request_to_ec_platform(method, url, headers=headers)
 
 
 @p.toolkit.side_effect_free
@@ -1646,18 +1644,7 @@ def ec_user_list(context, data_dict):
         'Content-Type': 'application/json',
     }
 
-    try:
-        return send_request_to_ec_platform(method, url, headers=headers)
-    except ECAPINotAuthorized, e:
-        return p.toolkit.abort(
-            401,
-            'EC Platform denied this request {0}'.format(str(e))
-        )
-    except p.toolkit.ValidationError, e:
-        return p.toolkit.abort(
-            502,
-            'EC Platform errored {0}'.format(str(e))
-        )
+    return send_request_to_ec_platform(method, url, headers=headers)
 
 
 @p.toolkit.side_effect_free
@@ -1681,15 +1668,4 @@ def ec_user_list_for_organization(context, data_dict):
         'Content-Type': 'application/json',
     }
 
-    try:
-        return send_request_to_ec_platform(method, url, headers=headers)
-    except ECAPINotAuthorized, e:
-        return p.toolkit.abort(
-            401,
-            'EC Platform denied this request {0}'.format(str(e))
-        )
-    except p.toolkit.ValidationError, e:
-        return p.toolkit.abort(
-            502,
-            'EC Platform errored {0}'.format(str(e))
-        )
+    return send_request_to_ec_platform(method, url, headers=headers)
