@@ -184,8 +184,13 @@ def _get_api_endpoint(operation):
             read_base),
         'user_role_update': (
             'PUT',
+            '/UserRoles/User/{user_id}',
+            identity_base),
+        'user_org_role_update': (
+            'PUT',
             '/UserRoles/Organisation/{organization_id}/User/{user_id}',
             identity_base),
+
         'user_show': (
             'GET',
             '/Identity/User/{username}',
@@ -1513,31 +1518,35 @@ def organization_member_create(context, data_dict):
         if errors:
             raise p.toolkit.ValidationError(errors)
 
-        if validated_data_dict.get('role') == 'member':
-            admins = p.toolkit.get_action('member_list')(context,
-                {'id': validated_data_dict['id'], 'capacity': 'admin'})
-            editors = p.toolkit.get_action('member_list')(context,
-                {'id': validated_data_dict['id'], 'capacity': 'editor'})
-            admin_editors = set([admin[0] for admin in admins] +
-                [editor[0] for editor in editors])
-
-            user = p.toolkit.get_action('user_show')(
-                context,
-                {'id': data_dict['username']}
+        try:
+            # check if the user is a CTPEC user
+            ec_user = p.toolkit.get_action('ec_user_show')(
+                context, 
+                {'ec_username': validated_data_dict['username']}
             )
-            if user['id'] in admin_editors:
-                # if we're changing an admin/editor to member, we have
-                # to go via ec api
-                return p.toolkit.get_action('user_role_update')(
-                    context,
-                    validated_data_dict)
-            else:
+        except ECAPINotFound:
+            ec_user = None
+
+        # ckan only users can only be members, CTPEC users can only be
+        # editors/admins. If it's a ckan member assignment, use the core
+        # action, if it's a CTPEC user send it to CTPEC
+        if validated_data_dict.get('role') == 'member' and not ec_user:
                 return core_actions.create.organization_member_create(context,
                                                                       data_dict)
-        else:
+
+        elif validated_data_dict.get('role') != 'member' and ec_user:
+            if ec_user.get('OrganisationId'):
+                validated_data_dict['current_organization'] = ec_user['OrganisationId']
+
             return p.toolkit.get_action('user_role_update')(
                 context,
                 validated_data_dict)
+
+        elif validated_data_dict.get('role') != 'member' and not ec_user:
+            raise p.toolkit.ValidationError('a non CTPEC user can only be a member')
+
+        elif validated_data_dict.get('role') == 'member' and ec_user:
+            raise p.toolkit.ValidationError('a CTPEC user cannot be a member')
 
 
 def user_role_update(context, data_dict):
@@ -1562,11 +1571,18 @@ def user_role_update(context, data_dict):
         {'id': data_dict['username']}
     )
 
-    method, url = _get_api_endpoint('user_role_update')
-    url = url.format(
-        organization_id=data_dict['id'],
-        user_id=user['name']
-    )
+    if data_dict.get('current_organization'):
+        method, url = _get_api_endpoint('user_org_role_update')
+        url = url.format(
+            organization_id=data_dict.pop('current_organization'),
+            user_id=user['name']
+        )
+    else:
+        method, url = _get_api_endpoint('user_role_update')
+        url = url.format(
+            user_id=user['name']
+        )
+
 
     content = send_request_to_ec_platform(method, url,
                                           data=json.dumps(ec_dict),
