@@ -191,6 +191,23 @@ def convert_ckan_member_to_ec_member(ckan_dict):
         }
     }
 
+def convert_ec_member_to_ckan_member(ec_dict):
+    role_dict = {
+        'OrganisationAdmin': 'admin',
+        'OrganisationEditor': 'editor',
+        'Member': 'member',
+    }
+
+    try:
+        return {
+            'id': ec_dict['OrganisationId'],
+            'role':  role_dict[ec_dict['Roles'][0]],
+            'username': ec_dict['UserName'],
+        }
+
+    except (KeyError, IndexError), e:
+        raise p.toolkit.ValidationError('cannot convert ec to ckan')
+
 
 def convert_ec_user_to_ckan_user(ec_dict):
     ckan_dict = {}

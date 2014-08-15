@@ -21,6 +21,19 @@ class TestOrganizationUpdate(object):
             u'UserId': u'dcfb1b12-fe52-4d71-9aad-c60fc4c6952c',
             u'UserName': u'johndoe'
         }
+        self.org_owner = helpers.call_action('user_create',
+                                               name='org_owner',
+                                               email='test@test.com',
+                                               password='test')
+
+        self.test_org = helpers.call_action('organization_create',
+                                       context={
+                                           'user': 'org_owner',
+                                           'local_action': True,
+                                       },
+                                       name='test_org',
+                                       id=u'de0f2f6e-58ca-4a7b-95b1-7fd6e8df1f69')
+
 
     def teardown(self):
         helpers.reset_db()
@@ -28,8 +41,11 @@ class TestOrganizationUpdate(object):
     def test_creates_users(self):
         user = create_user(self.ec_dict)
         assert_dict_contains_subset({
-                 'display_name': u'John Doe',
-                 'name': u'dcfb1b12-fe52-4d71-9aad-c60fc4c6952c',
+                 'id': u'dcfb1b12-fe52-4d71-9aad-c60fc4c6952c',
+                 'name': u'johndoe',
+                 'fullname': u'John Doe',
+                 'about': u'Description',
+                 'email': u'john.doe@org.com',
             },
             user
         )
