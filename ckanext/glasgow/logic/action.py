@@ -5,6 +5,7 @@ import json
 import datetime
 import uuid
 import re
+import urlparse
 
 import dateutil.parser
 import requests
@@ -34,11 +35,17 @@ get_action = p.toolkit.get_action
 check_access = p.toolkit.check_access
 
 
-class ECAPIError(ActionError):
+class ECAPIError(p.toolkit.ValidationError):
+    # ActionErrors aren't actually handled by the api controller,
+    # so you will receive a standard 500 if this inherited from ActionError
     pass
 
 
-class ECAPINotAuthorized(ActionError):
+class ECAPINotAuthorized(p.toolkit.NotAuthorized):
+    pass
+
+
+class ECAPINotFound(p.toolkit.ObjectNotFound):
     pass
 
 
@@ -116,55 +123,93 @@ def _get_api_endpoint(operation):
 
     write_base = config.get('ckanext.glasgow.data_collection_api', '').rstrip('/')
     read_base = config.get('ckanext.glasgow.metadata_api', '').rstrip('/')
+    identity_base = config.get('ckanext.glasgow.identity_api', '').rstrip('/')
 
-    if operation == 'dataset_request_create':
-        method = 'POST'
-        path = '/Datasets/Organisation/{organization_id}'
-    elif operation == 'dataset_request_update':
-        method = 'PUT'
-        path = '/Datasets/Organisation/{organization_id}/Dataset/{dataset_id}'
-    elif operation == 'file_request_create':
-        method = 'POST'
-        path = '/Files/Organisation/{organization_id}/Dataset/{dataset_id}'
-    elif operation == 'file_request_update':
-        method = 'PUT'
-        path = '/Files/Organisation/{organization_id}/Dataset/{dataset_id}'
-    elif operation == 'organization_show':
-        method = 'GET'
-        path = '/Metadata/Organisation/{organization_id}'
-    elif operation == 'dataset_show':
-        method = 'GET'
-        path = '/Metadata/Organisation/{organization_id}/Dataset/{dataset_id}'
-    elif operation == 'file_show':
-        method = 'GET'
-        path = '/Metadata/Organisation/{organization_id}/Dataset/{dataset_id}/File/{file_id}'
-    elif operation == 'file_version_show':
-        method = 'GET'
-        path = '/Metadata/Organisation/{organization_id}/Dataset/{dataset_id}/File/{file_id}/Versions/{version_id}'
-    elif operation == 'file_versions_show':
-        method = 'GET'
-        path = '/Metadata/Organisation/{organization_id}/Dataset/{dataset_id}/File/{file_id}/Versions'
-    elif operation == 'request_status_show':
-        method = 'GET'
-        path = '/ChangeLog/RequestStatus/{request_id}'
-    elif operation == 'changelog_show':
-        method = 'GET'
-        path = '/ChangeLog/RequestChanges'
-    elif operation == 'organization_request_create':
-        method = 'POST'
-        path = '/Organisations'
-    elif operation == 'organization_request_update':
-        method = 'PUT'
-        path = '/Organisations/Organisation/{organization_id}'
-    elif operation == 'user_role_update':
-        method = 'PUT'
-        path = '/UserRoles/Organisation/{organization_id}/User/{user_id}'
-    else:
+    operations = {
+        'dataset_show': (
+            'GET',
+            '/Metadata/Organisation/{organization_id}/Dataset/{dataset_id}',
+            read_base),
+        'dataset_request_create': (
+            'POST',
+            '/Datasets/Organisation/{organization_id}',
+            write_base),
+        'dataset_request_update': (
+            'PUT',
+            '/Datasets/Organisation/{organization_id}/Dataset/{dataset_id}',
+            write_base),
+        'file_show': (
+            'GET',
+            '/Metadata/Organisation/{organization_id}/Dataset/{dataset_id}/File/{file_id}',
+            read_base),
+        'file_request_create': (
+            'POST',
+            '/Files/Organisation/{organization_id}/Dataset/{dataset_id}',
+            write_base),
+        'file_request_update': (
+            'POST',
+            '/Files/Organisation/{organization_id}/Dataset/{dataset_id}/File/{file_id}',
+            write_base),
+        'file_version_request_update': (
+            'PUT',
+            '/Files/Organisation/{organization_id}/Dataset/{dataset_id}/File/{file_id}/Version/{version_id}',
+            write_base),
+        'file_version_show': (
+            'GET',
+            '/Metadata/Organisation/{organization_id}/Dataset/{dataset_id}/File/{file_id}/Version/{version_id}',
+            read_base),
+        'file_versions_show': (
+            'GET',
+            '/Metadata/Organisation/{organization_id}/Dataset/{dataset_id}/File/{file_id}/Versions',
+            read_base),
+        'organization_show': (
+            'GET',
+            '/Metadata/Organisation/{organization_id}',
+            read_base),
+        'organization_request_create': (
+            'POST',
+            '/Organisations',
+            write_base),
+        'organization_request_update': (
+            'PUT',
+            '/Organisations/Organisation/{organization_id}',
+            write_base),
+        'request_status_show': (
+            'GET',
+            '/ChangeLog/RequestStatus/{request_id}',
+            read_base),
+        'changelog_show': (
+            'GET',
+            '/ChangeLog/RequestChanges',
+            read_base),
+        'user_role_update': (
+            'PUT',
+            '/UserRoles/User/{user_id}',
+            identity_base),
+        'user_org_role_update': (
+            'PUT',
+            '/UserRoles/Organisation/{organization_id}/User/{user_id}',
+            identity_base),
+
+        'user_show': (
+            'GET',
+            '/Identity/User/{username}',
+            identity_base),
+        'user_list': (
+            'GET',
+            '/Identity/User',
+            identity_base),
+        'user_list_for_organization': (
+            'GET',
+            '/Identity/Organisation/{organization_id}/User',
+            identity_base),
+    }
+
+    try:
+        method, path, url = operations[operation]
+        return method, urlparse.urljoin(url, path)
+    except KeyError:
         return None, None
-
-    base = write_base if method in ('POST', 'PUT') else read_base
-
-    return method, '{0}{1}'.format(base, path)
 
 
 def _get_ec_api_org_id(ckan_org_id):
@@ -553,6 +598,10 @@ def file_request_create(context, data_dict):
     else:
         headers['Content-Type'] = 'application/json'
         files = None
+
+        # Use ExternalUrl instead of FileExternalUrl
+        ec_dict['ExternalUrl'] = ec_dict.pop('FileExternalUrl', None)
+
         data = json.dumps(ec_dict)
 
     content = send_request_to_ec_platform(method, url,
@@ -610,7 +659,7 @@ def resource_update(context, data_dict):
         data_dict.pop('__local_action', None)
     if context.get('local_action', False):
 
-        return core_actions.create.resource_update(context, data_dict)
+        return core_actions.update.resource_update(context, data_dict)
 
     else:
 
@@ -679,12 +728,22 @@ def file_request_update(context, data_dict):
     try:
         dataset_dict = p.toolkit.get_action('package_show')(context,
                                                             {'id': package_id})
+        # We need to get the version id from the existing resource
+        version_id = None
+        for resource in dataset_dict.get('resources', []):
+            if resource['id'] == data_dict['id']:
+                version_id = resource.get('ec_api_version_id')
+        if not version_id:
+            raise p.toolkit.ObjectNotFound('No version id found for resource')
     except p.toolkit.ObjectNotFound:
         raise p.toolkit.ObjectNotFound('Dataset not found')
 
     # Check access
 
     check_access('file_request_update', context, data_dict)
+
+    # We need the actual dataset id, not the name
+    data_dict['package_id'] = dataset_dict['id']
 
     # Validate data_dict
 
@@ -706,6 +765,7 @@ def file_request_update(context, data_dict):
     key = '{0}@{1}'.format(validated_data_dict.get('package_id', 'file'),
                            datetime.datetime.now().isoformat())
 
+    uploaded_file = data_dict.pop('upload', None)
     task_dict = _create_task_status(context,
                                     task_type='file_request_update',
                                     entity_id=validated_data_dict['package_id'],
@@ -717,17 +777,17 @@ def file_request_update(context, data_dict):
 
     # Send request to EC Data Collection API
 
-    method, url = _get_api_endpoint('file_request_update')
+    method, url = _get_api_endpoint('file_version_request_update')
     url = url.format(
         organization_id=dataset_dict['owner_org'],
         dataset_id=validated_data_dict['package_id'],
+        file_id=validated_data_dict['id'],
+        version_id=version_id,
     )
 
     headers = {
         'Authorization': _get_api_auth_token(),
     }
-
-    uploaded_file = data_dict.pop('upload', None)
 
     if isinstance(uploaded_file, cgi.FieldStorage):
         files = {
@@ -740,8 +800,16 @@ def file_request_update(context, data_dict):
     else:
         headers['Content-Type'] = 'application/json'
         files = None
-        data = json.dumps(ec_dict)
 
+        # Check if the URL provided is actually the same file (using
+        # the platform download URL)
+
+        if (ec_dict['FileExternalUrl'].startswith('{0}/Download'.format(
+                config.get('ckanext.glasgow.metadata_api', '').rstrip('/')))
+             and validated_data_dict['id'] in ec_dict['FileExternalUrl']):
+            ec_dict.pop('FileExternalUrl', None)
+
+        data = json.dumps(ec_dict)
     content = send_request_to_ec_platform(method, url, data, headers,
                                           files=files,
                                           context=context,
@@ -960,29 +1028,18 @@ def resource_version_show(context, data_dict):
 
     resource = p.toolkit.get_action('resource_show')(context,
                                                      {'id': resource_id})
-    #TODO: store ec_api_dataset_id in resource extra
     package_show = p.toolkit.get_action('package_show')
     dataset = package_show(context, {'name_or_id': package_id})
 
+    organisation = p.toolkit.get_action('organization_show')(
+        context, {'id': dataset['owner_org']})
+
     method, url = _get_api_endpoint('file_versions_show')
 
-    try:
-        ec_api_file_id = resource['ec_api_id'] 
-    except KeyError, e:
-        raise ECAPIValidationError(
-            ['Error: {0} not in resource metadata'.format(e.message)])
-
-    try:
-        ec_api_org_id = dataset['ec_api_org_id']
-        ec_api_dataset_id = dataset['ec_api_id']
-    except KeyError, e:
-        raise ECAPIValidationError(
-            ['Error: {0} not in dataset metadata'.format(e.message)])
-
     url = url.format(
-        organization_id=ec_api_org_id,
-        dataset_id=ec_api_dataset_id,
-        file_id=ec_api_file_id,
+        organization_id=organisation['id'],
+        dataset_id=package_id,
+        file_id=resource_id,
     )
 
     content = send_request_to_ec_platform(method, url)
@@ -991,7 +1048,7 @@ def resource_version_show(context, data_dict):
     try:
         metadata = content['MetadataResultSet']
     except IndexError:
-        return {}
+        return []
 
     versions = []
     if metadata:
@@ -1066,7 +1123,7 @@ def check_for_task_status_update(context, data_dict):
                     task_status['state'] = 'error'
                     # todo: fix abuse of task_status.value
                     request_dict['ec_api_message'] = e.message
-                    
+
             task_status.update({
                 'value': json.dumps(request_dict),
                 'last_updated': latest['Timestamp'],
@@ -1104,7 +1161,7 @@ def on_task_status_success(context, task_status_dict):
         #todo error handling
         p.toolkit.get_action('package_create')(pkg_create_context,
                                            ckan_data_dict)
-        
+
     functions = {
         'dataset_request_create': on_dataset_request_create,
     }
@@ -1129,7 +1186,7 @@ def get_change_request(context, data_dict):
 
     import ckanext.oauth2waad.plugin as oauth2waad_plugin
     try:
-        access_token = oauth2waad_plugin.service_to_service_access_token()
+        access_token = oauth2waad_plugin.service_to_service_access_token('metadata')
         if not access_token.startswith('Bearer '):
             access_token = 'Bearer ' + access_token
         headers = {
@@ -1138,7 +1195,7 @@ def get_change_request(context, data_dict):
         }
     except oauth2waad_plugin.ServiceToServiceAccessTokenError, e:
         raise ECAPIError(['EC API Error: Failed to get service auth {0}'.format(e.message)])
-    
+
     response = requests.request(method, url, headers=headers, verify=False)
     if response.status_code == requests.codes.ok:
         try:
@@ -1202,7 +1259,7 @@ def changelog_show(context, data_dict):
     # Get Service to Service auth token
 
     try:
-        access_token = oauth2.service_to_service_access_token()
+        access_token = oauth2.service_to_service_access_token('metadata')
     except oauth2.ServiceToServiceAccessTokenError:
         log.warning('Could not get the Service to Service auth token')
         access_token = None
@@ -1227,7 +1284,7 @@ def changelog_show(context, data_dict):
             'content': [content],
         }
         if status_code == 401:
-            raise ECAPINotAuthorized(error_dict)
+            raise ECAPINotAuthorized('CTPEC API returned an authentication failure: {0}'.format(response.content))
         else:
             raise p.toolkit.ValidationError(error_dict)
 
@@ -1413,10 +1470,13 @@ def send_request_to_ec_platform(method, url, data=None, headers=None, **kwargs):
             })
 
         if response.status_code == requests.codes.unauthorized:
-            raise ECAPINotAuthorized(error_dict)
+            raise ECAPINotAuthorized('CTPEC API returned an authentication failure: {0}'.format(response.content))
+        elif response.status_code == requests.codes.not_found:
+            raise ECAPINotFound('CTPEC API returned a 404: {0}'.format(response.content))
 
         log.debug('request url: {0} - {1}'.format(method, url))
-        raise p.toolkit.ValidationError(error_dict)
+        raise ECAPIError('The CTPEC API returned an error code: {0} : {1}'.format(response.status_code,
+                                                                                  response.content))
     except requests.exceptions.RequestException, e:
         error_dict = {
             'message': ['Request exception: {0}'.format(e)],
@@ -1449,27 +1509,52 @@ def organization_member_create(context, data_dict):
     if (context.get('local_action', False) or
             data_dict.get('type') == 'harvest' or
             data_dict.get('source_type')):
-        return core_actions.update.organization_member_create(context, data_dict)
+        return core_actions.create.organization_member_create(context, data_dict)
     else:
-        return p.toolkit.get_action('user_role_update')(context,
-                                                        data_dict)
+        check_access('organization_member_create', context, data_dict)
+        create_schema = core_schema.member_schema()
+        validated_data_dict, errors = validate(data_dict, create_schema, context)
+
+        if errors:
+            raise p.toolkit.ValidationError(errors)
+
+        try:
+            # check if the user is a CTPEC user
+            ec_user = p.toolkit.get_action('ec_user_show')(
+                context, 
+                {'ec_username': validated_data_dict['username']}
+            )
+        except ECAPINotFound:
+            ec_user = None
+
+        # ckan only users can only be members, CTPEC users can only be
+        # editors/admins. If it's a ckan member assignment, use the core
+        # action, if it's a CTPEC user send it to CTPEC
+        if validated_data_dict.get('role') == 'member' and not ec_user:
+                return core_actions.create.organization_member_create(context,
+                                                                      data_dict)
+
+        elif validated_data_dict.get('role') != 'member' and ec_user:
+            if ec_user.get('OrganisationId'):
+                validated_data_dict['current_organization'] = ec_user['OrganisationId']
+
+            return p.toolkit.get_action('user_role_update')(
+                context,
+                validated_data_dict)
+
+        elif validated_data_dict.get('role') != 'member' and not ec_user:
+            raise p.toolkit.ValidationError('a non CTPEC user can only be a member')
+
+        elif validated_data_dict.get('role') == 'member' and ec_user:
+            raise p.toolkit.ValidationError('a CTPEC user cannot be a member')
 
 
 def user_role_update(context, data_dict):
-    check_access('organization_member_create', context, data_dict)
     context.update({'model': model, 'session': model.Session})
 
-    create_schema = core_schema.member_schema()
+    ec_dict = custom_schema.convert_ckan_member_to_ec_member(data_dict)
 
-    validated_data_dict, errors = validate(data_dict, create_schema, context)
-
-    if errors:
-        raise p.toolkit.ValidationError(errors)
-
-    ec_dict = custom_schema.convert_ckan_member_to_ec_member(
-        validated_data_dict)
-
-    key = '{0}@{1}'.format(validated_data_dict.get('name', data_dict['id']),
+    key = '{0}@{1}'.format(data_dict.get('name', data_dict['id']),
                            datetime.datetime.now().isoformat())
 
     task_dict = _create_task_status(context,
@@ -1483,14 +1568,21 @@ def user_role_update(context, data_dict):
 
     user = p.toolkit.get_action('user_show')(
         context,
-        {'id': validated_data_dict['username']}
+        {'id': data_dict['username']}
     )
 
-    method, url = _get_api_endpoint('user_role_update')
-    url = url.format(
-        organization_id=validated_data_dict['id'],
-        user_id=user['name']
-    )
+    if data_dict.get('current_organization'):
+        method, url = _get_api_endpoint('user_org_role_update')
+        url = url.format(
+            organization_id=data_dict.pop('current_organization'),
+            user_id=user['name']
+        )
+    else:
+        method, url = _get_api_endpoint('user_role_update')
+        url = url.format(
+            user_id=user['name']
+        )
+
 
     content = send_request_to_ec_platform(method, url,
                                           data=json.dumps(ec_dict),
@@ -1507,7 +1599,7 @@ def user_role_update(context, data_dict):
         raise p.toolkit.ValidationError(error_dict)
 
     task_dict = _update_task_status_success(context, task_dict, {
-        'data_dict': validated_data_dict,
+        'data_dict': data_dict,
         'request_id': request_id,
     })
 
@@ -1530,3 +1622,70 @@ def organization_member_delete(context, data_dict):
         return core_actions.update.organization_member_create(context, data_dict)
     else:
         p.toolkit.abort(404, 'users cannot be deleted from groups. Use organization_member_change to change the group a user belongs to')
+
+
+@p.toolkit.side_effect_free
+def ec_user_show(context, data_dict):
+    '''proxy a request to ec platform for user details'''
+    check_access('user_show',context, data_dict)
+    username = p.toolkit.get_or_bust(data_dict, 'ec_username')
+
+    method, url = _get_api_endpoint('user_show')
+    url = url.format(username=username)
+
+    try:
+        access_token = oauth2.service_to_service_access_token('identity')
+    except oauth2.ServiceToServiceAccessTokenError:
+        log.warning('Could not get the Service to Service auth token')
+        access_token = None
+
+    headers = {
+        'Authorization': 'Bearer {0}'.format(access_token),
+        'Content-Type': 'application/json',
+    }
+
+    return send_request_to_ec_platform(method, url, headers=headers)
+
+
+@p.toolkit.side_effect_free
+def ec_user_list(context, data_dict):
+    '''proxy a request to ec platform for user list'''
+    check_access('user_list',context, data_dict)
+    method, url = _get_api_endpoint('user_list')
+
+    try:
+        access_token = oauth2.service_to_service_access_token('identity')
+    except oauth2.ServiceToServiceAccessTokenError:
+        log.warning('Could not get the Service to Service auth token')
+        access_token = None
+
+    headers = {
+        'Authorization': 'Bearer {0}'.format(access_token),
+        'Content-Type': 'application/json',
+    }
+
+    return send_request_to_ec_platform(method, url, headers=headers)
+
+
+@p.toolkit.side_effect_free
+def ec_user_list_for_organization(context, data_dict):
+    '''proxy a request to ec platform for user list'''
+    check_access('user_list',context, data_dict)
+    method, url = _get_api_endpoint('user_list_for_organization')
+
+    organization_id = p.toolkit.get_or_bust(data_dict,
+                                            'organization_id')
+    url = url.format(organization_id=organization_id)
+
+    try:
+        access_token = oauth2.service_to_service_access_token('identity')
+    except oauth2.ServiceToServiceAccessTokenError:
+        log.warning('Could not get the Service to Service auth token')
+        access_token = None
+
+    headers = {
+        'Authorization': 'Bearer {0}'.format(access_token),
+        'Content-Type': 'application/json',
+    }
+
+    return send_request_to_ec_platform(method, url, headers=headers)

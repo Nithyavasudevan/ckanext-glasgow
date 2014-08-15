@@ -194,6 +194,8 @@ class EcInitialHarvester(EcHarvester):
                 file_metadata['FileMetadata'])
             ckan_dict['id'] = file_metadata['FileId']
 
+            ckan_dict['ec_api_version_id'] = file_metadata['Version']
+
             #TODO: This needs to be removed once MS api is using the proper ExternalURL field
             if not ckan_dict.get('url') and file_metadata['FileMetadata'].get('FileExternalUrl'):
                 ckan_dict['url'] = file_metadata['FileMetadata'].get('FileExternalUrl')
@@ -277,6 +279,7 @@ class EcInitialHarvester(EcHarvester):
                 # See ckan/ckanext-harvest#84
                 context.pop('__auth_audit', None)
                 try:
+
                     pkg = toolkit.get_action('package_create')(context,
                                                                ckan_data_dict)
                 except toolkit.ValidationError, e:

@@ -225,7 +225,8 @@ def _get_latest_dataset_version(audit):
     dataset_dict['owner_org'] = content['MetadataResultSet'].get(
         'OrganisationId')
 
-    dataset_dict['needs_approval'] = content['MetadataResultSet'].get('NeedsApproval')
+    dataset_dict['needs_approval'] = content['MetadataResultSet'].get(
+        'NeedsApproval')
 
     return dataset_dict
 
@@ -262,6 +263,9 @@ def _get_file_version(audit):
 
     resource_dict['ec_api_org_id'] = content['MetadataResultSet'].get(
         'OrganisationId')
+
+    resource_dict['ec_api_version_id'] = content['MetadataResultSet'].get(
+        'Version')
 
     return resource_dict
 
@@ -340,6 +344,8 @@ def handle_file_create(context, audit, harvest_object):
 
     resource_dict = _get_file_version(audit)
 
+    dataset_id = audit['CustomProperties'].get('DataSetId')
+
     if not resource_dict:
         msg = ['Could not get remote file metadata: {0}'.format(
             json.dumps(audit['CustomProperties']))]
@@ -349,28 +355,74 @@ def handle_file_create(context, audit, harvest_object):
         p.toolkit.get_action('resource_show')(context,
                                               {'id': resource_dict['id']})
         is_version = True
+        log.debug('Resource "{0}" exists, updating it ...'.format(resource_dict['id']))
     except p.toolkit.ObjectNotFound, e:
         is_version = False
+        log.debug('Resource "{0}" does not exist, creating it ...'.format(resource_dict['id']))
 
-    try:
-        if is_version:
-            resource_dict = p.toolkit.get_action('resource_update')(context,
-                                                                    resource_dict)
-            log.debug('Updated existing resource "{0}" on dataset {1}'.format(
-                      resource_dict['id'], resource_dict['package_id']))
-        else:
+    if is_version:
+        resource_dict = p.toolkit.get_action('resource_update')(context,
+                                                                resource_dict)
+        log.debug('Updated existing resource "{0}" on dataset {1}'.format(
+                  resource_dict['id'], dataset_id))
+    else:
+        try:
             resource_dict = p.toolkit.get_action('resource_create')(context,
                                                                     resource_dict)
 
             log.debug('Created new resource "{0}" on dataset {1}'.format(
-                      resource_dict['id'], resource_dict['package_id']))
+                      resource_dict['id'], dataset_id))
+
+        except p.toolkit.ObjectNotFound, e:
+            e.extra_msg = ['Could not create resource, parent dataset {0} not found'.format(
+                dataset_id)]
+            raise e
+
+    harvest_object.guid = dataset_id
+    harvest_object.package_id = dataset_id
+    harvest_object.current = True
+
+    harvest_object.add()
+
+    previous_objects = model.Session.query(HarvestObject) \
+        .filter(HarvestObject.guid==harvest_object.guid) \
+        .filter(HarvestObject.current==True) \
+        .all()
+
+    for obj in previous_objects:
+        obj.delete()
+
+    model.Session.commit()
+
+    return True
+
+
+def handle_file_update(context, audit, harvest_object):
+
+    resource_dict = _get_file_version(audit)
+
+    dataset_id = audit['CustomProperties'].get('DataSetId')
+
+    if not resource_dict:
+        msg = ['Could not get remote file metadata: {0}'.format(
+            json.dumps(audit['CustomProperties']))]
+        raise p.toolkit.ObjectNotFound(msg)
+
+    try:
+        p.toolkit.get_action('resource_show')(context,
+                                              {'id': resource_dict['id']})
+        log.debug('Resource "{0}" exists, updating it ...'.format(resource_dict['id']))
     except p.toolkit.ObjectNotFound, e:
-        e.extra_msg = ['Could not create resource, parent dataset {0} not found'.format(
-            audit['CustomProperties'].get('DataSetId'))]
+        e.extra_msg = ['Could not find resource {0}'.format(resource_dict['id'])]
         raise e
 
-    harvest_object.guid = resource_dict['package_id']
-    harvest_object.package_id = resource_dict['package_id']
+    resource_dict = p.toolkit.get_action('resource_update')(context,
+                                                            resource_dict)
+    log.debug('Updated existing resource "{0}" on dataset {1}'.format(
+              resource_dict['id'], dataset_id))
+
+    harvest_object.guid = dataset_id
+    harvest_object.package_id = dataset_id
     harvest_object.current = True
 
     harvest_object.add()
@@ -440,6 +492,7 @@ def get_audit_command_handler(command):
         'CreateDataSet': handle_dataset_create,
         'UpdateDataSet': handle_dataset_update,
         'CreateFile': handle_file_create,
+        'UpdateFile': handle_file_update,
         'CreateOrganisation': handle_organization_create,
         'UpdateOrganisation': handle_organization_update,
     }
