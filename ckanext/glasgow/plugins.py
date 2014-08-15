@@ -132,6 +132,7 @@ class GlasgowSchemaPlugin(p.SingletonPlugin, p.toolkit.DefaultDatasetForm):
             'get_change_request',
             'changelog_show',
             'approvals_list',
+            'approval_act',
         )
         return _get_module_functions(custom_actions, function_names)
 
@@ -154,6 +155,7 @@ class GlasgowSchemaPlugin(p.SingletonPlugin, p.toolkit.DefaultDatasetForm):
             'get_change_request',
             'changelog_show',
             'approvals_list',
+            'approval_act',
         )
         return _get_module_functions(custom_auth, function_names)
 

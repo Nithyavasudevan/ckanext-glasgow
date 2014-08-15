@@ -220,10 +220,16 @@ class DatasetController(PackageController):
     def approval_act(self, id, accept):
 
         accept = (accept == 'True')
-
-        if accept:
-            helpers.flash_success('Request {0} approved'.format(id))
+        try:
+            p.toolkit.get_action('approval_act')({}, {
+                'request_id': id,
+                'accept': accept})
+        except p.toolkit.ValidationError, e:
+            helpers.flash_error('The EC API returned and error: {0}'.format(str(e)))
         else:
-            helpers.flash_error('Request {0} rejected'.format(id))
+            if accept:
+                helpers.flash_success('Request {0} approved'.format(id))
+            else:
+                helpers.flash_error('Request {0} rejected'.format(id))
 
         p.toolkit.redirect_to('approvals_list')

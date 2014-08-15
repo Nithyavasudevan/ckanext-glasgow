@@ -72,5 +72,10 @@ def changelog_show(context, data_dict):
     return {'success': False,
             'msg': 'Only sysadmins can see the change log'}
 
+
 def approvals_list(context, data_dict):
+    return True
+
+
+def approval_act(context, data_dict):
     return True
