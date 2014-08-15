@@ -79,3 +79,6 @@ def approvals_list(context, data_dict):
 
 def approval_act(context, data_dict):
     return True
+
+def approval_download(context, data_dict):
+    return True

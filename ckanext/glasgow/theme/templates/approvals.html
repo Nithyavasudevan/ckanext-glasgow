@@ -55,6 +55,10 @@
                 <p>
           <a class="btn btn-danger" href="{% url_for controller=controller, action='approval_act', id=audit['RequestId'], accept=False %}" >{{ _('Reject') }}</a>
                 </p>
+                {% if audit['ObjectType'] == 'File' %}
+          <a class="btn" href="{% url_for controller=controller, action='approval_download', id=audit['RequestId'] %}" >{{ _('Download') }}</a>
+
+                {% endif %}
 
               </td>
             </tr>

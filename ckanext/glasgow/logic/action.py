@@ -1801,3 +1801,53 @@ def approval_act(context, data_dict):
             raise p.toolkit.ValidationError(error_dict)
 
     return True
+
+
+def approval_download(context, data_dict):
+    '''
+    Download a file pending approval
+
+    :param request_id: Request id to act upon
+    :type top: string
+
+    '''
+
+    p.toolkit.check_access('approval_download', context, data_dict)
+
+    request_id = data_dict.get('request_id', False)
+
+    # Send request to EC Audit API
+
+    method, url = _get_api_endpoint('approval_download')
+
+    url = url.format(
+        request_id=request_id,
+    )
+
+    headers = {
+        'Authorization': _get_api_auth_token(),
+    }
+
+    response = requests.request(method, url, headers=headers, verify=False)
+
+    # Check status codes
+
+    status_code = response.status_code
+
+    if status_code != 200:
+
+        content = response.json()
+        error_dict = {
+            'message': ['The CTPEC API returned an error code'],
+            'status': [status_code],
+            'content': [content],
+        }
+        if status_code == 401:
+            raise ECAPINotAuthorized('CTPEC API returned an authentication failure: {0}'.format(response.content))
+        else:
+            raise p.toolkit.ValidationError(error_dict)
+
+    return {
+        'headers': response.headers,
+        'content': response.content,
+    }

@@ -50,6 +50,8 @@ class GlasgowSchemaPlugin(p.SingletonPlugin, p.toolkit.DefaultDatasetForm):
                     controller=controller, action='approval_act', accept=True)
         map.connect('approval_reject', '/approvals/{id}/reject',
                     controller=controller, action='approval_act', accept=False)
+        map.connect('approval_download', '/approvals/{id}/download',
+                    controller=controller, action='approval_download')
 
 
 
@@ -133,6 +135,7 @@ class GlasgowSchemaPlugin(p.SingletonPlugin, p.toolkit.DefaultDatasetForm):
             'changelog_show',
             'approvals_list',
             'approval_act',
+            'approval_download',
         )
         return _get_module_functions(custom_actions, function_names)
 
@@ -156,6 +159,7 @@ class GlasgowSchemaPlugin(p.SingletonPlugin, p.toolkit.DefaultDatasetForm):
             'changelog_show',
             'approvals_list',
             'approval_act',
+            'approval_download',
         )
         return _get_module_functions(custom_auth, function_names)
 

@@ -233,3 +233,16 @@ class DatasetController(PackageController):
                 helpers.flash_error('Request {0} rejected'.format(id))
 
         p.toolkit.redirect_to('approvals_list')
+
+    def approval_download(self, id):
+
+        try:
+            download = p.toolkit.get_action('approval_download')({}, {
+                'request_id': id})
+        except p.toolkit.ValidationError, e:
+            helpers.flash_error('The EC API returned and error: {0}'.format(str(e)))
+
+            p.toolkit.redirect_to('approvals_list')
+        else:
+            p.toolkit.response.headers = download['headers']
+            return download['content']
