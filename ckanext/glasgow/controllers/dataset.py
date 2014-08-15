@@ -161,7 +161,7 @@ class DatasetController(PackageController):
             if versions:
                 versions.reverse()
             else:
-               return p.toolkit.abort(404, 'no versions were found for this file') 
+               return p.toolkit.abort(404, 'no versions were found for this file')
         except p.toolkit.ValidationError, e:
             return p.toolkit.abort(404, 'error fetching versions: {0}'.format(str(e)))
         except p.toolkit.NotAuthorized. e:
@@ -210,3 +210,20 @@ class DatasetController(PackageController):
                                             'change_request': request_status,
                                             'task': task,
                                             })
+
+    def approvals(self):
+        approvals_list = p.toolkit.get_action('approvals_list')({}, {})
+
+        return p.toolkit.render('approvals.html',
+                                extra_vars={'approvals': approvals_list})
+
+    def approval_act(self, id, accept):
+
+        accept = (accept == 'True')
+
+        if accept:
+            helpers.flash_success('Request {0} approved'.format(id))
+        else:
+            helpers.flash_error('Request {0} rejected'.format(id))
+
+        p.toolkit.redirect_to('approvals_list')

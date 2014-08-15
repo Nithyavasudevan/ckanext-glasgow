@@ -1,3 +1,4 @@
+import datetime
 import json
 from ckan import model
 import ckan.lib.helpers as helpers
@@ -54,3 +55,15 @@ def get_pending_task_for_dataset(pkg_name):
         return None
     except toolkit.NotAuthorized:
         return None
+
+
+def get_datetime_from_ec_iso(date_str):
+
+    try:
+        return datetime.datetime.strptime(date_str, '%Y-%m-%dT%H:%M:%S.%f')
+    except ValueError:
+        return date_str
+
+
+def parse_metadata_string(metadata_str):
+    return json.loads(metadata_str)
