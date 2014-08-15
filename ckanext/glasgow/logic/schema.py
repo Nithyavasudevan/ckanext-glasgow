@@ -83,6 +83,15 @@ ckan_to_ec_resource_mapping = {
 }
 
 
+ckan_to_ec_user_mapping = {
+    'id': 'UserId',
+    'name': 'UserName',
+    'fullname': 'DisplayName',
+    'about': 'About',
+    'email': 'Email',
+}
+
+
 def convert_ckan_organization_to_ec_organization(ckan_dict):
 
     ec_dict = {}
@@ -176,12 +185,38 @@ def convert_ckan_member_to_ec_member(ckan_dict):
     }
 
     return {
+        'NewOrganisationId': ckan_dict['id'],
         'UserRoles': {
             'UserGroup': [ role_dict.get(ckan_dict['role']) ]
         }
     }
 
+def convert_ec_member_to_ckan_member(ec_dict):
+    role_dict = {
+        'OrganisationAdmin': 'admin',
+        'OrganisationEditor': 'editor',
+        'Member': 'member',
+    }
 
+    try:
+        return {
+            'id': ec_dict['OrganisationId'],
+            'role':  role_dict[ec_dict['Roles'][0]],
+            'username': ec_dict['UserName'],
+        }
+
+    except (KeyError, IndexError), e:
+        raise p.toolkit.ValidationError('cannot convert ec to ckan')
+
+
+def convert_ec_user_to_ckan_user(ec_dict):
+    ckan_dict = {}
+
+    for ckan_name, ec_name in ckan_to_ec_user_mapping.iteritems():
+        if ec_dict.get(ec_name):
+            ckan_dict[ckan_name] = ec_dict.get(ec_name)
+
+    return ckan_dict
 
 def create_package_schema():
     schema = default_create_package_schema()
