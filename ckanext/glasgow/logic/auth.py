@@ -71,3 +71,6 @@ def pending_task_for_organization(context, data_dict):
 def changelog_show(context, data_dict):
     return {'success': False,
             'msg': 'Only sysadmins can see the change log'}
+
+def approvals_list(context, data_dict):
+    return True

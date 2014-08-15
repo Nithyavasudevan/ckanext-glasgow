@@ -182,6 +182,10 @@ def _get_api_endpoint(operation):
             'GET',
             '/ChangeLog/RequestChanges',
             read_base),
+        'approvals_list': (
+            'GET',
+            '/Approval',
+            write_base),
         'user_role_update': (
             'PUT',
             '/UserRoles/Organisation/{organization_id}/User/{user_id}',
@@ -1673,3 +1677,59 @@ def ec_user_list_for_organization(context, data_dict):
     }
 
     return send_request_to_ec_platform(method, url, headers=headers)
+
+@p.toolkit.side_effect_free
+def approvals_list(context, data_dict):
+    '''
+    Requests a list of pending approvals to EC API Data collection API
+
+    :param top: Number of records to return
+    :type top: int
+    :param skip: Number of records to skip
+    :type skip: int
+
+    :returns: a list with the returned audit objects
+    :rtype: list
+    '''
+
+    p.toolkit.check_access('approvals_list', context, data_dict)
+
+    top = data_dict.get('top')
+    skip = data_dict.get('skip')
+
+    # Send request to EC Audit API
+
+    method, url = _get_api_endpoint('approvals_list')
+
+
+    params = {}
+    if top:
+        params['$top'] = top
+    if skip:
+        params['$skip'] = skip
+
+    headers = {
+        'Authorization': _get_api_auth_token(),
+        'Content-Type': 'application/json',
+    }
+
+    response = requests.request(method, url, headers=headers, params=params, verify=False)
+
+    content = response.json()
+
+    # Check status codes
+
+    status_code = response.status_code
+
+    if status_code != 200:
+        error_dict = {
+            'message': ['The CTPEC API returned an error code'],
+            'status': [status_code],
+            'content': [content],
+        }
+        if status_code == 401:
+            raise ECAPINotAuthorized('CTPEC API returned an authentication failure: {0}'.format(response.content))
+        else:
+            raise p.toolkit.ValidationError(error_dict)
+
+    return content

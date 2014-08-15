@@ -122,6 +122,7 @@ class GlasgowSchemaPlugin(p.SingletonPlugin, p.toolkit.DefaultDatasetForm):
             'check_for_task_status_update',
             'get_change_request',
             'changelog_show',
+            'approvals_list',
         )
         return _get_module_functions(custom_actions, function_names)
 
@@ -143,6 +144,7 @@ class GlasgowSchemaPlugin(p.SingletonPlugin, p.toolkit.DefaultDatasetForm):
             'task_status_show',
             'get_change_request',
             'changelog_show',
+            'approvals_list',
         )
         return _get_module_functions(custom_auth, function_names)
 
