@@ -74,13 +74,23 @@ def changelog_show(context, data_dict):
 
 
 def approvals_list(context, data_dict):
-    return {'success': True}
+
+    # Check if the user has admin rights in some org
+    from ckan import new_authz
+
+    user_name = context.get('user')
+
+    if user_name:
+        check = new_authz.has_user_permission_for_some_org(user_name, 'admin')
+        if check:
+            return {'success': True}
+
+    return {'success': False}
 
 
 def approval_act(context, data_dict):
-    return {'success': True}
+    return approvals_list(context, data_dict)
 
 
 def approval_download(context, data_dict):
-
-    return {'success': True}
+    return approvals_list(context, data_dict)
