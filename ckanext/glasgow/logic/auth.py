@@ -74,11 +74,13 @@ def changelog_show(context, data_dict):
 
 
 def approvals_list(context, data_dict):
-    return True
+    return {'success': True}
 
 
 def approval_act(context, data_dict):
-    return True
+    return {'success': True}
+
 
 def approval_download(context, data_dict):
-    return True
+
+    return {'success': True}
