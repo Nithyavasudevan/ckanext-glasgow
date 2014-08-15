@@ -212,9 +212,10 @@ class DatasetController(PackageController):
                                             })
 
     def approvals(self):
+        approvals_list = []
         try:
             approvals_list = p.toolkit.get_action('approvals_list')({}, {})
-        except p.toolkit.ValidationError, e:
+        except (ECAPINotAuthorized, p.toolkit.ValidationError), e:
             helpers.flash_error('The EC API returned and error: {0}'.format(str(e)))
 
         except p.toolkit.NotAuthorized:
