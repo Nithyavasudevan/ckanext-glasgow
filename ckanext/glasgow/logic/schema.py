@@ -170,7 +170,7 @@ def convert_ec_file_to_ckan_resource(ec_dict):
 
     ckan_dict = {}
 
-    for ckan_name, ec_name in ckan_to_ec_user_mapping.iteritems():
+    for ckan_name, ec_name in ckan_to_ec_resource_mapping.iteritems():
         if ec_dict.get(ec_name):
             ckan_dict[ckan_name] = ec_dict.get(ec_name)
 
@@ -195,7 +195,7 @@ def convert_ckan_member_to_ec_member(ckan_dict):
 def convert_ec_user_to_ckan_user(ec_dict):
     ckan_dict = {}
 
-    for ckan_name, ec_name in ckan_to_ec_resource_mapping.iteritems():
+    for ckan_name, ec_name in ckan_to_ec_user_mapping.iteritems():
         if ec_dict.get(ec_name):
             ckan_dict[ckan_name] = ec_dict.get(ec_name)
 
