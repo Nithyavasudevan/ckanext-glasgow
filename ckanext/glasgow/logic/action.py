@@ -593,6 +593,10 @@ def file_request_create(context, data_dict):
     else:
         headers['Content-Type'] = 'application/json'
         files = None
+
+        # Use ExternalUrl instead of FileExternalUrl
+        ec_dict['ExternalUrl'] = ec_dict.pop('FileExternalUrl', None)
+
         data = json.dumps(ec_dict)
 
     content = send_request_to_ec_platform(method, url,
