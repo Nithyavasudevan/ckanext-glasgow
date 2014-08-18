@@ -168,7 +168,10 @@ class EcInitialHarvester(EcHarvester):
             org = content['OrganisationId']
             dataset = content['Id']
             request = requests.get(api_endpoint.format(org, dataset), verify=False)
-            result = _fetch_from_ec(request)
+            if request.status_code == 404:
+                log.debug('No files for dataset {0}'.format(dataset))
+            else:
+                result = _fetch_from_ec(request)
         except requests.exceptions.RequestException, e:
             self._save_object_error(
                 'Error fetching file metadata for package {0}: {1}'.format(
