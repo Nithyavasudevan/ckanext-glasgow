@@ -161,7 +161,7 @@ class DatasetController(PackageController):
             if versions:
                 versions.reverse()
             else:
-               return p.toolkit.abort(404, 'no versions were found for this file') 
+               return p.toolkit.abort(404, 'no versions were found for this file')
         except p.toolkit.ValidationError, e:
             return p.toolkit.abort(404, 'error fetching versions: {0}'.format(str(e)))
         except p.toolkit.NotAuthorized. e:
@@ -210,3 +210,47 @@ class DatasetController(PackageController):
                                             'change_request': request_status,
                                             'task': task,
                                             })
+
+    def approvals(self):
+        approvals_list = []
+        try:
+            approvals_list = p.toolkit.get_action('approvals_list')({}, {})
+        except (ECAPINotAuthorized, p.toolkit.ValidationError), e:
+            helpers.flash_error('The EC API returned and error: {0}'.format(str(e)))
+
+        except p.toolkit.NotAuthorized:
+
+            return p.toolkit.abort(401, p.toolkit._('Not authorized to view pending requests'))
+
+        return p.toolkit.render('approvals.html',
+                                extra_vars={'approvals': approvals_list})
+
+    def approval_act(self, id, accept):
+
+        accept = (accept == 'True')
+        try:
+            p.toolkit.get_action('approval_act')({}, {
+                'request_id': id,
+                'accept': accept})
+        except p.toolkit.ValidationError, e:
+            helpers.flash_error('The EC API returned and error: {0}'.format(str(e)))
+        else:
+            if accept:
+                helpers.flash_success('Request {0} approved'.format(id))
+            else:
+                helpers.flash_error('Request {0} rejected'.format(id))
+
+        p.toolkit.redirect_to('approvals_list')
+
+    def approval_download(self, id):
+
+        try:
+            download = p.toolkit.get_action('approval_download')({}, {
+                'request_id': id})
+        except p.toolkit.ValidationError, e:
+            helpers.flash_error('The EC API returned and error: {0}'.format(str(e)))
+
+            p.toolkit.redirect_to('approvals_list')
+        else:
+            p.toolkit.response.headers = download['headers']
+            return download['content']

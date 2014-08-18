@@ -182,6 +182,23 @@ def _get_api_endpoint(operation):
             'GET',
             '/ChangeLog/RequestChanges',
             read_base),
+        'approvals_list': (
+            'GET',
+            '/Approval',
+            write_base),
+        'approval_accept': (
+            'POST',
+            '/Approval/{request_id}/Accept',
+            write_base),
+        'approval_reject': (
+            'POST',
+            '/Approval/{request_id}/Reject',
+            write_base),
+        'approval_download': (
+            'GET',
+            '/Approval/{request_id}/Download',
+            write_base),
+
         'user_role_update': (
             'PUT',
             '/UserRoles/User/{user_id}',
@@ -1690,3 +1707,164 @@ def ec_user_list_for_organization(context, data_dict):
     }
 
     return send_request_to_ec_platform(method, url, headers=headers)
+
+@p.toolkit.side_effect_free
+def approvals_list(context, data_dict):
+    '''
+    Requests a list of pending approvals to EC API Data collection API
+
+    :param top: Number of records to return
+    :type top: int
+    :param skip: Number of records to skip
+    :type skip: int
+
+    :returns: a list with the returned audit objects
+    :rtype: list
+    '''
+
+    p.toolkit.check_access('approvals_list', context, data_dict)
+
+    top = data_dict.get('top')
+    skip = data_dict.get('skip')
+
+    # Send request to EC Audit API
+
+    method, url = _get_api_endpoint('approvals_list')
+
+
+    params = {}
+    if top:
+        params['$top'] = top
+    if skip:
+        params['$skip'] = skip
+
+    headers = {
+        'Authorization': _get_api_auth_token(),
+        'Content-Type': 'application/json',
+    }
+
+    response = requests.request(method, url, headers=headers, params=params, verify=False)
+
+    content = response.json()
+
+    # Check status codes
+
+    status_code = response.status_code
+
+    if status_code != 200:
+        error_dict = {
+            'message': ['The CTPEC API returned an error code'],
+            'status': [status_code],
+            'content': [content],
+        }
+        if status_code == 401:
+            raise ECAPINotAuthorized('CTPEC API returned an authentication failure: {0}'.format(response.content))
+        else:
+            raise p.toolkit.ValidationError(error_dict)
+
+    return content
+
+
+def approval_act(context, data_dict):
+    '''
+    Act upon a pending approval
+
+    :param request_id: Request id to act upon
+    :type top: string
+    :param accept: Whether to accept the request or not
+    :type top: bool
+
+    :returns: True if the request was successful
+    :rtype: bool
+    '''
+
+    p.toolkit.check_access('approval_act', context, data_dict)
+
+    request_id = data_dict.get('request_id', False)
+    accept = data_dict.get('accept', False)
+
+    # Send request to EC Audit API
+
+    if accept:
+        method, url = _get_api_endpoint('approval_accept')
+    else:
+        method, url = _get_api_endpoint('approval_reject')
+
+    url = url.format(
+        request_id=request_id,
+    )
+
+    headers = {
+        'Authorization': _get_api_auth_token(),
+    }
+
+    response = requests.request(method, url, headers=headers, verify=False)
+
+    # Check status codes
+
+    status_code = response.status_code
+
+    if status_code != 200:
+
+        content = response.json()
+        error_dict = {
+            'message': ['The CTPEC API returned an error code'],
+            'status': [status_code],
+            'content': [content],
+        }
+        if status_code == 401:
+            raise ECAPINotAuthorized('CTPEC API returned an authentication failure: {0}'.format(response.content))
+        else:
+            raise p.toolkit.ValidationError(error_dict)
+
+    return True
+
+
+def approval_download(context, data_dict):
+    '''
+    Download a file pending approval
+
+    :param request_id: Request id to act upon
+    :type top: string
+
+    '''
+
+    p.toolkit.check_access('approval_download', context, data_dict)
+
+    request_id = data_dict.get('request_id', False)
+
+    # Send request to EC Audit API
+
+    method, url = _get_api_endpoint('approval_download')
+
+    url = url.format(
+        request_id=request_id,
+    )
+
+    headers = {
+        'Authorization': _get_api_auth_token(),
+    }
+
+    response = requests.request(method, url, headers=headers, verify=False)
+
+    # Check status codes
+
+    status_code = response.status_code
+
+    if status_code != 200:
+
+        content = response.json()
+        error_dict = {
+            'message': ['The CTPEC API returned an error code'],
+            'status': [status_code],
+            'content': [content],
+        }
+        if status_code == 401:
+            raise ECAPINotAuthorized('CTPEC API returned an authentication failure: {0}'.format(response.content))
+        else:
+            raise p.toolkit.ValidationError(error_dict)
+
+    return {
+        'headers': response.headers,
+        'content': response.content,
+    }

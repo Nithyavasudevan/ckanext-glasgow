@@ -44,6 +44,17 @@ class GlasgowSchemaPlugin(p.SingletonPlugin, p.toolkit.DefaultDatasetForm):
         map.connect('dataset_change_requests', '/dataset/change_requests/{dataset_name}',
                     controller=controller, action='dataset_change_requests')
 
+        map.connect('approvals_list', '/approvals',
+                    controller=controller, action='approvals')
+        map.connect('approval_accept', '/approvals/{id}/accept',
+                    controller=controller, action='approval_act', accept=True)
+        map.connect('approval_reject', '/approvals/{id}/reject',
+                    controller=controller, action='approval_act', accept=False)
+        map.connect('approval_download', '/approvals/{id}/download',
+                    controller=controller, action='approval_download')
+
+
+
         status_ctl = 'ckanext.glasgow.controllers.request_status:RequestStatusController'
         map.connect('/request/{request_id}', controller=status_ctl,
                     action='get_status')
@@ -122,6 +133,9 @@ class GlasgowSchemaPlugin(p.SingletonPlugin, p.toolkit.DefaultDatasetForm):
             'check_for_task_status_update',
             'get_change_request',
             'changelog_show',
+            'approvals_list',
+            'approval_act',
+            'approval_download',
         )
         return _get_module_functions(custom_actions, function_names)
 
@@ -143,6 +157,9 @@ class GlasgowSchemaPlugin(p.SingletonPlugin, p.toolkit.DefaultDatasetForm):
             'task_status_show',
             'get_change_request',
             'changelog_show',
+            'approvals_list',
+            'approval_act',
+            'approval_download',
         )
         return _get_module_functions(custom_auth, function_names)
 
@@ -156,6 +173,8 @@ class GlasgowSchemaPlugin(p.SingletonPlugin, p.toolkit.DefaultDatasetForm):
             'get_resource_versions',
             'get_pending_files_for_dataset',
             'get_pending_task_for_dataset',
+            'get_datetime_from_ec_iso',
+            'parse_metadata_string',
         )
         return _get_module_functions(custom_helpers, function_names)
 

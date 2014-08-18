@@ -1,0 +1,77 @@
+{% extends "page.html" %}
+
+{% set controller = 'ckanext.glasgow.controllers.dataset:DatasetController' %}
+
+{% block subtitle %}{{ _('Pending Approvals') }}{% endblock %}
+
+{% block breadcrumb_content %}
+  <li class="active">{% link_for _('Pending Approvals'), controller=controller, action='approvals' %}</li>
+{% endblock %}
+
+{% block primary %}
+
+  <div class="module-content">
+
+  </div>
+
+  <article class="module">
+    <div class="module-content">
+      <table class="table table-striped table-bordered table-condensed">
+        <thead>
+          <tr>
+            <th scope="col">{{ _('Request Id') }}</th>
+            <th scope="col">{{ _('Created') }}</th>
+            <th scope="col">{{ _('Command') }}</th>
+            <th scope="col">{{ _('Metadata') }}</th>
+            <th scope="col">{{ _('Action') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% if approvals|length == 0 %}
+            <tr><td colspan="6">{{ _('No pending approvals at this moment') }}</td></tr>
+        {% else %}
+            {% for audit in approvals %}
+            
+            <tr>
+              <td>{{ audit['RequestId'] }}</td>
+              <td>
+                <span title="{{ audit['CreatedDate'] }}">
+                    {{ h.render_datetime(h.get_datetime_from_ec_iso(audit['CreatedDate']), with_hours=True) }}
+                </span>
+              </td>
+              <td>{{ audit['Command'] }}</td>
+              <td>
+                <ul>
+                {% for key, value in h.parse_metadata_string(audit['Metadata']).iteritems() %}
+                    <li>{{ key }}: {{ value }}</li>
+                {% endfor %}
+                </ul>
+              </td>
+              <td>
+                <p>
+          <a class="btn btn-success" href="{% url_for controller=controller, action='approval_act', id=audit['RequestId'], accept=True %}" >{{ _('Accept') }}</a>
+                </p>
+
+                <p>
+          <a class="btn btn-danger" href="{% url_for controller=controller, action='approval_act', id=audit['RequestId'], accept=False %}" >{{ _('Reject') }}</a>
+                </p>
+                {% if audit['ObjectType'] == 'File' %}
+          <a class="btn" href="{% url_for controller=controller, action='approval_download', id=audit['RequestId'] %}" >{{ _('Download') }}</a>
+
+                {% endif %}
+
+              </td>
+            </tr>
+            {% endfor %}
+
+        {% endif %}
+        </tbody>
+      </table>
+
+
+    </div>
+  </article>
+{% endblock %}
+
+{% block secondary %}{% endblock %}
+

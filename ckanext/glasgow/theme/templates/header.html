@@ -1,9 +1,19 @@
 {% ckan_extends %}
 
 {% block header_site_navigation_tabs %}
+  {% if h.check_access('approvals_list') %}
+  {{ h.build_nav_main(
+    ('search', _('Datasets')),
+    ('organizations_index', _('Organizations')),
+    ('about', _('About')),
+    ('approvals_list', _('Pending Approvals')),
+  ) }}
+
+  {% else %}
   {{ h.build_nav_main(
     ('search', _('Datasets')),
     ('organizations_index', _('Organizations')),
     ('about', _('About')),
   ) }}
+  {% endif %}
 {% endblock %}
