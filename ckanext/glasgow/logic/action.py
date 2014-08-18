@@ -1357,6 +1357,7 @@ def organization_request_create(context, data_dict):
 
 def organization_update(context, data_dict):
     if data_dict.get('__local_action', False):
+
         context['local_action'] = True
         data_dict.pop('__local_action', None)
 
@@ -1543,10 +1544,10 @@ def organization_member_create(context, data_dict):
                 validated_data_dict)
 
         elif validated_data_dict.get('role') != 'member' and not ec_user:
-            raise p.toolkit.ValidationError('a non CTPEC user can only be a member')
+            raise p.toolkit.ValidationError(['a non CTPEC user can only be a member'])
 
         elif validated_data_dict.get('role') == 'member' and ec_user:
-            raise p.toolkit.ValidationError('a CTPEC user cannot be a member')
+            raise p.toolkit.ValidationError(['a CTPEC user cannot be a member'])
 
 
 def user_role_update(context, data_dict):
