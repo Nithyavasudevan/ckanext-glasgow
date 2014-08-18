@@ -1,5 +1,4 @@
 import sys
-import logging
 
 from sqlalchemy import or_
 
@@ -7,7 +6,7 @@ from ckan import model
 from ckan.lib.cli import CkanCommand
 from ckan.plugins import toolkit
 
-from ckanext.glasgow.model import HarvestLastAudit, harvest_last_audit_table
+from ckanext.glasgow.model import harvest_last_audit_table
 from ckanext.glasgow.logic.action import ECAPIError
 from ckanext.glasgow.harvesters.changelog import save_last_audit_id
 
@@ -90,3 +89,44 @@ class ChangelogAudit(CkanCommand):
         save_last_audit_id(audit_id, None)
 
         print 'Set last audit id to', audit_id
+
+
+class Cleanup(CkanCommand):
+    '''Cleans up DB tables
+
+    Usage:
+
+      db_clean harvest
+        - Clean up harvest tables (jobs, objects, extras and errors)
+
+    '''
+
+    summary = __doc__.split('\n')[0]
+    usage = __doc__
+
+    def command(self):
+
+        self._load_config()
+        if len(self.args) == 0:
+            self.parser.print_usage()
+            sys.exit(1)
+
+        cmd = self.args[0]
+        if cmd == 'harvest':
+            self._clear_harvest()
+
+    def _clear_harvest(self):
+
+        interval = '48 hours'
+
+        sql = '''
+        BEGIN;
+        DELETE FROM harvest_object_error WHERE harvest_object_id IN (SELECT o.id FROM harvest_object o JOIN harvest_job j on j.id = o.harvest_job_id where j.created < NOW() - INTERVAL '{0}');
+        DELETE FROM harvest_object_extra WHERE harvest_object_id IN (SELECT o.id FROM harvest_object o JOIN harvest_job j on j.id = o.harvest_job_id where j.created < NOW() - INTERVAL '{0}');
+        DELETE FROM harvest_object o USING harvest_job j WHERE j.id = o.harvest_job_id AND j.created < NOW() - INTERVAL '{0}';
+        DELETE FROM harvest_gather_error WHERE harvest_job_id IN (SELECT id FROM harvest_job WHERE created < NOW() - INTERVAL '{0}');
+        DELETE FROM harvest_job WHERE created < NOW() - INTERVAL '{0}';
+        COMMIT;
+        '''
+
+        model.Session.execute(sql.format(interval))
