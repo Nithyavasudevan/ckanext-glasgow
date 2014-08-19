@@ -1676,6 +1676,11 @@ def ec_user_list(context, data_dict):
     else:
         method, url = _get_api_endpoint('user_list')
 
+
+    top = data_dict.get('top')
+    params = {}
+    if top:
+        params['$top'] = top
     try:
         access_token = oauth2.service_to_service_access_token('identity')
     except oauth2.ServiceToServiceAccessTokenError:
@@ -1687,31 +1692,9 @@ def ec_user_list(context, data_dict):
         'Content-Type': 'application/json',
     }
 
-    return send_request_to_ec_platform(method, url, headers=headers)
+    return send_request_to_ec_platform(method, url, headers=headers,
+                                       params=params)
 
-
-@p.toolkit.side_effect_free
-def ec_user_list_for_organization(context, data_dict):
-    '''proxy a request to ec platform for user list'''
-    check_access('user_list',context, data_dict)
-    method, url = _get_api_endpoint('user_list_for_organization')
-
-    organization_id = p.toolkit.get_or_bust(data_dict,
-                                            'organization_id')
-    url = url.format(organization_id=organization_id)
-
-    try:
-        access_token = oauth2.service_to_service_access_token('identity')
-    except oauth2.ServiceToServiceAccessTokenError:
-        log.warning('Could not get the Service to Service auth token')
-        access_token = None
-
-    headers = {
-        'Authorization': 'Bearer {0}'.format(access_token),
-        'Content-Type': 'application/json',
-    }
-
-    return send_request_to_ec_platform(method, url, headers=headers)
 
 @p.toolkit.side_effect_free
 def approvals_list(context, data_dict):
