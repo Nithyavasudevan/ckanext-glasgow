@@ -120,7 +120,6 @@ class GlasgowSchemaPlugin(p.SingletonPlugin, p.toolkit.DefaultDatasetForm):
             'user_role_update',
             'ec_user_show',
             'ec_user_list',
-            'ec_user_list_for_organization',
             'dataset_request_create',
             'file_request_create',
             'file_request_update',
