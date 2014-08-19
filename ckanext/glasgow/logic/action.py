@@ -1672,7 +1672,7 @@ def ec_user_list(context, data_dict):
     organization_id = data_dict.get('organization_id')
     if organization_id:
         method, url = _get_api_endpoint('user_list_for_organization')
-        url.format(organization_id=organization_id)
+        url = url.format(organization_id=organization_id)
     else:
         method, url = _get_api_endpoint('user_list')
 
