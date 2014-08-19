@@ -5,6 +5,7 @@ import mock
 import nose.tools as nt
 
 from ckan.lib import search
+from ckan import model
 
 import ckan.new_tests.helpers as helpers
 import ckan.new_tests.factories as factories
@@ -14,6 +15,10 @@ from ckanext.harvest.tests.factories import HarvestJobFactory
 
 from ckanext.glasgow.harvesters.ec_harvester import (
     EcInitialHarvester, EcApiException)
+from ckanext.glasgow.harvesters.changelog import (
+    handle_user_create,
+    handle_user_update,
+)
 from ckanext.glasgow.tests import run_mock_ec
 
 
@@ -130,7 +135,7 @@ class TestDatasetCreate(object):
 
         harvester = EcInitialHarvester()
         job = HarvestJobFactory()
-        
+
         nt.assert_equals(False, harvester.gather_stage(job))
 
     @mock.patch('requests.get')
@@ -148,7 +153,7 @@ class TestDatasetCreate(object):
 
         harvester = EcInitialHarvester()
         job = HarvestJobFactory()
-        
+
         nt.assert_equals(False, harvester.gather_stage(job))
 
     def test_fetch(self):
@@ -192,7 +197,7 @@ class TestDatasetCreate(object):
 
         file_extras = [e for e in harvest_object.extras if e.key == 'file']
         nt.assert_equals(len(file_extras), 2)
-        
+
         # TODO: split into seperate test
         harvester.import_stage(harvest_object)
         pkg = helpers.call_action('package_show', name_or_id=harvest_object.package_id)
@@ -247,3 +252,186 @@ class TestDatasetCreate(object):
         nt.assert_equals(org['id'], '4')
         nt.assert_equals(len(org['packages']), 1)
         nt.assert_equals(org['packages'][0]['name'], u'raj-data-set-001')
+
+
+class TestUserCreate(object):
+    @classmethod
+    def setup_class(cls):
+        # Start mock EC API
+        harvest_model.setup()
+        run_mock_ec()
+
+    def setup(self):
+        helpers.reset_db()
+        self.normal_user = helpers.call_action('user_create',
+                                              name='normal_user',
+                                              email='test@test.com',
+                                              password='test')
+
+        # Create test org
+        self.test_org = helpers.call_action('organization_create',
+                                       context={
+                                           'user': 'normal_user',
+                                           'local_action': True,
+                                       },
+                                       name='test_org',
+                                       id='organisation123')
+
+    @classmethod
+    def teardown_class(cls):
+        helpers.reset_db()
+        search.clear()
+
+    @mock.patch('requests.request')
+    def test_user_create(self, mock_request):
+        content = {"UserName": 'testuser',
+            "About": "about",
+            "DisplayName": "display name",
+            "Roles": ['OrganisationEditor'],
+            "FirstName": "firstname",
+            "LastName": "lastname",
+            "UserId": "userid123",
+            "IsRegistered": False,
+            "OrganisationId": 'organisation123',
+            "Email": "em@il.com"
+        }
+        mock_request.return_value = mock.Mock(
+            status_code=200,
+            content=json.dumps(content),
+            **{
+                'raise_for_status.return_value': None,
+                'json.return_value': content,
+            }
+        )
+        site_user = helpers.call_action('get_site_user')
+        handle_user_create(
+            context={
+                'model': model,
+                'ignore_auth': True,
+                'local_action': True,
+                'user': site_user['name']
+            },
+            audit={'CustomProperties':{'UserName':'testuser'}},
+            harvest_object=None,
+        )
+
+        user = helpers.call_action('user_show', id='testuser')
+        membership = helpers.call_action('member_list', id='organisation123')
+        nt.assert_dict_contains_subset(
+            {'about': u'about',
+             'display_name': u'display name',
+             'email_hash': '6dc2fde946483a1d8a84b89345a1b638',
+             'fullname': u'display name',
+             'id': u'userid123',
+             'name': u'testuser',
+             'state': u'active',
+             'sysadmin': False
+            },
+            user
+        )
+        nt.assert_equals(membership[1], (u'userid123', u'user', u'Editor'))
+
+
+class TestChangeLogUserUpdate(object):
+    @classmethod
+    def setup_class(cls):
+        # Start mock EC API
+        harvest_model.setup()
+        run_mock_ec()
+
+    def setup(self):
+        helpers.reset_db()
+        self.normal_user = helpers.call_action('user_create',
+                                              name='normal_user',
+                                              email='test@test.com',
+                                              password='test')
+
+
+        self.test_user = helpers.call_action('user_create',
+                                             id='userid123',
+                                             name='testuser',
+                                             email='test1@test.com',
+                                             password='test')
+
+        # Create test org that the user is currently in
+        self.test_org = helpers.call_action('organization_create',
+                                       context={
+                                           'user': 'normal_user',
+                                           'local_action': True,
+                                       },
+                                       name='an_org')
+        helpers.call_action('organization_member_create',
+                            context={
+                                'user': 'normal_user',
+                                'local_action': True,
+                            },
+                            id=self.test_org['id'],
+                            username=self.test_user['name'],
+                            role='editor')
+
+
+        # the org we want to add the user to
+        self.test_org = helpers.call_action('organization_create',
+                                       context={
+                                           'user': 'normal_user',
+                                           'local_action': True,
+                                       },
+                                       name='test_org',
+                                       id='organisation123')
+    @classmethod
+    def teardown_class(cls):
+        helpers.reset_db()
+        search.clear()
+
+    @mock.patch('requests.request')
+    def test_user_create(self, mock_request):
+        content = {"UserName": 'testuser',
+            "About": "about",
+            "DisplayName": "display name",
+            "Roles": ['OrganisationEditor'],
+            "FirstName": "firstname",
+            "LastName": "lastname",
+            "UserId": "userid123",
+            "IsRegistered": False,
+            "OrganisationId": 'organisation123',
+            "Email": "em@il.com"
+        }
+        mock_request.return_value = mock.Mock(
+            status_code=200,
+            content=json.dumps(content),
+            **{
+                'raise_for_status.return_value': None,
+                'json.return_value': content,
+            }
+        )
+        site_user = helpers.call_action('get_site_user')
+        handle_user_update(
+            context={
+                'model': model,
+                'ignore_auth': True,
+                'local_action': True,
+                'user': site_user['name']
+            },
+            audit={'CustomProperties':{'UserName':'testuser'}},
+            harvest_object=None,
+        )
+
+        user = helpers.call_action('user_show', id='testuser')
+        membership = helpers.call_action('member_list', id='organisation123')
+        nt.assert_dict_contains_subset(
+            {'about': u'about',
+             'display_name': u'display name',
+             'email_hash': '6dc2fde946483a1d8a84b89345a1b638',
+             'fullname': u'display name',
+             'id': u'userid123',
+             'name': u'testuser',
+             'state': u'active',
+             'sysadmin': False
+            },
+            user
+        )
+        nt.assert_equals(membership[1], (u'userid123', u'user', u'Editor'))
+
+        membership = helpers.call_action('member_list', id='an_org')
+        nt.assert_false(u'userid123' in set(i[0] for i in membership))
+        import ipdb; ipdb.set_trace()

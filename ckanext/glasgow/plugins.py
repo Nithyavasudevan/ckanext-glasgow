@@ -117,6 +117,7 @@ class GlasgowSchemaPlugin(p.SingletonPlugin, p.toolkit.DefaultDatasetForm):
             'organization_request_update',
             'organization_member_create',
             'organization_member_delete',
+            'organization_list_for_user',
             'user_role_update',
             'ec_user_show',
             'ec_user_list',

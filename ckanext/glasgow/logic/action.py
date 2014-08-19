@@ -14,6 +14,7 @@ from sqlalchemy import or_
 from pylons import config, session
 
 import ckan.model as model
+from ckan import new_authz
 import ckan.plugins as p
 from ckan.lib.navl.dictization_functions import validate
 import ckan.lib.dictization.model_dictize as model_dictize
@@ -1149,8 +1150,8 @@ def check_for_task_status_update(context, data_dict):
             return  p.toolkit.get_action('task_status_update')(context,
                                                                task_status)
     else:
-        raise ECAPIError('EC API returned an error: {0} - {1}'.format(
-            response.status_code, url))
+        raise ECAPIError(['EC API returned an error: {0} - {1}'.format(
+            response.status_code, url)])
 
 
 class NoSuchTaskType(Exception):
@@ -1493,8 +1494,8 @@ def send_request_to_ec_platform(method, url, data=None, headers=None, **kwargs):
             raise ECAPINotFound('CTPEC API returned a 404: {0}'.format(response.content))
 
         log.debug('request url: {0} - {1}'.format(method, url))
-        raise ECAPIError('The CTPEC API returned an error code: {0} : {1}'.format(response.status_code,
-                                                                                  response.content))
+        raise ECAPIError(['The CTPEC API returned an error code: {0} : {1}'.format(response.status_code,
+                                                                                  response.content)])
     except requests.exceptions.RequestException, e:
         error_dict = {
             'message': ['Request exception: {0}'.format(e)],
@@ -1539,7 +1540,7 @@ def organization_member_create(context, data_dict):
         try:
             # check if the user is a CTPEC user
             ec_user = p.toolkit.get_action('ec_user_show')(
-                context, 
+                context,
                 {'ec_username': validated_data_dict['username']}
             )
         except ECAPINotFound:
@@ -1637,7 +1638,7 @@ def organization_member_delete(context, data_dict):
     if (context.get('local_action', False) or
             data_dict.get('type') == 'harvest' or
             data_dict.get('source_type')):
-        return core_actions.update.organization_member_create(context, data_dict)
+        return core_actions.delete.organization_member_delete(context, data_dict)
     else:
         p.toolkit.abort(404, 'users cannot be deleted from groups. Use organization_member_change to change the group a user belongs to')
 
@@ -1856,3 +1857,60 @@ def approval_download(context, data_dict):
         'headers': response.headers,
         'content': response.content,
     }
+
+
+def organization_list_for_user(context, data_dict):
+    '''Return the list of organizations that the user is a member of.
+
+    :param permission: the permission the user has against the returned organizations
+      (optional, default: ``edit_group``)
+    :type permission: string
+
+    :param user: the id or username of the user.
+      (optional, default: current logged in user)
+
+    :returns: list of dictized organizations that the user is authorized to edit
+    :rtype: list of dicts
+
+    '''
+    model = context['model']
+    user = data_dict.get('user')
+    if not data_dict.get('user'):
+        user = context['user']
+
+    p.toolkit.check_access('organization_list_for_user',context, data_dict)
+    sysadmin = new_authz.is_sysadmin(user)
+
+    orgs_q = model.Session.query(model.Group) \
+        .filter(model.Group.is_organization == True) \
+        .filter(model.Group.state == 'active')
+
+    if not sysadmin:
+        # for non-Sysadmins check they have the required permission
+
+        permission = data_dict.get('permission', 'edit_group')
+
+        roles = new_authz.get_roles_with_permission(permission)
+
+        if not roles:
+            return []
+        user_id = new_authz.get_user_id_for_username(user, allow_none=True)
+        if not user_id:
+            return []
+
+        q = model.Session.query(model.Member) \
+            .filter(model.Member.table_name == 'user') \
+            .filter(model.Member.capacity.in_(roles)) \
+            .filter(model.Member.table_id == user_id)
+
+        group_ids = []
+        for row in q.all():
+            group_ids.append(row.group_id)
+
+        if not group_ids:
+            return []
+
+        orgs_q = orgs_q.filter(model.Group.id.in_(group_ids))
+
+    orgs_list = model_dictize.group_list_dictize(orgs_q.all(), context)
+    return orgs_list
