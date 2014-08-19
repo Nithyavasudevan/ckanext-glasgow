@@ -1669,7 +1669,12 @@ def ec_user_show(context, data_dict):
 def ec_user_list(context, data_dict):
     '''proxy a request to ec platform for user list'''
     check_access('user_list',context, data_dict)
-    method, url = _get_api_endpoint('user_list')
+    organization_id = data_dict.get('organization_id')
+    if organization_id:
+        method, url = _get_api_endpoint('user_list_for_organization')
+        url.format(organization_id=organization_id)
+    else:
+        method, url = _get_api_endpoint('user_list')
 
     try:
         access_token = oauth2.service_to_service_access_token('identity')
