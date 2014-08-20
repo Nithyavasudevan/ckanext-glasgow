@@ -1581,9 +1581,9 @@ def user_role_update(context, data_dict):
                            datetime.datetime.now().isoformat())
 
     task_dict = _create_task_status(context,
-                                    task_type='member_update',
+                                    task_type='user_update',
                                     entity_id=data_dict['id'],
-                                    entity_type='organization',
+                                    entity_type='member',
                                     key=key,
                                     value=json.dumps(
                                         {'data_dict': data_dict})
@@ -1644,8 +1644,93 @@ def organization_member_delete(context, data_dict):
             data_dict.get('source_type')):
         return core_actions.delete.organization_member_delete(context, data_dict)
     else:
-        p.toolkit.abort(404, 'users cannot be deleted from groups. Use organization_member_change to change the group a user belongs to')
+        check_access('organization_member_delete', context, data_dict)
+        
+        group_id = p.toolkit.get_or_bust(data_dict, 'id')
+        user_id = data_dict.get('username')
+        user_id = data_dict.get('user_id') if user_id is None else user_id
 
+        if not user_id:
+            raise p.toolkit.ValidationError(['user_id is required'])
+
+        ckan_user = p.toolkit.get_action('user_show')(context, {'id': user_id})
+        try:
+            # check if the user is a CTPEC user
+            ec_user = p.toolkit.get_action('ec_user_show')(
+                context,
+                {'ec_username': ckan_user['name']}
+            )
+        except ECAPINotFound:
+            ec_user = None
+
+        if not ec_user:
+            return core_actions.delete.organization_member_delete(
+                context,
+                data_dict,
+            )
+        else:
+            return user_role_delete(context, ckan_user['name'], group_id)
+
+
+def user_role_delete(context, user, user_organization=None):
+    context.update({'model': model, 'session': model.Session})
+
+
+    ckan_user = p.toolkit.get_action('user_show')(context, {'id': user})
+
+    key = '{0}@{1}'.format(user, datetime.datetime.now().isoformat())
+
+    task_dict = _create_task_status(context,
+                                    task_type='user_update',
+                                    entity_id=ckan_user['id'],
+                                    entity_type='member',
+                                    key=key,
+                                    value=None
+                                    )
+    
+
+    if user_organization:
+        method, url = _get_api_endpoint('user_org_role_update')
+        url = url.format(
+            organization_id=user_organization,
+            user_id=user
+        )
+    else:
+        method, url = _get_api_endpoint('user_role_update')
+        url = url.format(user)
+
+    ec_dict = {
+        'NewOrganisationId': None,
+        'UserRoles': []
+    }
+
+    content = send_request_to_ec_platform(method, url,
+                                          data=json.dumps(ec_dict),
+                                          context=context,
+                                          task_dict=task_dict)
+
+    try:
+        request_id = content['RequestId']
+    except KeyError:
+        error_dict = {
+            'message': ['RequestId not in response from EC Platform'],
+            'content': [json.dumps(content)],
+        }
+        raise p.toolkit.ValidationError(error_dict)
+
+    task_dict = _update_task_status_success(context, task_dict, {
+        'data_dict': None,
+        'request_id': request_id,
+    })
+
+    helpers.flash_success(
+        'user organization removal has been requested with request id {0}'.format(request_id)
+    )
+
+    return {
+        'task_id': task_dict['id'],
+        'request_id': request_id,
+    }
 
 @p.toolkit.side_effect_free
 def ec_user_show(context, data_dict):
@@ -1902,7 +1987,7 @@ def organization_list_for_user(context, data_dict):
         if not user_id:
             return []
 
-        q = model.Session.query(model.Member) \
+        q = model.Session.query(model.Member.group_id) \
             .filter(model.Member.table_name == 'user') \
             .filter(model.Member.capacity.in_(roles)) \
             .filter(model.Member.table_id == user_id)

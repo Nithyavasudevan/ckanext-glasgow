@@ -1553,3 +1553,86 @@ class TestUserRoleUpdate(object):
             'organization_member_create',
             context={'user': 'org_owner'},
             **data_dict)
+
+
+class TestUserRoleDelete(object):
+    def setup(self):
+        self.org_owner = helpers.call_action('user_create',
+                                               name='org_owner',
+                                               email='test@test.com',
+                                               password='test')
+
+        self.normal_user = helpers.call_action('user_create',
+                                               name='normal_user',
+                                               email='test@test.com',
+                                               password='test')
+
+        self.test_org = helpers.call_action('organization_create',
+                                       context={
+                                           'user': 'org_owner',
+                                           'local_action': True,
+                                       },
+                                       name='test_org')
+
+        data_dict = {
+            'id': self.test_org['id'],
+            'username': 'normal_user',
+            'role': 'editor',
+        }
+
+        helpers.call_action('organization_member_create',
+                            context={
+                                'user': 'org_owner',
+                                'local_action': True,
+                            },
+                            **data_dict)
+
+    def teardown(cls):
+        helpers.reset_db()
+
+    @mock.patch('ckan.lib.helpers.flash_success')
+    @mock.patch('requests.request')
+    def test_make_user_member(self, mock_request, mock_flash):
+        content =  {
+            # we're cheating here as requests gets called twice
+            # we want these 2 for the first response
+            'UserName': 'normal_user',
+            'OrganisationId': 'orgid',
+            # and the returned request when we post here
+            'RequestId': 'requestid',
+        }
+        mock_request.return_value = mock.Mock(
+            status_code=200,
+            content=json.dumps(content),
+            **{
+                'raise_for_status.side_effect': None,
+                'json.return_value': content,
+            }
+        )
+        # mock out the flash_success helper to avoid problems with the beaker
+        # session in tests
+        mock_flash.return_value = None
+
+        members = helpers.call_action('member_list',
+                                      id=self.test_org['id'])
+
+        member_ids = set([i[0] for i in members])
+        nose.tools.assert_in(self.normal_user['id'], member_ids)
+
+        data_dict = {
+            'id': self.test_org['id'],
+            'username': 'normal_user',
+        }
+
+        request = helpers.call_action('organization_member_delete',
+                            context={
+                                'user': 'org_owner',
+                            },
+                            **data_dict)
+
+        task = model.Session.query(model.TaskStatus) \
+                .filter(model.TaskStatus.id == request['task_id']) \
+                .one()
+
+        nose.tools.assert_equals('requestid', json.loads(task.value)['request_id'])
+        nose.tools.assert_equals('user_update', task.task_type)
