@@ -37,9 +37,13 @@ class GlasgowSchemaPlugin(p.SingletonPlugin, p.toolkit.DefaultDatasetForm):
         map.connect('auth token', '/auth_token', controller=controller,
                     action='auth_token')
 
-        map.connect('/dataset/{dataset}/resource/{resource}/version/{version}',
+        map.connect('resource_version', '/dataset/{dataset}/resource/{resource}/version/{version}',
                     controller=controller,
                     action='resource_version')
+
+        map.connect('/dataset/{dataset}/resource/{resource}/version/{version}/delete',
+                    controller=controller,
+                    action='resource_version_delete')
 
         map.connect('dataset_change_requests', '/dataset/change_requests/{dataset_name}',
                     controller=controller, action='dataset_change_requests')
