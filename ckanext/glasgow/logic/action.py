@@ -155,6 +155,10 @@ def _get_api_endpoint(operation):
             'PUT',
             '/Files/Organisation/{organization_id}/Dataset/{dataset_id}/File/{file_id}/Version/{version_id}',
             write_base),
+        'file_version_request_delete': (
+            'DELETE',
+            '/Files/Organisation/{organization_id}/Dataset/{dataset_id}/File/{file_id}/Version/{version_id}',
+            write_base),
         'file_version_show': (
             'GET',
             '/Metadata/Organisation/{organization_id}/Dataset/{dataset_id}/File/{file_id}/Version/{version_id}',
@@ -1914,3 +1918,122 @@ def organization_list_for_user(context, data_dict):
 
     orgs_list = model_dictize.group_list_dictize(orgs_q.all(), context)
     return orgs_list
+
+
+def resource_delete(context, data_dict):
+
+    if data_dict.get('__local_action', False):
+        context['local_action'] = True
+        data_dict.pop('__local_action', None)
+    if context.get('local_action', False):
+
+        return core_actions.delete.resource_delete(context, data_dict)
+
+    else:
+
+        return p.toolkit.get_action('file_request_delete')(context,
+                                                           data_dict)
+
+
+def file_request_delete(context, data_dict):
+
+    # TODO: refactor to reuse code across updates and file creation/udpate
+
+    if not data_dict.get('id'):
+        raise p.toolkit.ValidationError({'id': ['Missing resource id']})
+
+    resource_id = data_dict.get('id')
+
+    try:
+        resource_dict = p.toolkit.get_action('resource_show')(context,
+                                                              {'id': resource_id})
+        # Add some extra fields needed to display the pending deletion on the frontend
+        data_dict['name'] = resource_dict['name']
+        data_dict['description'] = resource_dict['description']
+
+        # Check if parent dataset exists
+        try:
+            dataset_dict = p.toolkit.get_action('package_show')(context,
+                                                                {'id': resource_dict.get('package_id')})
+
+            data_dict['package_id'] = dataset_dict['id']
+        except p.toolkit.ObjectNotFound:
+            raise p.toolkit.ObjectNotFound('Dataset not found')
+
+        # We need to get the version id from the existing resource
+        if not data_dict.get('version_id'):
+            version_id = resource_dict.get('ec_api_version_id')
+            data_dict['version_id'] = version_id
+
+        if not data_dict.get('version_id'):
+            raise p.toolkit.ObjectNotFound('No version id found for resource')
+    except p.toolkit.ObjectNotFound:
+        raise p.toolkit.ObjectNotFound('Resource not found')
+
+    # Check access
+
+    check_access('file_request_delete', context, data_dict)
+
+    # Validate data_dict
+
+
+
+    # Store data in task status table
+    # Create a task status entry with the validated data
+    key = '{0}@{1}'.format(data_dict.get('package_id', 'file'),
+                           datetime.datetime.now().isoformat())
+
+    task_dict = _create_task_status(context,
+                                    task_type='file_request_delete',
+                                    entity_id=data_dict['package_id'],
+                                    entity_type='file',
+                                    key=key,
+                                    value=json.dumps(
+                                        {'data_dict': data_dict})
+                                    )
+
+    # Send request to EC Data Collection API
+
+    method, url = _get_api_endpoint('file_version_request_delete')
+    url = url.format(
+        organization_id=dataset_dict['owner_org'],
+        dataset_id=dataset_dict['id'],
+        file_id=data_dict['id'],
+        version_id=data_dict['version_id'],
+    )
+
+    headers = {
+        'Authorization': _get_api_auth_token(),
+    }
+
+    context.update({'model': model, 'session': model.Session})
+    data = None
+
+    content = send_request_to_ec_platform(method, url, data, headers,
+                                          files=None,
+                                          context=context,
+                                          task_dict=task_dict)
+
+    try:
+        request_id = content['RequestId']
+    except KeyError:
+        error_dict = {
+            'message': ['RequestId not in response from EC Platform'],
+            'content': [json.dumps(content)],
+        }
+        raise p.toolkit.ValidationError(error_dict)
+
+    request_id = content.get('RequestId')
+    task_dict = _update_task_status_success(context, task_dict, {
+        'data_dict': data_dict,
+        'request_id': request_id,
+    })
+
+    # Return task id to access it later and the request id returned by the
+    # EC Metadata API
+
+    return {
+        'task_id': task_dict['id'],
+        'request_id': request_id,
+        'name': None,
+    }

@@ -398,6 +398,38 @@ def handle_file_create(context, audit, harvest_object):
     return True
 
 
+def handle_file_delete(context, audit, harvest_object):
+
+    resource_id = audit['CustomProperties'].get('FileId')
+    dataset_id = audit['CustomProperties'].get('DataSetId')
+
+    try:
+        p.toolkit.get_action('resource_delete')(context,
+                                                {'id': resource_id})
+    except p.toolkit.ObjectNotFound:
+        log.debug('Resource "{0}" does not exist, it can not be deleted'.format(resource_id))
+
+    log.debug('Deleted existing resource "{0}"'.format(resource_id))
+
+    harvest_object.guid = dataset_id
+    harvest_object.package_id = dataset_id
+    harvest_object.current = True
+
+    harvest_object.add()
+
+    previous_objects = model.Session.query(HarvestObject) \
+        .filter(HarvestObject.guid==harvest_object.guid) \
+        .filter(HarvestObject.current==True) \
+        .all()
+
+    for obj in previous_objects:
+        obj.delete()
+
+    model.Session.commit()
+
+    return True
+
+
 def handle_file_update(context, audit, harvest_object):
 
     resource_dict = _get_file_version(audit)
@@ -541,6 +573,7 @@ def get_audit_command_handler(command):
         'UpdateDataSet': handle_dataset_update,
         'CreateFile': handle_file_create,
         'UpdateFile': handle_file_update,
+        'DeleteFileVersion': handle_file_delete,
         'CreateOrganisation': handle_organization_create,
         'UpdateOrganisation': handle_organization_update,
         'CreateUser': handle_user_create,
