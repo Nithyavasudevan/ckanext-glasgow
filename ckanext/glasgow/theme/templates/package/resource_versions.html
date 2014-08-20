@@ -23,6 +23,9 @@
   {% set res =  versions[version_id] %}
   {% if res %}
     Download: <a href="{{ res.url }}">{{res.url}}</a>
+
+    <a class="btn btn-danger" href="{% url_for controller='ckanext.glasgow.controllers.dataset:DatasetController', action='resource_version_delete', dataset=pkg.id, resource=resource_id, version=version_id %}" >{{ _('Delete') }}</a>
+
     <section class="module">
       <div class="module-content">
         <h2>{{ _('Metadata') }}</h2>
@@ -85,7 +88,7 @@
     {% else %}
       <p> No versions found <p>
     {% endif %}
-  
+
 
 {% endblock %}
 

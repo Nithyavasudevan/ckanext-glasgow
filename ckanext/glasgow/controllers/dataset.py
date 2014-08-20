@@ -164,7 +164,7 @@ class DatasetController(PackageController):
                return p.toolkit.abort(404, 'no versions were found for this file')
         except p.toolkit.ValidationError, e:
             return p.toolkit.abort(404, 'error fetching versions: {0}'.format(str(e)))
-        except p.toolkit.NotAuthorized. e:
+        except p.toolkit.NotAuthorized, e:
             return p.toolkit.abort(401, 'error fetching versions: {0}'.format(str(e)))
         except p.toolkit.ObjectNotFound, e:
             return p.toolkit.abort(404, 'ObjectNotFound: error fetching versions: {0}'.format(str(e)))
@@ -177,6 +177,21 @@ class DatasetController(PackageController):
         }
         return p.toolkit.render('package/resource_versions.html',
                                 extra_vars=vars)
+
+    def resource_version_delete(self, dataset, resource, version=0):
+
+        data_dict = {
+            'id': resource
+        }
+        if version:
+            data_dict['version_id'] = version
+
+        p.toolkit.get_action('file_request_delete')({}, data_dict)
+
+        helpers.flash_notice('Deletion of File version {0} was requested'.format(version))
+
+        p.toolkit.redirect_to('resource_version')
+
 
     def dataset_change_requests(self, dataset_name):
         context = {
