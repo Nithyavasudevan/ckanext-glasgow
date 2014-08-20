@@ -27,7 +27,7 @@
               </tr>
               <tr>
                 <th scope="row">{{ _('License') }}</th>
-                <td>{% snippet "snippets/license.html", pkg_dict={'license_id': res.license_id}, text_only=True %}</td>
+                <td>{{ res.license_id or '-' }}</td>
               </tr>
               <tr>
                 <th scope="row">{{ _('Openness Rating') }}</th>
@@ -40,6 +40,10 @@
              <tr>
                 <th scope="row">{{ _('Standard Rating') }}</th>
                 <td>{{ res.standard_rating or '-' }}</td>
+             </tr>
+             <tr>
+                <th scope="row">{{ _('Standard Version') }}</th>
+                <td>{{ res.standard_version or '-' }}</td>
              </tr>
              <tr>
                 <th scope="row">{{ _('Standard Name') }}</th>
