@@ -321,12 +321,6 @@ def _modify_schema(schema):
 
     # Internal fields
 
-    schema['ec_api_id'] = [ignore_missing, unicode,
-                           convert_to_extras]
-
-    schema['ec_api_org_id'] = [ignore_missing, unicode,
-                               convert_to_extras]
-
     schema['resources'] = _modify_resource_schema()
 
     schema['tag_string'] = [ignore_missing, tag_string_convert]
@@ -361,12 +355,6 @@ def show_package_schema():
     schema['resources'] = resource_schema()
 
     schema['needs_approval'] = [convert_from_extras]
-
-    # Internal fields
-
-    schema['ec_api_id'] = [convert_from_extras]
-
-    schema['ec_api_org_id'] = [convert_from_extras]
 
 
     return schema
@@ -424,10 +412,6 @@ def _modify_resource_schema():
 
     schema['ec_api_version_id'] = [ignore_missing, unicode]
 
-    schema['ec_api_id'] = [ignore_missing, unicode]
-
-    schema['ec_api_dataset_id'] = [ignore_missing, unicode]
-
     return schema
 
 
@@ -459,7 +443,6 @@ def update_organization_schema():
     boolean_validator = get_validator('boolean_validator')
     not_missing = get_validator('not_missing')
     convert_to_extras = get_converter('convert_to_extras')
-    name_validator = get_validator('name_validator')
     group_name_validator = get_validator('group_name_validator')
     schema = default_update_group_schema()
     schema.update({
