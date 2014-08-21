@@ -1435,8 +1435,8 @@ class TestUserRoleUpdate(object):
                                         id=request_dict['task_id'])
         nose.tools.assert_dict_contains_subset(
             {
-                'task_type': u'member_update',
-                'entity_type': u'organization',
+                'task_type': u'user_update',
+                'entity_type': u'member',
                 'state': u'sent',
                 'error': None
             },
@@ -1445,7 +1445,7 @@ class TestUserRoleUpdate(object):
         mock_request.assert_called_with(
             'PUT',
             '/UserRoles/Organisation/{}/User/{}'.format(self.test_org['id'],
-                                                        self.normal_user['name']),
+                                                        self.normal_user['id']),
             verify=False,
             data='{{"NewOrganisationId": "{}", "UserRoles": {{"UserGroup": ["OrganisationAdmin"]}}}}'.format(self.test_org['id']),
             timeout=50,
@@ -1491,8 +1491,8 @@ class TestUserRoleUpdate(object):
                                         id=request_dict['task_id'])
         nose.tools.assert_dict_contains_subset(
             {
-                'task_type': u'member_update',
-                'entity_type': u'organization',
+                'task_type': u'user_update',
+                'entity_type': u'member',
                 'state': u'sent',
                 'error': None
             },
@@ -1500,7 +1500,7 @@ class TestUserRoleUpdate(object):
         )
         mock_request.assert_called_with(
             'PUT',
-            '/UserRoles/User/{}'.format(self.normal_user['name']),
+            '/UserRoles/User/{}'.format(self.normal_user['id']),
             verify=False,
             data='{{"NewOrganisationId": "{}", "UserRoles": {{"UserGroup": ["OrganisationAdmin"]}}}}'.format(self.test_org['id']),
             timeout=50,

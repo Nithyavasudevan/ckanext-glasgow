@@ -1602,12 +1602,12 @@ def user_role_update(context, data_dict):
         method, url = _get_api_endpoint('user_org_role_update')
         url = url.format(
             organization_id=data_dict.pop('current_organization'),
-            user_id=user['name']
+            user_id=user['id']
         )
     else:
         method, url = _get_api_endpoint('user_role_update')
         url = url.format(
-            user_id=user['name']
+            user_id=user['id']
         )
 
 
@@ -1673,7 +1673,7 @@ def organization_member_delete(context, data_dict):
                 data_dict,
             )
         else:
-            return user_role_delete(context, ckan_user['name'], group_id)
+            return user_role_delete(context, ckan_user['id'], group_id)
 
 
 def user_role_delete(context, user, user_organization=None):
