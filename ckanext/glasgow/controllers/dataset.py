@@ -164,7 +164,7 @@ class DatasetController(PackageController):
                return p.toolkit.abort(404, 'no versions were found for this file')
         except p.toolkit.ValidationError, e:
             return p.toolkit.abort(404, 'error fetching versions: {0}'.format(str(e)))
-        except p.toolkit.NotAuthorized. e:
+        except p.toolkit.NotAuthorized, e:
             return p.toolkit.abort(401, 'error fetching versions: {0}'.format(str(e)))
         except p.toolkit.ObjectNotFound, e:
             return p.toolkit.abort(404, 'ObjectNotFound: error fetching versions: {0}'.format(str(e)))
