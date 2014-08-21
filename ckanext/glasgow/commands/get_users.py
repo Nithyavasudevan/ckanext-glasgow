@@ -47,7 +47,10 @@ def create_user(ec_dict):
                 'local_action': True,
             }
             member_dict = convert_ec_member_to_ckan_member(ec_dict)
-            toolkit.get_action('organization_member_create')(context, member_dict)
+            try:
+                toolkit.get_action('organization_member_create')(context, member_dict)
+            except toolkit.ObjectNotFound, e:
+                log.warning('organization {} does not exist'.format(member_dict['id']))
         return user
     except toolkit.ValidationError, e:
         if e.error_dict.get('name') == [u'That login name is not available.']:
