@@ -5,7 +5,7 @@ from ckan.logic.schema import (
     default_resource_schema,
     default_group_schema,
     default_update_group_schema,
-    default_user_schema
+    default_user_schema,
     default_extras_schema,
     )
 
