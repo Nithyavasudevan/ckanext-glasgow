@@ -78,6 +78,7 @@
 
       {{ form.input('creation_date', id='field-creation_date', label=_('Creation Date'), placeholder=_('eg. 2012-06-05'), value=data.creation_date, error=errors.creation_date, classes=['control-medium']) }}
 
+  {% snippet 'snippets/custom_form_fields.html', extras=h.get_resource_ec_extra_fields(data), errors=errors, limit=3 %}
   </fieldset>
 
   <div class="form-actions">

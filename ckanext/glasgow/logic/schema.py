@@ -6,6 +6,7 @@ from ckan.logic.schema import (
     default_group_schema,
     default_update_group_schema,
     default_user_schema
+    default_extras_schema,
     )
 
 import ckan.plugins as p
@@ -178,6 +179,12 @@ def convert_ckan_resource_to_ec_file(ckan_dict):
     if not ec_dict.get('DatasetId') and ckan_dict.get('package_id'):
         ec_dict['DatasetId'] = ckan_dict.get('package_id')
 
+    # Arbitrary extras
+    ec_dict['Metadata'] = {}
+    for extra in ckan_dict.get('extras', []):
+        if extra['key'] not in ckan_dict:
+            ec_dict['Metadata'][extra['key']] = extra['value']
+
     return ec_dict
 
 
@@ -188,6 +195,11 @@ def convert_ec_file_to_ckan_resource(ec_dict):
     for ckan_name, ec_name in ckan_to_ec_resource_mapping.iteritems():
         if ec_dict.get(ec_name):
             ckan_dict[ckan_name] = ec_dict.get(ec_name)
+
+    ec_keys = [v for k, v in ckan_to_ec_resource_mapping.iteritems()]
+    for key, value in ec_dict.iteritems():
+        if key not in ec_keys:
+            ckan_dict[key] = value
 
     return ckan_dict
 
@@ -377,13 +389,27 @@ def show_package_schema():
 
 def resource_schema():
     schema = _modify_resource_schema()
+
+    # TODO: Why do we need this?
     schema.update({
-        'package_id': [not_empty, unicode],
+#        'package_id': [not_empty, unicode],
         'created':  [ignore_missing, iso_date, unicode],
         'last_modified': [ignore_missing, iso_date, unicode],
         'cache_last_updated': [ignore_missing, iso_date, unicode],
         'webstore_last_updated': [ignore_missing, iso_date, unicode],
     })
+    return schema
+
+
+def custom_resource_extras_schema():
+
+    not_missing = get_validator('not_missing')
+
+    schema = default_extras_schema()
+
+    schema['key'] = [not_empty, string_max_length(255), unicode]
+    schema['value'] = [not_missing, string_max_length(64000)]
+
     return schema
 
 
@@ -422,6 +448,8 @@ def _modify_resource_schema():
                                   unicode]
 
     schema['creation_date'] = [ignore_missing, iso_date, unicode]
+
+    schema['extras'] = custom_resource_extras_schema()
 
     # Internal fields
 
