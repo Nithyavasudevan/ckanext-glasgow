@@ -59,7 +59,8 @@ def create_user(ec_dict):
 def _create_users(ec_user_list):
     for ec_user in ec_user_list:
         user = create_user(ec_user)
-        log.debug('created user {0}'.format(user['id']))
+        if user:
+            log.debug('created user {0}'.format(user['id']))
 
 
 class GetInitialUsers(CkanCommand):
