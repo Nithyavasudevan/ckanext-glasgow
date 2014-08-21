@@ -37,9 +37,13 @@ class GlasgowSchemaPlugin(p.SingletonPlugin, p.toolkit.DefaultDatasetForm):
         map.connect('auth token', '/auth_token', controller=controller,
                     action='auth_token')
 
-        map.connect('/dataset/{dataset}/resource/{resource}/version/{version}',
+        map.connect('resource_version', '/dataset/{dataset}/resource/{resource}/version/{version}',
                     controller=controller,
                     action='resource_version')
+
+        map.connect('/dataset/{dataset}/resource/{resource}/version/{version}/delete',
+                    controller=controller,
+                    action='resource_version_delete')
 
         map.connect('dataset_change_requests', '/dataset/change_requests/{dataset_name}',
                     controller=controller, action='dataset_change_requests')
@@ -111,6 +115,7 @@ class GlasgowSchemaPlugin(p.SingletonPlugin, p.toolkit.DefaultDatasetForm):
             'package_update',
             'resource_create',
             'resource_update',
+            'resource_delete',
             'organization_create',
             'organization_update',
             'organization_request_create',
@@ -124,6 +129,7 @@ class GlasgowSchemaPlugin(p.SingletonPlugin, p.toolkit.DefaultDatasetForm):
             'dataset_request_create',
             'file_request_create',
             'file_request_update',
+            'file_request_delete',
             'dataset_request_update',
             'pending_task_for_dataset',
             'pending_files_for_dataset',
@@ -150,6 +156,7 @@ class GlasgowSchemaPlugin(p.SingletonPlugin, p.toolkit.DefaultDatasetForm):
             'dataset_request_create',
             'file_request_create',
             'file_request_update',
+            'file_request_delete',
             'dataset_request_update',
             'pending_task_for_dataset',
             'pending_task_for_organization',

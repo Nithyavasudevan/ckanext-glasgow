@@ -434,4 +434,3 @@ class TestChangeLogUserUpdate(object):
 
         membership = helpers.call_action('member_list', id='an_org')
         nt.assert_false(u'userid123' in set(i[0] for i in membership))
-        import ipdb; ipdb.set_trace()
