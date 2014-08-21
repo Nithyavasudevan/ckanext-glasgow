@@ -130,6 +130,12 @@ def convert_ckan_dataset_to_ec_dataset(ckan_dict):
     elif ckan_dict.get('tags_string'):
         ec_dict['Tags'] = ckan_dict.get('tags_string')
 
+    # Arbitrary extras
+    ec_dict['Metadata'] = {}
+    for extra in ckan_dict.get('extras', []):
+        if extra['key'] not in ckan_dict and not extra['key'].startswith('harvest_'):
+            ec_dict['Metadata'][extra['key']] = extra['value']
+
     return ec_dict
 
 
@@ -148,6 +154,13 @@ def convert_ec_dataset_to_ckan_dataset(ec_dict):
     # Make sure ids are strings, otherwise we might get errors on update
     if ckan_dict.get('id'):
         ckan_dict['id'] = unicode(ckan_dict['id'])
+
+    # Arbitrary stuff stored as extras
+    ec_keys = [v for k, v in ckan_to_ec_dataset_mapping.iteritems()]
+    ckan_dict['extras'] = []
+    for key, value in ec_dict.iteritems():
+        if key not in ec_keys:
+            ckan_dict['extras'].append({'key': key, 'value': value})
 
     return ckan_dict
 
