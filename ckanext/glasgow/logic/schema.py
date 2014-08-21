@@ -5,6 +5,8 @@ from ckan.logic.schema import (
     default_resource_schema,
     default_group_schema,
     default_update_group_schema,
+    default_user_schema
+    default_extras_schema,
     )
 
 import ckan.plugins as p
@@ -23,6 +25,7 @@ from ckanext.glasgow.logic.validators import (
     unique_title_within_organization,
     no_pending_dataset_with_same_title_in_same_org,
     tag_length_validator,
+    url_name_validator,
 )
 
 
@@ -130,6 +133,12 @@ def convert_ckan_dataset_to_ec_dataset(ckan_dict):
     elif ckan_dict.get('tags_string'):
         ec_dict['Tags'] = ckan_dict.get('tags_string')
 
+    # Arbitrary extras
+    ec_dict['Metadata'] = {}
+    for extra in ckan_dict.get('extras', []):
+        if extra['key'] not in ckan_dict and not extra['key'].startswith('harvest_'):
+            ec_dict['Metadata'][extra['key']] = extra['value']
+
     return ec_dict
 
 
@@ -149,6 +158,13 @@ def convert_ec_dataset_to_ckan_dataset(ec_dict):
     if ckan_dict.get('id'):
         ckan_dict['id'] = unicode(ckan_dict['id'])
 
+    # Arbitrary stuff stored as extras
+    ec_keys = [v for k, v in ckan_to_ec_dataset_mapping.iteritems()]
+    ckan_dict['extras'] = []
+    for key, value in ec_dict.iteritems():
+        if key not in ec_keys:
+            ckan_dict['extras'].append({'key': key, 'value': value})
+
     return ckan_dict
 
 
@@ -163,6 +179,12 @@ def convert_ckan_resource_to_ec_file(ckan_dict):
     if not ec_dict.get('DatasetId') and ckan_dict.get('package_id'):
         ec_dict['DatasetId'] = ckan_dict.get('package_id')
 
+    # Arbitrary extras
+    ec_dict['Metadata'] = {}
+    for extra in ckan_dict.get('extras', []):
+        if extra['key'] not in ckan_dict:
+            ec_dict['Metadata'][extra['key']] = extra['value']
+
     return ec_dict
 
 
@@ -173,6 +195,11 @@ def convert_ec_file_to_ckan_resource(ec_dict):
     for ckan_name, ec_name in ckan_to_ec_resource_mapping.iteritems():
         if ec_dict.get(ec_name):
             ckan_dict[ckan_name] = ec_dict.get(ec_name)
+
+    ec_keys = [v for k, v in ckan_to_ec_resource_mapping.iteritems()]
+    for key, value in ec_dict.iteritems():
+        if key not in ec_keys:
+            ckan_dict[key] = value
 
     return ckan_dict
 
@@ -321,12 +348,6 @@ def _modify_schema(schema):
 
     # Internal fields
 
-    schema['ec_api_id'] = [ignore_missing, unicode,
-                           convert_to_extras]
-
-    schema['ec_api_org_id'] = [ignore_missing, unicode,
-                               convert_to_extras]
-
     schema['resources'] = _modify_resource_schema()
 
     schema['tag_string'] = [ignore_missing, tag_string_convert]
@@ -362,25 +383,33 @@ def show_package_schema():
 
     schema['needs_approval'] = [convert_from_extras]
 
-    # Internal fields
-
-    schema['ec_api_id'] = [convert_from_extras]
-
-    schema['ec_api_org_id'] = [convert_from_extras]
-
 
     return schema
 
 
 def resource_schema():
     schema = _modify_resource_schema()
+
+    # TODO: Why do we need this?
     schema.update({
-        'package_id': [not_empty, unicode],
+#        'package_id': [not_empty, unicode],
         'created':  [ignore_missing, iso_date, unicode],
         'last_modified': [ignore_missing, iso_date, unicode],
         'cache_last_updated': [ignore_missing, iso_date, unicode],
         'webstore_last_updated': [ignore_missing, iso_date, unicode],
     })
+    return schema
+
+
+def custom_resource_extras_schema():
+
+    not_missing = get_validator('not_missing')
+
+    schema = default_extras_schema()
+
+    schema['key'] = [not_empty, string_max_length(255), unicode]
+    schema['value'] = [not_missing, string_max_length(64000)]
+
     return schema
 
 
@@ -420,13 +449,11 @@ def _modify_resource_schema():
 
     schema['creation_date'] = [ignore_missing, iso_date, unicode]
 
+    schema['extras'] = custom_resource_extras_schema()
+
     # Internal fields
 
     schema['ec_api_version_id'] = [ignore_missing, unicode]
-
-    schema['ec_api_id'] = [ignore_missing, unicode]
-
-    schema['ec_api_dataset_id'] = [ignore_missing, unicode]
 
     return schema
 
@@ -459,7 +486,6 @@ def update_organization_schema():
     boolean_validator = get_validator('boolean_validator')
     not_missing = get_validator('not_missing')
     convert_to_extras = get_converter('convert_to_extras')
-    name_validator = get_validator('name_validator')
     group_name_validator = get_validator('group_name_validator')
     schema = default_update_group_schema()
     schema.update({
@@ -467,4 +493,11 @@ def update_organization_schema():
                  no_pending_organization_with_same_name],
         'needs_approval': [not_missing, boolean_validator, convert_to_extras]
     })
+    return schema
+
+
+def user_schema():
+    user_name_validator = get_validator('user_name_validator')
+    schema = default_user_schema()
+    schema['name'] = [not_empty, url_name_validator, user_name_validator, unicode]
     return schema

@@ -92,6 +92,7 @@
   {# Standard Version #}
   {{ form.input('standard_version', label=_('Standard Version'), id='field-standard_version', value=data.standard_version, error=errors.standard_version, classes=['control-medium']) }}
 
+  {% snippet 'snippets/custom_form_fields.html', extras=data.extras, errors=errors, limit=3 %}
 </fieldset>
 
 {% set dataset_is_draft = data.get('state', 'draft').startswith('draft') or data.get('state', 'none') ==  'none' %}

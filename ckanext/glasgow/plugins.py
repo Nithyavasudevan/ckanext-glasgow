@@ -124,6 +124,7 @@ class GlasgowSchemaPlugin(p.SingletonPlugin, p.toolkit.DefaultDatasetForm):
             #'organization_member_delete',
             'organization_list_for_user',
             'user_role_update',
+            'user_role_delete',
             'ec_user_show',
             'ec_user_list',
             'dataset_request_create',
@@ -182,6 +183,7 @@ class GlasgowSchemaPlugin(p.SingletonPlugin, p.toolkit.DefaultDatasetForm):
             'get_pending_task_for_dataset',
             'get_datetime_from_ec_iso',
             'parse_metadata_string',
+            'get_resource_ec_extra_fields',
         )
         return _get_module_functions(custom_helpers, function_names)
 
