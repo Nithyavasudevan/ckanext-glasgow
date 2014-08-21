@@ -1,6 +1,7 @@
 import cgi
 import json
 import datetime
+import re
 from itertools import count
 
 from dateutil.parser import parse as date_parser
@@ -9,7 +10,10 @@ import ckan.lib.navl.dictization_functions as df
 missing = df.missing
 
 import ckan.plugins as p
-from ckan.model import MAX_TAG_LENGTH
+from ckan.model import (
+    MAX_TAG_LENGTH,
+    PACKAGE_NAME_MAX_LENGTH,
+)
 
 # Reference some stuff from the toolkit
 _ = p.toolkit._
@@ -331,3 +335,25 @@ def tag_string_convert(key, data, errors, context):
 
     for num, tag in zip(count(current_index+1), tags):
         data[('tags', num, 'name')] = tag
+
+
+name_match = re.compile('[.@A-Za-z0-9_\-.]*$')
+def url_name_validator(value, context):
+    '''copy of name_validator that allows that @ symbol'''
+    if not isinstance(value, basestring):
+        raise Invalid(_('Names must be strings'))
+
+    # check basic textual rules
+    if value in ['new', 'edit', 'search']:
+        raise Invalid(_('That name cannot be used'))
+
+    if len(value) < 2:
+        raise Invalid(_('Name must be at least %s characters long') % 2)
+    if len(value) > PACKAGE_NAME_MAX_LENGTH:
+        raise Invalid(_('Name must be a maximum of %i characters long') % \
+                      PACKAGE_NAME_MAX_LENGTH)
+    if not name_match.match(value):
+        import ipdb; ipdb.set_trace()
+        raise Invalid(_('Url must be purely lowercase alphanumeric '
+                        '(ascii) characters and these symbols: -_'))
+    return value

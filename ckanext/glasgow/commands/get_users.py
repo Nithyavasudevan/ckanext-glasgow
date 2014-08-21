@@ -1,5 +1,6 @@
 import logging
 import uuid
+import urllib
 
 from ckan import model
 from ckan.lib.cli import CkanCommand
@@ -8,6 +9,7 @@ from ckan.plugins import toolkit
 from ckanext.glasgow.logic.schema import (
     convert_ec_user_to_ckan_user,
     convert_ec_member_to_ckan_member,
+    user_schema
 )
 
 
@@ -18,6 +20,7 @@ def create_user(ec_dict):
     data_dict['password'] = str(uuid.uuid4())
     if not data_dict.get('email'):
         data_dict['email'] = 'noemail'
+
 
     context = {
         'ignore_auth': True,
@@ -30,7 +33,8 @@ def create_user(ec_dict):
         'ignore_auth': True,
         'model': model,
         'user': site_user['name'],
-        'session': model.Session
+        'session': model.Session,
+        'schema': user_schema(),
     }
     try:
         user = toolkit.get_action('user_create')(context, data_dict)
