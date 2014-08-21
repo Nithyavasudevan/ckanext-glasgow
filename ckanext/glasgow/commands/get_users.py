@@ -16,6 +16,8 @@ log = logging.getLogger(__name__)
 def create_user(ec_dict):
     data_dict = convert_ec_user_to_ckan_user(ec_dict)
     data_dict['password'] = str(uuid.uuid4())
+    if not data_dict.get('email'):
+        data_dict['email'] = 'noemail'
 
     context = {
         'ignore_auth': True,
