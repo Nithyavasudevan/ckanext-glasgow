@@ -4,6 +4,8 @@ from ckan import model
 import ckan.lib.helpers as helpers
 import ckan.plugins.toolkit as toolkit
 
+from ckanext.glasgow.logic.schema import resource_schema as custom_resource_schema
+
 def get_licenses():
 
     return [('', '')] + model.Package.get_license_options()
@@ -38,7 +40,7 @@ def get_pending_files_for_dataset(pkg_dict):
         for pending_file in pending_files:
             pending_file['value'] = json.loads(pending_file['value'])
         return pending_files
-            
+
     except (toolkit.ValidationError,  toolkit.ObjectNotFound), e:
         helpers.flash_error('{0}'.format(e.error_dict['message']))
         return []
@@ -67,3 +69,22 @@ def get_datetime_from_ec_iso(date_str):
 
 def parse_metadata_string(metadata_str):
     return json.loads(metadata_str)
+
+
+def get_resource_ec_extra_fields(resource_dict):
+
+    if resource_dict.get('extras'):
+        return resource_dict['extras']
+
+    resource_schema_keys = custom_resource_schema().keys()
+    resource_schema_keys.extend([
+        'ec_api_org_id', 'FileName', 'DataSetId', 'can_be_previewed',
+        'on_same_domain', 'clear_upload',
+    ])
+
+    extra_ec_fields = []
+    for key, value in resource_dict.iteritems():
+        if key not in resource_schema_keys:
+            extra_ec_fields.append({'key': key, 'value': value})
+
+    return extra_ec_fields

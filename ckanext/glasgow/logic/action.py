@@ -773,8 +773,12 @@ def file_request_update(context, data_dict):
     create_schema = custom_schema.resource_schema()
 
     validated_data_dict, errors = validate(data_dict, create_schema, context)
-
     if errors:
+        for error in errors.get('extras', []):
+            if error:
+                errors.update(error)
+        errors.pop('extras', None)
+
         raise p.toolkit.ValidationError(errors)
 
     # Convert payload from CKAN to EC API spec
