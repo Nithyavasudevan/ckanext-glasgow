@@ -5,6 +5,7 @@ from ckan.logic.schema import (
     default_resource_schema,
     default_group_schema,
     default_update_group_schema,
+    default_user_schema
     )
 
 import ckan.plugins as p
@@ -23,6 +24,7 @@ from ckanext.glasgow.logic.validators import (
     unique_title_within_organization,
     no_pending_dataset_with_same_title_in_same_org,
     tag_length_validator,
+    url_name_validator,
 )
 
 
@@ -463,4 +465,11 @@ def update_organization_schema():
                  no_pending_organization_with_same_name],
         'needs_approval': [not_missing, boolean_validator, convert_to_extras]
     })
+    return schema
+
+
+def user_schema():
+    user_name_validator = get_validator('user_name_validator')
+    schema = default_user_schema()
+    schema['name'] = [not_empty, url_name_validator, user_name_validator, unicode]
     return schema

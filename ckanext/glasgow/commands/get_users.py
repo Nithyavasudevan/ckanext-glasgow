@@ -1,5 +1,6 @@
 import logging
 import uuid
+import urllib
 
 from ckan import model
 from ckan.lib.cli import CkanCommand
@@ -8,6 +9,7 @@ from ckan.plugins import toolkit
 from ckanext.glasgow.logic.schema import (
     convert_ec_user_to_ckan_user,
     convert_ec_member_to_ckan_member,
+    user_schema
 )
 
 
@@ -16,6 +18,9 @@ log = logging.getLogger(__name__)
 def create_user(ec_dict):
     data_dict = convert_ec_user_to_ckan_user(ec_dict)
     data_dict['password'] = str(uuid.uuid4())
+    if not data_dict.get('email'):
+        data_dict['email'] = 'noemail'
+
 
     context = {
         'ignore_auth': True,
@@ -28,7 +33,8 @@ def create_user(ec_dict):
         'ignore_auth': True,
         'model': model,
         'user': site_user['name'],
-        'session': model.Session
+        'session': model.Session,
+        'schema': user_schema(),
     }
     try:
         user = toolkit.get_action('user_create')(context, data_dict)
@@ -41,7 +47,11 @@ def create_user(ec_dict):
                 'local_action': True,
             }
             member_dict = convert_ec_member_to_ckan_member(ec_dict)
-            toolkit.get_action('organization_member_create')(context, member_dict)
+            try:
+                toolkit.get_action('organization_show')(context, {'id': member_dict['id']})
+                toolkit.get_action('organization_member_create')(context, member_dict)
+            except toolkit.ObjectNotFound, e:
+                log.warning('organization {} does not exist'.format(member_dict['id']))
         return user
     except toolkit.ValidationError, e:
         if e.error_dict.get('name') == [u'That login name is not available.']:
@@ -53,7 +63,8 @@ def create_user(ec_dict):
 def _create_users(ec_user_list):
     for ec_user in ec_user_list:
         user = create_user(ec_user)
-        log.debug('created user {0}'.format(user['id']))
+        if user:
+            log.debug('created user {0}'.format(user['id']))
 
 
 class GetInitialUsers(CkanCommand):
