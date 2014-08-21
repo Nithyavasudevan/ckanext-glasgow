@@ -48,6 +48,7 @@ def create_user(ec_dict):
             }
             member_dict = convert_ec_member_to_ckan_member(ec_dict)
             try:
+                toolkit.get_action('organization_show')(context, {'id': member_dict['id']})
                 toolkit.get_action('organization_member_create')(context, member_dict)
             except toolkit.ObjectNotFound, e:
                 log.warning('organization {} does not exist'.format(member_dict['id']))
