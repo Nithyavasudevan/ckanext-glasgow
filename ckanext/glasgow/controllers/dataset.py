@@ -207,9 +207,9 @@ class DatasetController(PackageController):
             task = p.toolkit.get_action('pending_task_for_dataset')(context,
                 {'name': dataset_name, 'id': pkg['id']})
             if task:
-                task_value = json.loads(task['value'])
+                task['value'] = json.loads(task['value'])
                 request_status = p.toolkit.get_action('get_change_request')(context,
-                    {'id': task_value.get('request_id')})
+                    {'id': task['value'].get('request_id')})
             else:
                 request_status = None
         except p.toolkit.ValidationError, e:
