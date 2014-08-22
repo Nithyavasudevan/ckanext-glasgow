@@ -72,10 +72,13 @@ class OrgController(OrganizationController):
                 request_status = None
         except p.toolkit.ValidationError, e:
             helpers.flash_error('{0}'.format(e.error_dict['message']))
+            request_status = None
         except ECAPIError, e:
             helpers.flash_error('{0}'.format(e.error_dict['message']))
+            request_status = None
         except p.toolkit.NotAuthorized:
             return p.toolkit.abort(401, p.toolkit._('Not authorized to view change requests'))
+            request_status = None
 
         c.group_dict = org
 

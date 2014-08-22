@@ -26,7 +26,8 @@ def create_user(ec_dict):
     data_dict['password'] = str(uuid.uuid4())
     if not data_dict.get('email'):
         data_dict['email'] = 'noemail'
-
+    if not data_dict.get('fullname'):
+        data_dict['fullname'] = data_dict.get('name')
 
     context = {
         'ignore_auth': True,
@@ -78,9 +79,10 @@ def create_orgs(organization_id, site_user):
 
     request = requests.get(api_endpoint, verify=False)
     try:
-        org = _fetch_from_ec(request)['MetaDataResultSet']
-    except KeyError:
-        print 'failed to fetch org {} from EC'.format(organization_id)
+        result = _fetch_from_ec(request)
+        org = result['MetadataResultSet'][0]
+    except (KeyError, IndexError):
+        print 'failed to fetch org {} from EC. Response {}'.format(organization_id, str(result))
         return
 
     context = {
