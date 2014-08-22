@@ -184,6 +184,7 @@ class GlasgowSchemaPlugin(p.SingletonPlugin, p.toolkit.DefaultDatasetForm):
             'get_datetime_from_ec_iso',
             'parse_metadata_string',
             'get_resource_ec_extra_fields',
+            'get_ec_api_metadata_link',
         )
         return _get_module_functions(custom_helpers, function_names)
 
