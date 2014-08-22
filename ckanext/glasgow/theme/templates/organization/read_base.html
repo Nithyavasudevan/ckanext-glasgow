@@ -2,8 +2,10 @@
 
 {% block head_extras -%}
   {{ super() }}
-  <link rel="alternate" type="application/json" href="/api/action/organization_show?id={{ c.group_dict['name'] }}"/>
-  <link rel="alternate" type="application/json" href="{{ h.get_ec_api_metadata_link('organization', c.group_dict) }}"/>
+  {% if c.group_dict %}
+    <link rel="alternate" type="application/json" href="/api/action/organization_show?id={{ c.group_dict['name'] }}"/>
+    <link rel="alternate" type="application/json" href="{{ h.get_ec_api_metadata_link('organization', c.group_dict) }}"/>
+  {% endif %}
 {% endblock -%}
 
 {% block content_primary_nav %}
