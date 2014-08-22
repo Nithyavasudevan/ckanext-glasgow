@@ -74,7 +74,7 @@ def create_user(ec_dict):
 
 def create_orgs(organization_id, site_user):
     api_url = config.get('ckanext.glasgow.metadata_api', '').rstrip('/')
-    api_endpoint = '{}/Metadata/Organisation/{}'.format(api_url, organization_id)
+    api_endpoint = '{0}/Metadata/Organisation/{}'.format(api_url, organization_id)
 
     request = requests.get(api_endpoint, verify=False)
     try:
@@ -98,7 +98,8 @@ def create_orgs(organization_id, site_user):
 
     try:
         toolkit.get_action('organization_create')(context, data_dict)
-        return toolkit.get_action('organization_show')(context, {id: organization_id})
+        context.pop('local_action', None)
+        return toolkit.get_action('organization_show')(context, {id: 'organization_id'})
     except toolkit.ValidationError:
         print 'failed to create org {}'.format(organization_id)
 
@@ -129,6 +130,5 @@ class GetInitialUsers(CkanCommand):
             'user': site_user['name'],
             'session': model.Session
         }
-        u
         ec_user_list = toolkit.get_action('ec_user_list')(context, {})
         _create_users(ec_user_list)
