@@ -195,6 +195,7 @@ class TestCreateUserNameIsEmail(object):
         assert_dict_contains_subset({
                  'id': u'e350cb61-ed72-4335-b915-7617b5e931f0',
                  'name': 'EditorGCC1@GCCCTPECADINT.onmicrosoft.com',
+                 'fullname': 'EditorGCC1@GCCCTPECADINT.onmicrosoft.com',
                  'email': u'noemail',
             },
             user
@@ -364,3 +365,103 @@ class TestCreateSuperUser(object):
     def test_user_already_exists_does_not_fail_validation_error(self):
         create_user(self.ec_dict)
         create_user(self.ec_dict)
+
+
+class TestCreateOrgEditor(object):
+    def setup(self):
+
+        self.ec_dict = {
+
+            "UserName": "orgeditor@GCCCTPECADINT.onmicrosoft.com",
+            "About": "",
+            "DisplayName": "",
+            "Roles": [
+                "OrganisationEditor"
+                ],
+            "FirstName": "",
+            "LastName": "",
+            "UserId": "e350cb61-ed72-4335-b915-7617b5e931f0",
+            "IsRegistered": False,
+            "OrganisationId": "f8c84440-24c6-40ce-a0b0-eafacd15ac59",
+            "Email": ""
+
+            }
+        self.org_owner = helpers.call_action('user_create',
+                                               name='org_owner',
+                                               email='test@test.com',
+                                               password='test')
+
+        self.test_org = helpers.call_action('organization_create',
+                                       context={
+                                           'user': 'org_owner',
+                                           'local_action': True,
+                                       },
+                                       name='test_org',
+                                       id=u'f8c84440-24c6-40ce-a0b0-eafacd15ac59')
+
+
+    def teardown(self):
+        helpers.reset_db()
+
+    def test_creates_user_no_email(self):
+        user = create_user(self.ec_dict)
+        assert_dict_contains_subset({
+                 'id': u'e350cb61-ed72-4335-b915-7617b5e931f0',
+                 'name': 'orgeditor@GCCCTPECADINT.onmicrosoft.com',
+                 'email': u'noemail',
+            },
+            user
+        )
+
+        members = helpers.call_action('member_list', id=self.test_org['id'])
+        assert_equals('Editor', members[1][2])
+
+
+class TestCreateOrgAdmin(object):
+    def setup(self):
+
+        self.ec_dict = {
+
+            "UserName": "orgadmin@GCCCTPECADINT.onmicrosoft.com",
+            "About": "",
+            "DisplayName": "",
+            "Roles": [
+                "OrganisationAdmin"
+                ],
+            "FirstName": "",
+            "LastName": "",
+            "UserId": "e350cb61-ed72-4335-b915-7617b5e931f0",
+            "IsRegistered": False,
+            "OrganisationId": "f8c84440-24c6-40ce-a0b0-eafacd15ac59",
+            "Email": ""
+
+            }
+        self.org_owner = helpers.call_action('user_create',
+                                               name='org_owner',
+                                               email='test@test.com',
+                                               password='test')
+
+        self.test_org = helpers.call_action('organization_create',
+                                       context={
+                                           'user': 'org_owner',
+                                           'local_action': True,
+                                       },
+                                       name='test_org',
+                                       id=u'f8c84440-24c6-40ce-a0b0-eafacd15ac59')
+
+
+    def teardown(self):
+        helpers.reset_db()
+
+    def test_creates_user_no_email(self):
+        user = create_user(self.ec_dict)
+        assert_dict_contains_subset({
+                 'id': u'e350cb61-ed72-4335-b915-7617b5e931f0',
+                 'name': 'orgadmin@GCCCTPECADINT.onmicrosoft.com',
+                 'email': u'noemail',
+            },
+            user
+        )
+
+        members = helpers.call_action('member_list', id=self.test_org['id'])
+        assert_equals('Admin', members[1][2])
