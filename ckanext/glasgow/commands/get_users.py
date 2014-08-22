@@ -74,7 +74,7 @@ def create_user(ec_dict):
 
 def create_orgs(organization_id, site_user):
     api_url = config.get('ckanext.glasgow.metadata_api', '').rstrip('/')
-    api_endpoint = '{0}/Metadata/Organisation/{}'.format(api_url, organization_id)
+    api_endpoint = '{}/Metadata/Organisation/{}'.format(api_url, organization_id)
 
     request = requests.get(api_endpoint, verify=False)
     try:
