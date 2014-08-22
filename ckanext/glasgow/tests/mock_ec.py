@@ -109,6 +109,15 @@ file_fields_under_255_characters = [
     'StandardVersion',
 ]
 
+
+@app.route('/Users', methods=['POST'])
+def request_user_create():
+
+    return flask.jsonify(**{
+        "RequestId": unicode(uuid.uuid4()),
+        }
+    )
+
 @app.route('/Organisations', methods=['POST'])
 def request_organization_create():
 

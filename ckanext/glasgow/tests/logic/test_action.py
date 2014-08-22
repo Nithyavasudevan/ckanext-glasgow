@@ -1636,3 +1636,115 @@ class TestUserRoleDelete(object):
 
         nose.tools.assert_equals('requestid', json.loads(task.value)['request_id'])
         nose.tools.assert_equals('user_update', task.task_type)
+
+
+class TestEcUserCreate(object):
+
+    def setup(self):
+        self.org_owner = helpers.call_action('user_create',
+                                               name='org_owner',
+                                               email='test@test.com',
+                                               password='test')
+
+
+        self.test_org = helpers.call_action('organization_create',
+                                       context={
+                                           'user': 'org_owner',
+                                           'local_action': True,
+                                       },
+                                       name='test_org')
+
+
+    def teardown(cls):
+        helpers.reset_db()
+
+    @mock.patch('ckanext.oauth2waad.plugin.service_to_service_access_token')
+    @mock.patch('requests.request')
+    def test_make_user(self, mock_request, mock_token):
+        content =  {
+            'RequestId': 'requestid',
+        }
+        mock_request.return_value = mock.Mock(
+            status_code=200,
+            content=json.dumps(content),
+            **{
+                'raise_for_status.side_effect': None,
+                'json.return_value': content,
+            }
+        )
+        mock_token.return_value = 'tmp_auth_token'
+
+
+        data_dict = {
+            'UserName': 'testuser',
+            'Password': 'pass',
+            'IsRegisteredUser': True,
+            'Email': 'em@il',
+            'First-Name': 'first',
+            'Last-Name': 'last',
+            'Display-Name': 'display name'
+        }
+
+        request = helpers.call_action('ec_user_create',
+                            context={
+                                'user': 'org_owner',
+                            },
+                            **data_dict)
+
+        task = model.Session.query(model.TaskStatus) \
+                .filter(model.TaskStatus.id == request['task_id']) \
+                .one()
+
+        nose.tools.assert_equals('requestid', json.loads(task.value)['request_id'])
+        nose.tools.assert_equals('user_request_create', task.task_type)
+        mock_request.assert_called_with(
+            'POST',
+            '/Users',
+            verify=False,
+            data='{"UserName": "testuser", "Last-Name": "last", "IsRegisteredUser": true, "Display-Name": "display name", "Password": "pass", "First-Name": "first", "Email": "em@il"}',
+            timeout=50,
+            headers={
+                'Content-Type': 'application/json', 'Authorization': 'Bearer tmp_auth_token'
+            }
+        )
+
+    @mock.patch('ckanext.oauth2waad.plugin.service_to_service_access_token')
+    @mock.patch('requests.request')
+    def test_make_user_in_org(self, mock_request, mock_token):
+        content =  {
+            'RequestId': 'requestid',
+        }
+        mock_request.return_value = mock.Mock(
+            status_code=200,
+            content=json.dumps(content),
+            **{
+                'raise_for_status.side_effect': None,
+                'json.return_value': content,
+            }
+        )
+        mock_token.return_value = 'tmp_auth_token'
+
+
+        data_dict = {
+            'UserName': 'testuser',
+            'Password': 'pass',
+            'IsRegisteredUser': True,
+            'Email': 'em@il',
+            'First-Name': 'first',
+            'Last-Name': 'last',
+            'Display-Name': 'display name',
+            'OrganisationId': self.test_org['id'],
+        }
+
+        request = helpers.call_action('ec_user_create',
+                            context={
+                                'user': 'org_owner',
+                            },
+                            **data_dict)
+
+        task = model.Session.query(model.TaskStatus) \
+                .filter(model.TaskStatus.id == request['task_id']) \
+                .one()
+
+        nose.tools.assert_equals('requestid', json.loads(task.value)['request_id'])
+        nose.tools.assert_equals('user_request_create', task.task_type)

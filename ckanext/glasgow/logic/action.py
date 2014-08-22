@@ -225,6 +225,14 @@ def _get_api_endpoint(operation):
             'GET',
             '/Identity/Organisation/{organization_id}/User',
             identity_base),
+        'user_request_create': (
+            'POST',
+            '/Users',
+            write_base),
+        'user_in_organization_request_create': (
+            'POST',
+            '/Users/Organisation/{organization_id}',
+            write_base),
     }
 
     try:
@@ -2126,3 +2134,62 @@ def file_request_delete(context, data_dict):
         'request_id': request_id,
         'name': None,
     }
+
+
+def ec_user_create(context, data_dict):
+    check_access('dataset_request_create', context, data_dict)
+    context.update({'model': model, 'session': model.Session})
+    create_schema = custom_schema.ec_create_user_schema()
+
+    validated_data_dict, errors = validate(data_dict, create_schema, context)
+
+    if errors:
+        raise p.toolkit.ValidationError(errors)
+
+    task_dict = _create_task_status(context,
+                                    task_type='user_request_create',
+                                    entity_id=_make_uuid(),
+                                    entity_type='user',
+                                    # This will be used for validating datasets
+                                    key=validated_data_dict['UserName'],
+                                    value=json.dumps(
+                                        {'data_dict': data_dict})
+                                    )
+
+    organization_id = validated_data_dict.pop('OrganisationId', None)
+    if organization_id:
+        method, url = _get_api_endpoint('user_in_organization_request_create')
+        url = url.format(organization_id=organization_id)
+    else:
+        method, url = _get_api_endpoint('user_request_create')
+
+    try:
+        access_token = oauth2.service_to_service_access_token('data_collection')
+    except oauth2.ServiceToServiceAccessTokenError:
+        log.warning('Could not get the Service to Service auth token')
+        access_token = None
+
+    headers = {
+        'Authorization': 'Bearer {}'.format(access_token),
+        'Content-Type': 'application/json',
+    }
+
+
+    content = send_request_to_ec_platform(method, url,
+                                          data=json.dumps(validated_data_dict),
+                                          headers=headers,
+                                          context=context,
+                                          task_dict=task_dict)
+
+
+    request_id = content.get('RequestId')
+    task_dict = _update_task_status_success(context, task_dict, {
+        'data_dict': data_dict,
+        'request_id': request_id,
+    })
+
+    return {
+        'task_id': task_dict['id'],
+        'request_id': request_id,
+    }
+

@@ -73,6 +73,10 @@ class GlasgowSchemaPlugin(p.SingletonPlugin, p.toolkit.DefaultDatasetForm):
                     controller=org_controller, action='organization_change_requests')
         map.connect('/organization/{organization_id}',
                     controller=org_controller, action='read')
+
+        map.connect('/create_users',
+                    controller='ckanext.glasgow.controllers.create_user:CreateUsersController',
+                    action='create_users')
         return map
 
     # IConfigurer
@@ -127,6 +131,7 @@ class GlasgowSchemaPlugin(p.SingletonPlugin, p.toolkit.DefaultDatasetForm):
             'user_role_delete',
             'ec_user_show',
             'ec_user_list',
+            'ec_user_create',
             'dataset_request_create',
             'file_request_create',
             'file_request_update',

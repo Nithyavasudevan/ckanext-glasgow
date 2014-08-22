@@ -1,0 +1,113 @@
+{% extends "page.html" %}
+
+{% block subtitle %}{{ _('Create users on The Platform') }}{% endblock %}
+
+{% block breadcrumb_content %}
+  <li class="active">{% link_for _('Create users on The Platform'), controller='ckanext.glasgow.controllers.create_user:CreateUsersController', action='create_users' %}</li>
+{% endblock %}
+
+{% block primary %}
+  <div class="primary">
+  <article class="module">
+    <div class="module-content">
+      <h1 class="page-heading">Create users on The Platform</h1>
+
+      <form class="form-horizontal" method="post" name="create_user">
+
+        <div class="control-group">
+          <label class="control-label" for="organisation">Organisation</label>
+          <div class="controls">
+            <select id="organisation" name="organisation">
+              {% if is_sysadmin %}
+              <option value="" {% if data['organisation'] == '' %}selected{% endif %}>No organisation</option>
+              {% endif %}
+              {% for organisation in organisation_names %}
+                <option {% if data['organisation'] == organisation %}selected{% endif %}>{{ organisation }}</option>
+              {% endfor %}
+            </select>
+            <span class="help-block">If you select an organisation here, the new user will be created as an <em>Editor</em> in that organisation.</span>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <label class="control-label" for="firstname"><span title="This field is required" class="control-required">*</span> First name</label>
+          <div class="controls">
+            <input type="text" id="firstname" name="First Name" placeholder="Joe" maxlength="255" value="{{ data['First Name'] }}">
+          </div>
+        </div>
+
+        <div class="control-group">
+          <label class="control-label" for="lastname"><span title="This field is required" class="control-required">*</span> Last name</label>
+          <div class="controls">
+            <input type="text" id="lastname" name="Last Name" placeholder="Bloggs" maxlength="255" value="{{ data['Last Name'] }}">
+          </div>
+        </div>
+
+        <div class="control-group">
+          <label class="control-label" for="username"><span title="This field is required" class="control-required">*</span> Username</label>
+          <div class="controls">
+            <input type="text" id="username" name="Username" placeholder="joebloggs" minlength="1" maxlength="16" pattern="([0-9,a-z,A-Z]-?_?)*" value="{{ data['Username'] }}">
+            <span class="help-block">The username must contain only digits 0-9, letters a-z and A-Z, dash - and undescore _.</span>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <label class="control-label" for="displayname"><span title="This field is required" class="control-required">*</span> Display name</label>
+          <div class="controls">
+            <input type="text" id="displayname" name="Display Name" placeholder="Joe Bloggs" maxlength="255" value="{{ data['Display Name'] }}">
+          </div>
+        </div>
+
+        <div class="control-group">
+          <label class="control-label" for="email"><span title="This field is required" class="control-required">*</span> Email</label>
+          <div class="controls">
+            <input type="email" id="email" name="Email" placeholder="joe@bloggs.com" maxlength="255" value="{{ data['Email'] }}">
+          </div>
+        </div>
+
+        <div class="control-group">
+          <label class="control-label" for="password"><span title="This field is required" class="control-required">*</span> Password</label>
+          <div class="controls">
+            <input type="password" id="password" name="Password" minlength="6" maxlength="16" value="{{ data['Password'] }}" placeholder="••••••">
+            <span class="help-block">The password must be 6-16 characters long.</span>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <label class="control-label" for="confirm-password"><span title="This field is required" class="control-required">*</span> Confirm</label>
+          <div class="controls">
+            <input type="password" id="confirm-password" name="confirm-password" value="{{ data['confirm-password'] }}" minlength="6" maxlength="16" placeholder="••••••">
+            <span class="help-block">Enter the same password again to confirm.</span>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <label class="control-label" for="about">About</label>
+          <div class="controls">
+            <textarea id="about" name="About" rows="5" placeholder="A short description of the user (optional)." maxlength="4000">{{ data['About'] }}</textarea>
+            <span class="help-block">You can use <a href="http://daringfireball.net/projects/markdown/syntax" target="_blank">Markdown formatting</a> in the <strong>About</strong> text.</span>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <p class="control-required-message">
+            <span class="control-required">*</span> Required field
+          </p>
+          <button class="btn btn-primary" type="submit">Create user</button>
+        </div>
+
+      </form>
+    </div>
+    </div>
+  </article>
+{% endblock %}
+
+{% block secondary %}
+  <aside class="secondary">
+    <section class="module module-narrow module-shallow">
+      <div class="module-content">
+        <p>Here you can submit new user accounts to be created on The Platform.</p>
+      </div>
+    </section>
+  </aside>
+{% endblock %}

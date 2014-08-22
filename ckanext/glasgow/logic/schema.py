@@ -275,6 +275,21 @@ def ec_create_package_schema():
     return schema
 
 
+def ec_create_user_schema():
+    boolean_validator = get_validator('boolean_validator')
+    return {
+        'UserName': [not_empty, unicode],
+        'Password': [not_empty, unicode],
+        'IsRegisteredUser': [not_empty, boolean_validator],
+        'Email': [not_empty, unicode],
+        'First-Name': [not_empty, unicode],
+        'Last-Name': [not_empty, unicode],
+        'Display-Name': [not_empty, unicode],
+        'About': [ignore_missing, unicode],
+        'OrganisationId': [ignore_missing, unicode],
+    }
+
+
 def update_package_schema():
     schema = default_update_package_schema()
 
