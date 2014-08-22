@@ -169,6 +169,7 @@ class EcInitialHarvester(EcHarvester):
             dataset = content['Id']
             request = requests.get(api_endpoint.format(org, dataset), verify=False)
             if request.status_code == 404:
+                result = False
                 log.debug('No files for dataset {0}'.format(dataset))
             else:
                 result = _fetch_from_ec(request)
