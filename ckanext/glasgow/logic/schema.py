@@ -360,27 +360,27 @@ def show_package_schema():
 
     convert_from_extras = get_converter('convert_from_extras')
 
-    schema['openness_rating'] = [convert_from_extras]
+    schema['openness_rating'] = [ignore_missing, convert_from_extras]
 
-    schema['quality'] = [convert_from_extras]
+    schema['quality'] = [ignore_missing, convert_from_extras]
 
-    schema['published_on_behalf_of'] = [convert_from_extras]
+    schema['published_on_behalf_of'] = [ignore_missing, convert_from_extras]
 
-    schema['usage_guidance'] = [convert_from_extras]
+    schema['usage_guidance'] = [ignore_missing, convert_from_extras]
 
-    schema['category'] = [convert_from_extras]
+    schema['category'] = [ignore_missing, convert_from_extras]
 
-    schema['theme'] = [convert_from_extras]
+    schema['theme'] = [ignore_missing, convert_from_extras]
 
-    schema['standard_name'] = [convert_from_extras]
+    schema['standard_name'] = [ignore_missing, convert_from_extras]
 
-    schema['standard_rating'] = [convert_from_extras]
+    schema['standard_rating'] = [ignore_missing, convert_from_extras]
 
-    schema['standard_version'] = [convert_from_extras]
+    schema['standard_version'] = [ignore_missing, convert_from_extras]
 
     schema['resources'] = resource_schema()
 
-    schema['needs_approval'] = [convert_from_extras]
+    schema['needs_approval'] = [ignore_missing, convert_from_extras]
 
 
     return schema
