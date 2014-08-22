@@ -114,6 +114,8 @@ class EcChangelogHarvester(EcHarvester):
 
         audit = json.loads(harvest_object.content)
 
+        log.debug('Import stage for audit "{0}"'.format(audit.get('AuditId')))
+
         command = audit.get('Command')
 
         handler = get_audit_command_handler(command)

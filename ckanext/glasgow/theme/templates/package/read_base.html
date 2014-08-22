@@ -1,5 +1,13 @@
 {% ckan_extends %}
 
+{% block head_extras -%}
+  {{ super() }}
+  {% if c.pkg_dict %}
+    <link rel="alternate" type="application/json" href="/api/action/package_show?id={{ c.pkg_dict['name'] }}"/>
+    <link rel="alternate" type="application/json" href="{{ h.get_ec_api_metadata_link('dataset', c.pkg_dict) }}"/>
+  {% endif %}
+{% endblock -%}
+
 {% block content_primary_nav %}
   {{ h.build_nav_icon('dataset_read', _('Dataset'), id=pkg.name) }}
   {{ h.build_nav_icon('dataset_groups', _('Groups'), id=pkg.name) }}
