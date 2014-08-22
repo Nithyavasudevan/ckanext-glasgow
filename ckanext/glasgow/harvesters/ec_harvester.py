@@ -190,7 +190,7 @@ class EcInitialHarvester(EcHarvester):
             return False
 
         if not result:
-            return False
+            return True
 
         for file_metadata in result['MetadataResultSet']:
             # create harvest object extra for each file
