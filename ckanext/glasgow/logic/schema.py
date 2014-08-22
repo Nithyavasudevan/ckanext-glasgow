@@ -181,9 +181,10 @@ def convert_ckan_resource_to_ec_file(ckan_dict):
 
     # Arbitrary extras
     ec_dict['Metadata'] = {}
-    for extra in ckan_dict.get('extras', []):
-        if extra['key'] not in ckan_dict:
-            ec_dict['Metadata'][extra['key']] = extra['value']
+    if isinstance(ckan_dict.get('extras'), list):
+        for extra in ckan_dict['extras']:
+            if extra['key'] not in ckan_dict:
+                ec_dict['Metadata'][extra['key']] = extra['value']
 
     return ec_dict
 
