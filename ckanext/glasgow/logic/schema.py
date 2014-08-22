@@ -214,9 +214,7 @@ def convert_ckan_member_to_ec_member(ckan_dict):
 
     return {
         'NewOrganisationId': ckan_dict['id'],
-        'UserRoles': {
-            'UserGroup': [ role_dict.get(ckan_dict['role']) ]
-        }
+        'UserRoles': [ role_dict.get(ckan_dict['role']) ],
     }
 
 def convert_ec_member_to_ckan_member(ec_dict):

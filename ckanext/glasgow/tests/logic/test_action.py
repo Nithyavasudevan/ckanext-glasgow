@@ -1447,7 +1447,7 @@ class TestUserRoleUpdate(object):
             '/UserRoles/Organisation/{}/User/{}'.format(self.test_org['id'],
                                                         self.normal_user['id']),
             verify=False,
-            data='{{"NewOrganisationId": "{}", "UserRoles": {{"UserGroup": ["OrganisationAdmin"]}}}}'.format(self.test_org['id']),
+            data='{{"NewOrganisationId": "{}", "UserRoles": ["OrganisationAdmin"]}}'.format(self.test_org['id']),
             timeout=50,
             headers={
                 'Content-Type': 'application/json', 'Authorization': 'Bearer tmp_auth_token'
@@ -1502,7 +1502,7 @@ class TestUserRoleUpdate(object):
             'PUT',
             '/UserRoles/User/{}'.format(self.normal_user['id']),
             verify=False,
-            data='{{"NewOrganisationId": "{}", "UserRoles": {{"UserGroup": ["OrganisationAdmin"]}}}}'.format(self.test_org['id']),
+            data='{{"NewOrganisationId": "{}", "UserRoles": ["OrganisationAdmin"]}}'.format(self.test_org['id']),
             timeout=50,
             headers={
                 'Content-Type': 'application/json', 'Authorization': 'Bearer tmp_auth_token'
