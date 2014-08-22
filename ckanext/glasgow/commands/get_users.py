@@ -60,7 +60,7 @@ def create_user(ec_dict):
             try:
                 org = toolkit.get_action('organization_show')(context, {'id': member_dict['id']})
             except toolkit.ObjectNotFound, e:
-                org = create_orgs(site_user['name'])
+                org = create_orgs(member_dict['id'], site_user['name'])
             if org:
                 toolkit.get_action('organization_member_create')(context, member_dict)
 
