@@ -1,5 +1,11 @@
 {% ckan_extends  %}
 
+{% block head_extras -%}
+  {{ super() }}
+  <link rel="alternate" type="application/json" href="/api/action/organization_show?id={{ c.group_dict['name'] }}"/>
+  <link rel="alternate" type="application/json" href="{{ h.get_ec_api_metadata_link('organization', c.group_dict) }}"/>
+{% endblock -%}
+
 {% block content_primary_nav %}
   {{ super() }}
   {{ h.build_nav_icon('organization_change_requests', _('Pending Changes'), organization_name=c.group_dict.name) }}

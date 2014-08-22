@@ -5,7 +5,7 @@ import ckan.lib.helpers as helpers
 import ckan.plugins.toolkit as toolkit
 
 from ckanext.glasgow.logic.schema import resource_schema as custom_resource_schema
-
+from ckanext.glasgow.logic.action import _get_api_endpoint
 def get_licenses():
 
     return [('', '')] + model.Package.get_license_options()
@@ -88,3 +88,21 @@ def get_resource_ec_extra_fields(resource_dict):
             extra_ec_fields.append({'key': key, 'value': value})
 
     return extra_ec_fields
+
+
+def get_ec_api_metadata_link(object_type, object_dict):
+
+    url = None
+    if object_type == 'organization':
+        method, url = _get_api_endpoint('organization_show')
+        url = url.format(
+            organization_id=object_dict['id'],
+        )
+    elif object_type == 'dataset':
+        method, url = _get_api_endpoint('dataset_show')
+        url = url.format(
+            organization_id=object_dict['owner_org'],
+            dataset_id=object_dict['id']
+        )
+
+    return url
