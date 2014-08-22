@@ -200,3 +200,55 @@ class TestCreateUserNameIsEmail(object):
     def test_user_already_exists_does_not_fail_validation_error(self):
         create_user(self.ec_dict)
         create_user(self.ec_dict)
+
+
+class TestCreateSuperUser(object):
+    def setup(self):
+
+        self.ec_dict = {
+
+            "UserName": "SuperAdmin@GCCCTPECADINT.onmicrosoft.com",
+            "About": "",
+            "DisplayName": "",
+            "Roles": [
+                "SuperAdmin"
+                ],
+            "FirstName": "",
+            "LastName": "",
+            "UserId": "e350cb61-ed72-4335-b915-7617b5e931f0",
+            "IsRegistered": False,
+            "OrganisationId": "f8c84440-24c6-40ce-a0b0-eafacd15ac59",
+            "Email": ""
+
+            }
+        self.org_owner = helpers.call_action('user_create',
+                                               name='org_owner',
+                                               email='test@test.com',
+                                               password='test')
+
+        self.test_org = helpers.call_action('organization_create',
+                                       context={
+                                           'user': 'org_owner',
+                                           'local_action': True,
+                                       },
+                                       name='test_org',
+                                       id=u'f8c84440-24c6-40ce-a0b0-eafacd15ac59')
+
+
+    def teardown(self):
+        helpers.reset_db()
+
+    def test_creates_user_no_email(self):
+        user = create_user(self.ec_dict)
+        assert_dict_contains_subset({
+                 'id': u'e350cb61-ed72-4335-b915-7617b5e931f0',
+                 'name': 'SuperAdmin@GCCCTPECADINT.onmicrosoft.com',
+                 'email': u'noemail',
+                 'sysadmin': True,
+            },
+            user
+        )
+
+    def test_user_already_exists_does_not_fail_validation_error(self):
+        create_user(self.ec_dict)
+        create_user(self.ec_dict)
