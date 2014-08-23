@@ -207,11 +207,11 @@ def _get_api_endpoint(operation):
         'user_role_update': (
             'PUT',
             '/UserRoles/User/{user_id}',
-            identity_base),
+            write_base),
         'user_org_role_update': (
             'PUT',
             '/UserRoles/Organisation/{organization_id}/User/{user_id}',
-            identity_base),
+            write_base),
 
         'user_show': (
             'GET',
