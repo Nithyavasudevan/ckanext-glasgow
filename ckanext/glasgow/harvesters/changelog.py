@@ -580,6 +580,7 @@ def get_audit_command_handler(command):
         'UpdateOrganisation': handle_organization_update,
         'CreateUser': handle_user_create,
         'UpdateUser': handle_user_update,
+        'ChangeUserRoles': handle_user_update,
     }
 
     return handlers.get(command)
