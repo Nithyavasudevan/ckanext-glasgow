@@ -282,9 +282,9 @@ def ec_create_user_schema():
         'Password': [not_empty, unicode],
         'IsRegisteredUser': [not_empty, boolean_validator],
         'Email': [not_empty, unicode],
-        'First-Name': [not_empty, unicode],
-        'Last-Name': [not_empty, unicode],
-        'Display-Name': [not_empty, unicode],
+        'FirstName': [not_empty, unicode],
+        'LastName': [not_empty, unicode],
+        'DisplayName': [not_empty, unicode],
         'About': [ignore_missing, unicode],
         'OrganisationId': [ignore_missing, unicode],
     }

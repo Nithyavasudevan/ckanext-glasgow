@@ -36,9 +36,9 @@ class CreateUsersController(toolkit.BaseController):
                 'Password': params['Password'],
                 'IsRegisteredUser': True,
                 'Email': params['Email'],
-                'First-Name': params['First Name'],
-                'Last-Name': params['Last Name'],
-                'Display-Name': params['Display Name'],
+                'FirstName': params['First Name'],
+                'LastName': params['Last Name'],
+                'DisplayName': params['Display Name'],
                 'About': params['About'],
                 'OrganisationId': params.get('organisation'),
             }
